@@ -5,6 +5,14 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+} from "firebase/auth";
+// 以前：import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-client";
 
 import {
   Form,
@@ -16,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 // 定義表單驗證 Schema
 const formSchema = z.object({
@@ -29,8 +38,8 @@ export function AuthForm() {
   const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // 初始化 React Hook Form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -40,11 +49,53 @@ export function AuthForm() {
   });
 
   // 處理表單送出
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // 這裡將是未來與 Firebase 溝通的程式碼
-    console.log(values);
-    setTimeout(() => setIsLoading(false), 2000);
+    setError(null);
+    try {
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, values.email, values.password);
+      } else {
+        await createUserWithEmailAndPassword(
+          auth,
+          values.email,
+          values.password
+        );
+      }
+      // 成功後，可能導向主頁或關閉對話框
+      console.log("Authentication successful!");
+    } catch (err: unknown) {
+      // 檢查 err 是否為一個 Error 物件
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 處理 Google 登入
+  async function handleGoogleLogin() {
+    setIsLoading(true);
+    setError(null);
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      console.log("Google login successful!");
+    } catch (err: unknown) {
+      // 檢查 err 是否為一個 Error 物件
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -80,11 +131,29 @@ export function AuthForm() {
               </FormItem>
             )}
           />
+          {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Loading..." : isLogin ? t("login") : t("register")}
           </Button>
         </form>
       </Form>
+
+      <div className="relative">
+        <Separator className="absolute inset-0 flex items-center h-px -z-10 bg-gray-200" />
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-gray-500">or continue with</span>
+        </div>
+      </div>
+
+      <Button
+        onClick={handleGoogleLogin}
+        variant="outline"
+        className="w-full"
+        disabled={isLoading}
+      >
+        Sign in with Google
+      </Button>
+
       <div className="text-center text-sm text-muted-foreground">
         <p>
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
