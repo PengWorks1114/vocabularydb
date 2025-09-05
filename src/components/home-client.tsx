@@ -17,18 +17,37 @@ import { useAuth } from "@/components/auth-provider";
 import "@/i18n/i18n-client";
 import { signOut } from "firebase/auth";
 
-// 將 export function HomeClient() 改為 export default function HomeClient()
+// ⬇️ 引入 Firestore 服務
+import { createWordbook } from "@/lib/firestore-service";
+
 export default function HomeClient() {
   const { t } = useTranslation();
   const { user, loading, auth } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  const handleAuthSuccess = () => {
-    setIsAuthOpen(false);
-  };
+  // 建立單字本時的 loading 狀態
+  const [creating, setCreating] = useState(false);
 
+  const handleAuthSuccess = () => setIsAuthOpen(false);
   const handleLogout = async () => {
     await signOut(auth);
+  };
+
+  // 手動建立測試用單字本
+  const handleCreateWordbook = async () => {
+    if (!user) return;
+    setCreating(true);
+    try {
+      const wb = await createWordbook(
+        user.uid,
+        "測試本 " + new Date().toLocaleTimeString()
+      );
+      console.log("✅ 手動建立成功：", wb);
+    } catch (e) {
+      console.error("❌ 手動建立失敗：", e);
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (loading) {
@@ -44,9 +63,15 @@ export default function HomeClient() {
       {user ? (
         <>
           <p className="text-xl font-bold">歡迎，{user.email}！</p>
-          <Button onClick={handleLogout} variant="outline">
-            登出
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleLogout} variant="outline">
+              登出
+            </Button>
+            {/* 測試建立單字本的按鈕 */}
+            <Button onClick={handleCreateWordbook} disabled={creating}>
+              {creating ? "建立中..." : "建立測試用單字本"}
+            </Button>
+          </div>
         </>
       ) : (
         <>
