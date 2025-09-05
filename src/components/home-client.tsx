@@ -17,37 +17,17 @@ import { useAuth } from "@/components/auth-provider";
 import "@/i18n/i18n-client";
 import { signOut } from "firebase/auth";
 
-// ⬇️ 引入 Firestore 服務
-import { createWordbook } from "@/lib/firestore-service";
+// ✅ 單字本清單元件
+import WordbookList from "@/components/wordbooks/wordbook-list";
 
 export default function HomeClient() {
   const { t } = useTranslation();
   const { user, loading, auth } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // 建立單字本時的 loading 狀態
-  const [creating, setCreating] = useState(false);
-
   const handleAuthSuccess = () => setIsAuthOpen(false);
   const handleLogout = async () => {
     await signOut(auth);
-  };
-
-  // 手動建立測試用單字本
-  const handleCreateWordbook = async () => {
-    if (!user) return;
-    setCreating(true);
-    try {
-      const wb = await createWordbook(
-        user.uid,
-        "測試本 " + new Date().toLocaleTimeString()
-      );
-      console.log("✅ 手動建立成功：", wb);
-    } catch (e) {
-      console.error("❌ 手動建立失敗：", e);
-    } finally {
-      setCreating(false);
-    }
   };
 
   if (loading) {
@@ -59,22 +39,21 @@ export default function HomeClient() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-24 gap-4">
+    <div className="min-h-screen p-8">
       {user ? (
-        <>
-          <p className="text-xl font-bold">歡迎，{user.email}！</p>
-          <div className="flex gap-2">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xl font-bold">歡迎，{user.email}！</p>
             <Button onClick={handleLogout} variant="outline">
               登出
             </Button>
-            {/* 測試建立單字本的按鈕 */}
-            <Button onClick={handleCreateWordbook} disabled={creating}>
-              {creating ? "建立中..." : "建立測試用單字本"}
-            </Button>
           </div>
-        </>
+
+          {/* ✅ 單字本清單（讀取 / 新增 / 改名 / 刪除） */}
+          <WordbookList />
+        </div>
       ) : (
-        <>
+        <div className="flex min-h-[60vh] items-center justify-center gap-4">
           <Button>{t("welcome")}</Button>
           <LanguageSwitcher />
           <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
@@ -91,7 +70,7 @@ export default function HomeClient() {
               <AuthForm onSuccess={handleAuthSuccess} />
             </DialogContent>
           </Dialog>
-        </>
+        </div>
       )}
     </div>
   );
