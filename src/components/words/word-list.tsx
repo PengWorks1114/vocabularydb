@@ -318,8 +318,8 @@ export function WordList({ wordbookId }: WordListProps) {
         <div className="text-sm text-muted-foreground">尚無單字</div>
       ) : (
         <div className="w-full">
-          <div className="min-w-[1000px] text-sm">
-            <div className="flex bg-muted">
+          <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
+            <div className="flex bg-muted sticky top-0 z-10">
               <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
               <div className="flex-1 px-2 py-1 border-r border-gray-200">單字</div>
               <div className="flex-1 px-2 py-1 border-r border-gray-200">拼音</div>
@@ -399,8 +399,9 @@ export function WordList({ wordbookId }: WordListProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => openEdit(w)}
+                          aria-label="編輯"
                         >
-                          編輯
+                          ✏️
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-h-[80vh] overflow-y-auto">
@@ -493,8 +494,12 @@ export function WordList({ wordbookId }: WordListProps) {
                     </Dialog>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive">
-                          刪除
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          aria-label="刪除"
+                        >
+                          🗑️
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
