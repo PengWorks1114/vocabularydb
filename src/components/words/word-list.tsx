@@ -45,6 +45,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const [sortBy, setSortBy] = useState<"createdAt" | "mastery">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [showFavorites, setShowFavorites] = useState(false);
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
@@ -244,6 +245,9 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
+  const displayWords = showFavorites ? words.filter((w) => w.favorite) : words;
+  const emptyMessage = showFavorites ? "尚無收藏單字" : "尚無單字";
+
   if (loading) {
     return <div className="text-sm text-muted-foreground">載入中...</div>;
   }
@@ -254,14 +258,15 @@ export function WordList({ wordbookId }: WordListProps) {
 
   return (
     <div className="space-y-4">
-      <Dialog open={createOpen} onOpenChange={(o) => {
-        setCreateOpen(o);
-        if (!o) resetCreateForm();
-      }}>
-        <DialogTrigger asChild>
-          <Button>新增單字</Button>
-        </DialogTrigger>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <div className="flex gap-2">
+        <Dialog open={createOpen} onOpenChange={(o) => {
+          setCreateOpen(o);
+          if (!o) resetCreateForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button>新增單字</Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>新增單字</DialogTitle>
           </DialogHeader>
@@ -341,11 +346,22 @@ export function WordList({ wordbookId }: WordListProps) {
               {creating ? "新增中..." : "新增"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+        <Button
+          className={
+            showFavorites
+              ? "bg-black text-white hover:bg-black/90"
+              : "bg-yellow-500 text-black hover:bg-yellow-600"
+          }
+          onClick={() => setShowFavorites((prev) => !prev)}
+        >
+          {showFavorites ? "顯示全部" : "顯示最愛"}
+        </Button>
+      </div>
 
-      {!words.length ? (
-        <div className="text-sm text-muted-foreground">尚無單字</div>
+      {!displayWords.length ? (
+        <div className="text-sm text-muted-foreground">{emptyMessage}</div>
       ) : (
         <div className="w-full">
           <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
@@ -394,7 +410,7 @@ export function WordList({ wordbookId }: WordListProps) {
               </div>
               <div className="w-40 px-2 py-1">操作</div>
             </div>
-            {words.map((w) => (
+            {displayWords.map((w) => (
               <div key={w.id} className="flex border-b items-start">
                 <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
