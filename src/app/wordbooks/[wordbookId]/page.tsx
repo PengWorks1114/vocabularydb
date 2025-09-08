@@ -19,11 +19,16 @@ export default function WordbookPage({ params }: PageProps) {
   const { user, auth } = useAuth();
   const { t } = useTranslation();
   const [name, setName] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     getWordbook(user.uid, wordbookId).then((wb) => setName(wb?.name || ""));
   }, [user, wordbookId]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -32,13 +37,19 @@ export default function WordbookPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-4">
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-sm text-muted-foreground">
-          &larr; {t("backToList")}
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground"
+          suppressHydrationWarning
+        >
+          &larr; {mounted ? t("backToList") : ""}
         </Link>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
-            {t("logout")}
+            <span suppressHydrationWarning>
+              {mounted ? t("logout") : ""}
+            </span>
           </Button>
         </div>
       </div>
