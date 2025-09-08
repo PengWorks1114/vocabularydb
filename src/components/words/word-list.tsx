@@ -43,6 +43,23 @@ export function WordList({ wordbookId }: WordListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [sortBy, setSortBy] = useState<"createdAt" | "mastery">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const sortWords = (list: Word[]) => {
+    return [...list].sort((a, b) => {
+      const aVal =
+        sortBy === "createdAt"
+          ? a.createdAt?.toMillis() || 0
+          : a.mastery || 0;
+      const bVal =
+        sortBy === "createdAt"
+          ? b.createdAt?.toMillis() || 0
+          : b.mastery || 0;
+      return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+    });
+  };
+
   // 新增
   const [creating, setCreating] = useState(false);
   const [newWord, setNewWord] = useState("");
@@ -72,14 +89,22 @@ export function WordList({ wordbookId }: WordListProps) {
   // 刪除
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const toggleSort = (column: "createdAt" | "mastery") => {
+    if (sortBy === column) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortDir("desc");
+    }
+  };
+
   async function load() {
     if (!user) return;
     setLoading(true);
     setError(null);
     try {
       const data = await getWordsByWordbookId(user.uid, wordbookId);
-      data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-      setWords(data);
+      setWords(sortWords(data));
     } catch (e) {
       setError(e instanceof Error ? e.message : "讀取失敗");
     } finally {
@@ -91,6 +116,11 @@ export function WordList({ wordbookId }: WordListProps) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, wordbookId]);
+
+  useEffect(() => {
+    setWords((prev) => sortWords(prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, sortDir]);
 
   const resetCreateForm = () => {
     setNewWord("");
@@ -122,7 +152,7 @@ export function WordList({ wordbookId }: WordListProps) {
         note: newNote.trim(),
         favorite: newFavorite,
       });
-      setWords((prev) => [created, ...prev]);
+      setWords((prev) => sortWords([created, ...prev]));
       resetCreateForm();
       setCreateOpen(false);
     } catch (e) {
@@ -165,7 +195,7 @@ export function WordList({ wordbookId }: WordListProps) {
       };
       await updateWord(user.uid, wordbookId, editTarget.id, updated);
       setWords((prev) =>
-        prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w))
+        sortWords(prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w)))
       );
       setEditTarget(null);
     } catch (e) {
@@ -180,7 +210,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setDeletingId(wordId);
     try {
       await deleteWord(user.uid, wordbookId, wordId);
-      setWords((prev) => prev.filter((w) => w.id !== wordId));
+      setWords((prev) => sortWords(prev.filter((w) => w.id !== wordId)));
     } catch (e) {
       console.error(e);
     } finally {
@@ -194,7 +224,7 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       await updateWord(user.uid, wordbookId, word.id, { favorite: newVal });
       setWords((prev) =>
-        prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w))
+        sortWords(prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w)))
       );
     } catch (e) {
       console.error(e);
@@ -207,7 +237,7 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       await updateWord(user.uid, wordbookId, word.id, { mastery: newVal });
       setWords((prev) =>
-        prev.map((w) => (w.id === word.id ? { ...w, mastery: newVal } : w))
+        sortWords(prev.map((w) => (w.id === word.id ? { ...w, mastery: newVal } : w)))
       );
     } catch (e) {
       console.error(e);
@@ -327,9 +357,41 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">詞性</div>
               <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
               <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
-              <div className="w-20 px-2 py-1 border-r border-gray-200">掌握度</div>
+              <div className="w-20 px-2 py-1 border-r border-gray-200">
+                <button
+                  className="flex items-center"
+                  onClick={() => toggleSort("mastery")}
+                >
+                  掌握度
+                  {sortBy === "mastery" ? (
+                    sortDir === "desc" ? (
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    ) : (
+                      <ChevronUp className="h-4 w-4 ml-1" />
+                    )
+                  ) : (
+                    <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                  )}
+                </button>
+              </div>
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">備註</div>
-              <div className="w-28 px-2 py-1 border-r border-gray-200">建立日期</div>
+              <div className="w-28 px-2 py-1 border-r border-gray-200">
+                <button
+                  className="flex items-center"
+                  onClick={() => toggleSort("createdAt")}
+                >
+                  建立日期
+                  {sortBy === "createdAt" ? (
+                    sortDir === "desc" ? (
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    ) : (
+                      <ChevronUp className="h-4 w-4 ml-1" />
+                    )
+                  ) : (
+                    <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                  )}
+                </button>
+              </div>
               <div className="w-40 px-2 py-1">操作</div>
             </div>
             {words.map((w) => (
