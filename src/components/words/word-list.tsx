@@ -198,7 +198,7 @@ export function WordList({ wordbookId }: WordListProps) {
         <DialogTrigger asChild>
           <Button>新增單字</Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>新增單字</DialogTitle>
           </DialogHeader>
@@ -318,7 +318,7 @@ export function WordList({ wordbookId }: WordListProps) {
                             編輯
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>編輯單字</DialogTitle>
                           </DialogHeader>
