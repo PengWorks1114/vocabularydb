@@ -88,6 +88,10 @@ export function WordList({ wordbookId }: WordListProps) {
   const [tempTagFilter, setTempTagFilter] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
@@ -416,10 +420,13 @@ export function WordList({ wordbookId }: WordListProps) {
       ? t("wordList.noFavoriteWords")
       : t("wordList.noWords");
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
-      <div className="text-sm text-muted-foreground">
-        {t("wordList.loading")}
+      <div
+        className="text-sm text-muted-foreground"
+        suppressHydrationWarning
+      >
+        {mounted ? t("wordList.loading") : ""}
       </div>
     );
   }
