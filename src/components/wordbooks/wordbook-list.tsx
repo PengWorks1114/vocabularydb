@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,23 +38,7 @@ import {
   type Wordbook,
 } from "@/lib/firestore-service";
 import { useAuth } from "@/components/auth-provider";
-
-// ✅ 用 dynamic 並把 default 明確轉成元件型別，避免 TS 認不出 default
-import dynamic from "next/dynamic";
-
-// 明確宣告 props 型別，供 dynamic Generic 使用
-type WordListProps = { wordbookId: string };
-
-// ✅ 用命名匯出避免 TS 找不到 default
-const WordList = dynamic<WordListProps>(
-  () => import("@/components/words/word-list").then((m) => m.WordList),
-  {
-    ssr: false,
-    loading: () => (
-      <p className="text-sm text-muted-foreground">載入單字清單…</p>
-    ),
-  }
-);
+import Link from "next/link";
 
 export default function WordbookList() {
   const { user } = useAuth();
@@ -195,17 +179,9 @@ export default function WordbookList() {
               <CardTitle>{wb.name}</CardTitle>
             </CardHeader>
             <CardFooter className="flex gap-2 justify-end">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="secondary">查看單字</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>單字列表 - {wb.name}</DialogTitle>
-                  </DialogHeader>
-                  <WordList wordbookId={wb.id} />
-                </DialogContent>
-              </Dialog>
+              <Button asChild variant="secondary">
+                <Link href={`/wordbooks/${wb.id}`}>查看單字</Link>
+              </Button>
 
               <Dialog
                 open={renameOpen && renameTarget?.id === wb.id}
