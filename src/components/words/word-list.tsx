@@ -450,7 +450,7 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className="w-40 px-2 py-1">操作</div>
             </div>
             {displayWords.map((w) => (
-              <div key={w.id} className="flex border-b items-start">
+              <div key={w.id} className="flex border-b">
                 <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Star
@@ -483,7 +483,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.relatedWords || '-'}
                 </div>
-                <div className="w-20 px-2 py-2 flex items-center justify-center gap-1 border-r border-gray-200">
+                <div className="w-20 px-2 py-2 flex items-start justify-center gap-1 border-r border-gray-200">
                   <span>{w.mastery}</span>
                   <div className="flex flex-col ml-1">
                     <button
