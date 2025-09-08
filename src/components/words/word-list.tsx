@@ -104,7 +104,7 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!user || !newWord.trim()) return;
     setCreating(true);
     try {
-      await createWord(user.uid, wordbookId, {
+      const created = await createWord(user.uid, wordbookId, {
         word: newWord.trim(),
         translation: newTranslation.trim(),
         partOfSpeech: newPartOfSpeech
@@ -117,9 +117,9 @@ export function WordList({ wordbookId }: WordListProps) {
         note: newNote.trim(),
         favorite: newFavorite,
       });
+      setWords((prev) => [created, ...prev]);
       resetCreateForm();
       setCreateOpen(false);
-      await load();
     } catch (e) {
       console.error(e);
     } finally {
@@ -143,7 +143,7 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!user || !editTarget) return;
     setUpdating(true);
     try {
-      await updateWord(user.uid, wordbookId, editTarget.id, {
+      const updated = {
         word: editWord.trim(),
         translation: editTranslation.trim(),
         partOfSpeech: editPartOfSpeech
@@ -155,9 +155,12 @@ export function WordList({ wordbookId }: WordListProps) {
         mastery: Number(editMastery) || 0,
         note: editNote.trim(),
         favorite: editFavorite,
-      });
+      };
+      await updateWord(user.uid, wordbookId, editTarget.id, updated);
+      setWords((prev) =>
+        prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w))
+      );
       setEditTarget(null);
-      await load();
     } catch (e) {
       console.error(e);
     } finally {
@@ -170,7 +173,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setDeletingId(wordId);
     try {
       await deleteWord(user.uid, wordbookId, wordId);
-      await load();
+      setWords((prev) => prev.filter((w) => w.id !== wordId));
     } catch (e) {
       console.error(e);
     } finally {
