@@ -336,9 +336,13 @@ export function WordList({ wordbookId }: WordListProps) {
     if (showFavorites && !w.favorite) return false;
     if (!search.trim()) return true;
     const term = normalize(search.trim());
-    return [w.word, w.translation, w.relatedWords || ""].some((f) =>
-      normalize(f).includes(term)
-    );
+    return [
+      w.word,
+      w.translation,
+      w.exampleSentence || "",
+      w.exampleTranslation || "",
+      w.relatedWords || "",
+    ].some((f) => normalize(f).includes(term));
   });
   const emptyMessage = search.trim()
     ? "沒有符合的單字"
