@@ -32,8 +32,10 @@ import {
 
 import {
   getWordbooksByUserId,
+  getTrashedWordbooksByUserId,
   createWordbook,
   deleteWordbook,
+  trashWordbook,
   updateWordbookName,
   type Wordbook,
 } from "@/lib/firestore-service";
@@ -41,7 +43,7 @@ import { useAuth } from "@/components/auth-provider";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
-export default function WordbookList() {
+export default function WordbookList({ trashed = false }: { trashed?: boolean }) {
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -68,7 +70,9 @@ export default function WordbookList() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getWordbooksByUserId(user.uid);
+      const data = trashed
+        ? await getTrashedWordbooksByUserId(user.uid)
+        : await getWordbooksByUserId(user.uid);
       data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setWordbooks(data);
     } catch (e) {
@@ -126,7 +130,11 @@ export default function WordbookList() {
     if (!user || !deleteTarget) return;
     setDeleting(true);
     try {
-      await deleteWordbook(user.uid, deleteTarget.id);
+      if (trashed) {
+        await deleteWordbook(user.uid, deleteTarget.id);
+      } else {
+        await trashWordbook(user.uid, deleteTarget.id);
+      }
       setDeleteTarget(null);
       await load();
     } catch (e) {
@@ -138,31 +146,37 @@ export default function WordbookList() {
 
   return (
     <div className="w-full max-w-3xl space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("wordbookList.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              placeholder={t("wordbookList.namePlaceholder")}
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreate();
-              }}
-            />
-            <Button
-              onClick={handleCreate}
-              disabled={creating || !newName.trim()}
-            >
-              {creating ? t("wordbookList.creating") : t("wordbookList.create")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {!trashed && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("wordbookList.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  placeholder={t("wordbookList.namePlaceholder")}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreate();
+                  }}
+                />
+                <Button
+                  onClick={handleCreate}
+                  disabled={creating || !newName.trim()}
+                >
+                  {creating
+                    ? t("wordbookList.creating")
+                    : t("wordbookList.create")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Separator />
+          <Separator />
+        </>
+      )}
 
       <div className="space-y-3">
         {loading && (
@@ -173,7 +187,7 @@ export default function WordbookList() {
         {error && <div className="text-sm text-red-500">{error}</div>}
         {!loading && !wordbooks.length && (
           <div className="text-sm text-muted-foreground">
-            {t("wordbookList.empty")}
+            {trashed ? t("trash.empty") : t("wordbookList.empty")}
           </div>
         )}
 

@@ -23,6 +23,16 @@ i18n
           loading: "Loading...",
           loadFailed: "Failed to load",
           welcomeUser: "Welcome, {{email}}!",
+          nav: {
+            wordbooks: "Wordbooks",
+            trash: "Trash",
+          },
+          trash: {
+            title: "Trash",
+            empty: "Trash is empty",
+            clear: "Empty Trash",
+            clearing: "Clearing...",
+          },
           backToList: "Back to wordbooks",
           wordbookList: {
             title: "My Wordbooks",
@@ -107,6 +117,16 @@ i18n
           loading: "載入中...",
           loadFailed: "讀取失敗",
           welcomeUser: "歡迎，{{email}}！",
+          nav: {
+            wordbooks: "單字本一覽",
+            trash: "垃圾桶",
+          },
+          trash: {
+            title: "垃圾桶",
+            empty: "垃圾桶是空的",
+            clear: "清空垃圾桶",
+            clearing: "清空中...",
+          },
           backToList: "返回單字本列表",
           wordbookList: {
             title: "我的單字本",
@@ -191,6 +211,16 @@ i18n
           loading: "読み込み中...",
           loadFailed: "読み込みに失敗しました",
           welcomeUser: "{{email}}さん、ようこそ！",
+          nav: {
+            wordbooks: "単語帳一覧",
+            trash: "ゴミ箱",
+          },
+          trash: {
+            title: "ゴミ箱",
+            empty: "ゴミ箱は空です",
+            clear: "ゴミ箱を空にする",
+            clearing: "消去中...",
+          },
           backToList: "単語帳一覧に戻る",
           wordbookList: {
             title: "私の単語帳",
