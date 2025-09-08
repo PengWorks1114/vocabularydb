@@ -46,6 +46,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [sortBy, setSortBy] = useState<"createdAt" | "mastery">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
+  const [search, setSearch] = useState("");
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
@@ -98,6 +99,13 @@ export function WordList({ wordbookId }: WordListProps) {
       setSortDir("desc");
     }
   };
+
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/[\u30a1-\u30f6]/g, (c) =>
+        String.fromCharCode(c.charCodeAt(0) - 0x60)
+      );
 
   async function load() {
     if (!user) return;
@@ -245,8 +253,17 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
-  const displayWords = showFavorites ? words.filter((w) => w.favorite) : words;
-  const emptyMessage = showFavorites ? "尚無收藏單字" : "尚無單字";
+  const displayWords = words.filter((w) => {
+    if (showFavorites && !w.favorite) return false;
+    if (!search.trim()) return true;
+    const term = normalize(search.trim());
+    return [w.word, w.translation].some((f) => normalize(f).includes(term));
+  });
+  const emptyMessage = search.trim()
+    ? "沒有符合的單字"
+    : showFavorites
+    ? "尚無收藏單字"
+    : "尚無單字";
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">載入中...</div>;
@@ -258,7 +275,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <Dialog open={createOpen} onOpenChange={(o) => {
           setCreateOpen(o);
           if (!o) resetCreateForm();
@@ -358,6 +375,12 @@ export function WordList({ wordbookId }: WordListProps) {
         >
           {showFavorites ? "顯示全部" : "顯示最愛"}
         </Button>
+        <Input
+          placeholder="搜尋"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="ml-auto w-40"
+        />
       </div>
 
       {!displayWords.length ? (
