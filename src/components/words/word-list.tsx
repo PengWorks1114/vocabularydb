@@ -290,7 +290,7 @@ export function WordList({ wordbookId }: WordListProps) {
       {!words.length ? (
         <div className="text-sm text-muted-foreground">尚無單字</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="w-full">
           <div className="min-w-[1000px] text-sm">
             <div className="flex bg-muted">
               <div className="w-12 px-2 py-1">收藏</div>
@@ -303,7 +303,7 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className="w-20 px-2 py-1">掌握度</div>
               <div className="flex-1 px-2 py-1">備註</div>
               <div className="w-28 px-2 py-1">建立日期</div>
-              <div className="w-24 px-2 py-1">操作</div>
+              <div className="w-40 px-2 py-1">操作</div>
             </div>
             {words.map((w) => (
               <div key={w.id} className="flex border-b items-center">
@@ -321,7 +321,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="w-28 px-2 py-1">
                   {w.createdAt?.toDate().toLocaleDateString() || '-'}
                 </div>
-                <div className="w-24 px-2 py-1">
+                <div className="w-40 px-2 py-1">
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
@@ -330,7 +330,11 @@ export function WordList({ wordbookId }: WordListProps) {
                       }}
                     >
                       <DialogTrigger asChild>
-                        <Button variant="outline" onClick={() => openEdit(w)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEdit(w)}
+                        >
                           編輯
                         </Button>
                       </DialogTrigger>
@@ -424,7 +428,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     </Dialog>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
+                        <Button size="sm" variant="destructive">
                           刪除
                         </Button>
                       </AlertDialogTrigger>
