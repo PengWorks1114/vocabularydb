@@ -56,7 +56,7 @@ const colorOptions = [
 
 const colorClasses: Record<string, string> = {
   gray: "bg-gray-300 text-gray-900",
-  brown: "bg-amber-300 text-amber-900",
+  brown: "bg-amber-700 text-amber-50",
   orange: "bg-orange-300 text-orange-900",
   yellow: "bg-yellow-300 text-yellow-900",
   green: "bg-green-300 text-green-900",
@@ -83,6 +83,9 @@ export function WordList({ wordbookId }: WordListProps) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
   const [search, setSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [tempTagFilter, setTempTagFilter] = useState<string[]>([]);
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
@@ -148,6 +151,26 @@ export function WordList({ wordbookId }: WordListProps) {
       setSortBy(column);
       setSortDir("desc");
     }
+  };
+
+  const openFilterDialog = () => {
+    setTempTagFilter(tagFilter.length ? tagFilter : posTags.map((t) => t.id));
+    setFilterOpen(true);
+  };
+
+  const toggleTempTag = (id: string) => {
+    setTempTagFilter((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+  };
+
+  const applyTagFilter = () => {
+    if (tempTagFilter.length === posTags.length) {
+      setTagFilter([]);
+    } else {
+      setTagFilter(tempTagFilter);
+    }
+    setFilterOpen(false);
   };
 
   const normalize = (str: string) =>
@@ -336,6 +359,9 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const displayWords = words.filter((w) => {
     if (showFavorites && !w.favorite) return false;
+    if (tagFilter.length && !tagFilter.every((t) => w.partOfSpeech?.includes(t))) {
+      return false;
+    }
     if (!search.trim()) return true;
     const term = normalize(search.trim());
     return [
@@ -346,7 +372,7 @@ export function WordList({ wordbookId }: WordListProps) {
       w.relatedWords || "",
     ].some((f) => normalize(f).includes(term));
   });
-  const emptyMessage = search.trim()
+  const emptyMessage = search.trim() || tagFilter.length
     ? "沒有符合的單字"
     : showFavorites
     ? "尚無收藏單字"
@@ -574,6 +600,37 @@ export function WordList({ wordbookId }: WordListProps) {
               新增
             </Button>
           </div>
+      </DialogContent>
+      </Dialog>
+
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>篩選詞性</DialogTitle>
+          </DialogHeader>
+          {posTags.map((tag) => (
+            <label key={tag.id} className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={tempTagFilter.includes(tag.id)}
+                onChange={() => toggleTempTag(tag.id)}
+              />
+              <span
+                className={`px-1 rounded text-xs ${
+                  colorClasses[tag.color] || colorClasses.gray
+                }`}
+              >
+                {tag.name}
+              </span>
+            </label>
+          ))}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFilterOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={applyTagFilter}>確定</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -587,7 +644,12 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">單字</div>
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">拼音</div>
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">翻譯</div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">詞性</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">
+                <button className="flex items-center" onClick={openFilterDialog}>
+                  詞性
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </button>
+              </div>
               <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
               <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">相關單字</div>
