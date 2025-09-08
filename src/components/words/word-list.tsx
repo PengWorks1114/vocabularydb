@@ -86,6 +86,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [tempTagFilter, setTempTagFilter] = useState<string[]>([]);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
@@ -210,6 +212,10 @@ export function WordList({ wordbookId }: WordListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, sortDir]);
 
+  useEffect(() => {
+    if (!bulkMode) setSelectedIds([]);
+  }, [bulkMode]);
+
   const resetCreateForm = () => {
     setNewWord("");
     setNewPinyin("");
@@ -304,6 +310,23 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!user || selectedIds.length === 0) return;
+    if (!window.confirm("是否刪除?")) return;
+    if (!window.confirm("真的要刪除嗎? 刪除後就不能再復原內容喔!")) return;
+    try {
+      await Promise.all(
+        selectedIds.map((id) => deleteWord(user.uid, wordbookId, id))
+      );
+      setWords((prev) =>
+        sortWords(prev.filter((w) => !selectedIds.includes(w.id)))
+      );
+      setSelectedIds([]);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const toggleFavorite = async (word: Word) => {
     if (!user) return;
     const newVal = !word.favorite;
@@ -372,6 +395,20 @@ export function WordList({ wordbookId }: WordListProps) {
       w.relatedWords || "",
     ].some((f) => normalize(f).includes(term));
   });
+  const allSelected =
+    displayWords.length > 0 && selectedIds.length === displayWords.length;
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(displayWords.map((w) => w.id));
+    }
+  };
   const emptyMessage = search.trim() || tagFilter.length
     ? "沒有符合的單字"
     : showFavorites
@@ -389,6 +426,7 @@ export function WordList({ wordbookId }: WordListProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
+        {!bulkMode && (
         <Dialog open={createOpen} onOpenChange={(o) => {
           setCreateOpen(o);
           if (!o) resetCreateForm();
@@ -506,6 +544,8 @@ export function WordList({ wordbookId }: WordListProps) {
           </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
+        {!bulkMode && (
         <Button
           className={
             showFavorites
@@ -516,6 +556,35 @@ export function WordList({ wordbookId }: WordListProps) {
         >
           {showFavorites ? "顯示全部" : "顯示最愛"}
         </Button>
+        )}
+        {bulkMode ? (
+          <>
+            <Button
+              className="bg-red-700 text-white hover:bg-red-800"
+              onClick={() => {
+                setBulkMode(false);
+                setSelectedIds([]);
+              }}
+            >
+              取消管理
+            </Button>
+            <Button
+              className="bg-red-500 text-white hover:bg-red-600"
+              onClick={handleBulkDelete}
+              disabled={!selectedIds.length}
+            >
+              批量刪除
+            </Button>
+            <Button>匯出CSV</Button>
+          </>
+        ) : (
+          <Button
+            className="bg-green-500 text-black hover:bg-green-600"
+            onClick={() => setBulkMode(true)}
+          >
+            批量管理
+          </Button>
+        )}
         <Input
           placeholder="搜尋"
           value={search}
@@ -637,6 +706,16 @@ export function WordList({ wordbookId }: WordListProps) {
       <div className="w-full">
         <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
+            {bulkMode && (
+              <div className="w-10 px-2 py-1 border-r border-gray-200 flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                />
+              </div>
+            )}
             <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
             <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">單字</div>
             <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">拼音</div>
@@ -687,6 +766,16 @@ export function WordList({ wordbookId }: WordListProps) {
           {displayWords.length ? (
             displayWords.map((w) => (
               <div key={w.id} className="flex border-b">
+                {bulkMode && (
+                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={selectedIds.includes(w.id)}
+                      onChange={() => toggleSelect(w.id)}
+                    />
+                  </div>
+                )}
                 <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Star
