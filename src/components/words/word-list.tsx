@@ -69,7 +69,7 @@ const colorClasses: Record<string, string> = {
 // 單字管理元件：顯示、建立、編輯、刪除
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +92,8 @@ export function WordList({ wordbookId }: WordListProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const headerTextClass = `${i18n.language !== "zh-Hant" ? "text-xs" : ""} whitespace-nowrap`;
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
@@ -730,22 +732,22 @@ export function WordList({ wordbookId }: WordListProps) {
                 />
               </div>
             )}
-            <div className="w-12 px-2 py-1 border-r border-gray-200">{t("wordList.favorite")}</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.word")}</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.pinyin")}</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.translation")}</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">
-              <button className="flex items-center" onClick={openFilterDialog}>
+            <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.word")}</div>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+              <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.example")}</div>
-            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.exampleTranslation")}</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.relatedWords")}</div>
-            <div className="w-20 px-2 py-1 border-r border-gray-200">
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button
-                className="flex items-center"
+                className={`flex items-center ${headerTextClass}`}
                 onClick={() => toggleSort("mastery")}
               >
                 {t("wordList.mastery")}
@@ -760,9 +762,9 @@ export function WordList({ wordbookId }: WordListProps) {
                 )}
               </button>
             </div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.note")}</div>
-            <div className="w-28 px-2 py-1 border-r border-gray-200">
-              <button className="flex items-center" onClick={() => toggleSort("createdAt")}> 
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`w-28 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("createdAt")}>
                 {t("wordList.createdAt")}
                 {sortBy === "createdAt" ? (
                   sortDir === "desc" ? (
@@ -775,7 +777,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 )}
               </button>
             </div>
-            <div className="w-40 px-2 py-1">{t("wordList.actions")}</div>
+            <div className={`w-40 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {displayWords.length ? (
             displayWords.map((w) => (

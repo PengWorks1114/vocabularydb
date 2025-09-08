@@ -44,7 +44,7 @@ i18n
           wordList: {
             addWord: "Add Word",
             word: "Word",
-            pinyin: "Pinyin",
+            pinyin: "Pronunciation",
             translation: "Translation",
             partOfSpeech: "Part of Speech",
             manageTags: "Manage Tags",
@@ -212,7 +212,7 @@ i18n
           wordList: {
             addWord: "単語を追加",
             word: "単語",
-            pinyin: "ピンイン",
+            pinyin: "振り仮名",
             translation: "翻訳",
             partOfSpeech: "品詞",
             manageTags: "品詞管理",
