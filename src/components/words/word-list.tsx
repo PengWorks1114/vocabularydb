@@ -321,20 +321,20 @@ export function WordList({ wordbookId }: WordListProps) {
           <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
             <div className="flex bg-muted sticky top-0 z-10">
               <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
-              <div className="flex-1 px-2 py-1 border-r border-gray-200">單字</div>
-              <div className="flex-1 px-2 py-1 border-r border-gray-200">拼音</div>
-              <div className="flex-1 px-2 py-1 border-r border-gray-200">翻譯</div>
-              <div className="flex-1 px-2 py-1 border-r border-gray-200">詞性</div>
-              <div className="flex-[2] px-2 py-1 border-r border-gray-200">例句</div>
-              <div className="flex-[2] px-2 py-1 border-r border-gray-200">例句翻譯</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">單字</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">拼音</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">翻譯</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">詞性</div>
+              <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
+              <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
               <div className="w-20 px-2 py-1 border-r border-gray-200">掌握度</div>
-              <div className="flex-1 px-2 py-1 border-r border-gray-200">備註</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">備註</div>
               <div className="w-28 px-2 py-1 border-r border-gray-200">建立日期</div>
               <div className="w-40 px-2 py-1">操作</div>
             </div>
             {words.map((w) => (
-              <div key={w.id} className="flex border-b items-center">
-                <div className="w-12 px-2 py-1 text-center border-r border-gray-200">
+              <div key={w.id} className="flex border-b items-start">
+                <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Star
                       className={`h-4 w-4 ${
@@ -345,25 +345,25 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </button>
                 </div>
-                <div className="flex-1 px-2 py-1 font-medium border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
                   {w.word}
                 </div>
-                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.pinyin || '-'}
                 </div>
-                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.translation || '-'}
                 </div>
-                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.partOfSpeech.join(', ') || '-'}
                 </div>
-                <div className="flex-[2] px-2 py-1 border-r border-gray-200">
+                <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.exampleSentence || '-'}
                 </div>
-                <div className="flex-[2] px-2 py-1 border-r border-gray-200">
+                <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.exampleTranslation || '-'}
                 </div>
-                <div className="w-20 px-2 py-1 flex items-center justify-center gap-1 border-r border-gray-200">
+                <div className="w-20 px-2 py-2 flex items-center justify-center gap-1 border-r border-gray-200">
                   <span>{w.mastery}</span>
                   <div className="flex flex-col ml-1">
                     <button
@@ -380,13 +380,13 @@ export function WordList({ wordbookId }: WordListProps) {
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.note || '-'}
                 </div>
-                <div className="w-28 px-2 py-1 border-r border-gray-200">
+                <div className="w-28 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || '-'}
                 </div>
-                <div className="w-40 px-2 py-1">
+                <div className="w-40 px-2 py-2">
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
@@ -496,7 +496,7 @@ export function WordList({ wordbookId }: WordListProps) {
                       <AlertDialogTrigger asChild>
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="outline"
                           aria-label="刪除"
                         >
                           🗑️
