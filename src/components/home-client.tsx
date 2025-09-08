@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -24,16 +24,23 @@ export default function HomeClient() {
   const { t } = useTranslation();
   const { user, loading, auth } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleAuthSuccess = () => setIsAuthOpen(false);
   const handleLogout = async () => {
     await signOut(auth);
   };
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p>{t("loading")}</p>
+        <p suppressHydrationWarning>
+          {mounted ? t("loading") : ""}
+        </p>
       </div>
     );
   }
