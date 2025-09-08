@@ -21,6 +21,7 @@ export interface Wordbook {
 export interface Word {
   id: string;
   word: string;
+  pinyin: string;
   favorite: boolean;
   translation: string;
   partOfSpeech: string[];

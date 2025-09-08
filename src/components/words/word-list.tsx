@@ -45,6 +45,7 @@ export function WordList({ wordbookId }: WordListProps) {
   // 新增
   const [creating, setCreating] = useState(false);
   const [newWord, setNewWord] = useState("");
+  const [newPinyin, setNewPinyin] = useState("");
   const [newTranslation, setNewTranslation] = useState("");
   const [newPartOfSpeech, setNewPartOfSpeech] = useState("");
   const [newExampleSentence, setNewExampleSentence] = useState("");
@@ -57,6 +58,7 @@ export function WordList({ wordbookId }: WordListProps) {
   // 編輯
   const [editTarget, setEditTarget] = useState<Word | null>(null);
   const [editWord, setEditWord] = useState("");
+  const [editPinyin, setEditPinyin] = useState("");
   const [editTranslation, setEditTranslation] = useState("");
   const [editPartOfSpeech, setEditPartOfSpeech] = useState("");
   const [editExampleSentence, setEditExampleSentence] = useState("");
@@ -91,6 +93,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const resetCreateForm = () => {
     setNewWord("");
+    setNewPinyin("");
     setNewTranslation("");
     setNewPartOfSpeech("");
     setNewExampleSentence("");
@@ -106,6 +109,7 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       const created = await createWord(user.uid, wordbookId, {
         word: newWord.trim(),
+        pinyin: newPinyin.trim(),
         translation: newTranslation.trim(),
         partOfSpeech: newPartOfSpeech
           .split(",")
@@ -130,6 +134,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const openEdit = (w: Word) => {
     setEditTarget(w);
     setEditWord(w.word);
+    setEditPinyin(w.pinyin || "");
     setEditTranslation(w.translation);
     setEditPartOfSpeech(w.partOfSpeech.join(", "));
     setEditExampleSentence(w.exampleSentence);
@@ -145,6 +150,7 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       const updated = {
         word: editWord.trim(),
+        pinyin: editPinyin.trim(),
         translation: editTranslation.trim(),
         partOfSpeech: editPartOfSpeech
           .split(",")
@@ -208,6 +214,13 @@ export function WordList({ wordbookId }: WordListProps) {
             autoFocus
             value={newWord}
             onChange={(e) => setNewWord(e.target.value)}
+            className="mb-2"
+          />
+          <Label htmlFor="newPinyin" className="mb-1">拼音</Label>
+          <Input
+            id="newPinyin"
+            value={newPinyin}
+            onChange={(e) => setNewPinyin(e.target.value)}
             className="mb-2"
           />
           <Label htmlFor="newTranslation" className="mb-1">翻譯</Label>
@@ -278,159 +291,165 @@ export function WordList({ wordbookId }: WordListProps) {
         <div className="text-sm text-muted-foreground">尚無單字</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-muted">
-                <th className="border px-2 py-1">單字</th>
-                <th className="border px-2 py-1">翻譯</th>
-                <th className="border px-2 py-1">詞性</th>
-                <th className="border px-2 py-1">例句</th>
-                <th className="border px-2 py-1">例句翻譯</th>
-                <th className="border px-2 py-1">掌握度</th>
-                <th className="border px-2 py-1">備註</th>
-                <th className="border px-2 py-1">收藏</th>
-                <th className="border px-2 py-1">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {words.map((w) => (
-                <tr key={w.id} className="border-b">
-                  <td className="border px-2 py-1 font-medium">{w.word}</td>
-                  <td className="border px-2 py-1">{w.translation || '-'}</td>
-                  <td className="border px-2 py-1">{w.partOfSpeech.join(', ') || '-'}</td>
-                  <td className="border px-2 py-1">{w.exampleSentence || '-'}</td>
-                  <td className="border px-2 py-1">{w.exampleTranslation || '-'}</td>
-                  <td className="border px-2 py-1">{w.mastery}</td>
-                  <td className="border px-2 py-1">{w.note || '-'}</td>
-                  <td className="border px-2 py-1 text-center">
-                    {w.favorite ? <span className="text-yellow-500">★</span> : ''}
-                  </td>
-                  <td className="border px-2 py-1 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <Dialog
-                        open={editTarget?.id === w.id}
-                        onOpenChange={(o) => {
-                          if (!o) setEditTarget(null);
-                        }}
-                      >
-                        <DialogTrigger asChild>
-                          <Button variant="outline" onClick={() => openEdit(w)}>
-                            編輯
+          <div className="min-w-[1000px] text-sm">
+            <div className="flex bg-muted">
+              <div className="w-12 px-2 py-1">收藏</div>
+              <div className="flex-1 px-2 py-1">單字</div>
+              <div className="flex-1 px-2 py-1">拼音</div>
+              <div className="flex-1 px-2 py-1">翻譯</div>
+              <div className="flex-1 px-2 py-1">詞性</div>
+              <div className="flex-[2] px-2 py-1">例句</div>
+              <div className="flex-[2] px-2 py-1">例句翻譯</div>
+              <div className="w-20 px-2 py-1">掌握度</div>
+              <div className="flex-1 px-2 py-1">備註</div>
+              <div className="w-28 px-2 py-1">建立日期</div>
+              <div className="w-24 px-2 py-1">操作</div>
+            </div>
+            {words.map((w) => (
+              <div key={w.id} className="flex border-b items-center">
+                <div className="w-12 px-2 py-1 text-center">
+                  {w.favorite ? <span className="text-yellow-500">★</span> : ""}
+                </div>
+                <div className="flex-1 px-2 py-1 font-medium">{w.word}</div>
+                <div className="flex-1 px-2 py-1">{w.pinyin || '-'}</div>
+                <div className="flex-1 px-2 py-1">{w.translation || '-'}</div>
+                <div className="flex-1 px-2 py-1">{w.partOfSpeech.join(', ') || '-'}</div>
+                <div className="flex-[2] px-2 py-1">{w.exampleSentence || '-'}</div>
+                <div className="flex-[2] px-2 py-1">{w.exampleTranslation || '-'}</div>
+                <div className="w-20 px-2 py-1">{w.mastery}</div>
+                <div className="flex-1 px-2 py-1">{w.note || '-'}</div>
+                <div className="w-28 px-2 py-1">
+                  {w.createdAt?.toDate().toLocaleDateString() || '-'}
+                </div>
+                <div className="w-24 px-2 py-1">
+                  <div className="flex gap-2">
+                    <Dialog
+                      open={editTarget?.id === w.id}
+                      onOpenChange={(o) => {
+                        if (!o) setEditTarget(null);
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button variant="outline" onClick={() => openEdit(w)}>
+                          編輯
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>編輯單字</DialogTitle>
+                        </DialogHeader>
+                        <Label htmlFor="editWord" className="mb-1">單字</Label>
+                        <Input
+                          id="editWord"
+                          autoFocus
+                          value={editWord}
+                          onChange={(e) => setEditWord(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editPinyin" className="mb-1">拼音</Label>
+                        <Input
+                          id="editPinyin"
+                          value={editPinyin}
+                          onChange={(e) => setEditPinyin(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editTranslation" className="mb-1">翻譯</Label>
+                        <Input
+                          id="editTranslation"
+                          value={editTranslation}
+                          onChange={(e) => setEditTranslation(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editPartOfSpeech" className="mb-1">詞性（以逗號分隔）</Label>
+                        <Input
+                          id="editPartOfSpeech"
+                          value={editPartOfSpeech}
+                          onChange={(e) => setEditPartOfSpeech(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editExampleSentence" className="mb-1">例句</Label>
+                        <Input
+                          id="editExampleSentence"
+                          value={editExampleSentence}
+                          onChange={(e) => setEditExampleSentence(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editExampleTranslation" className="mb-1">例句翻譯</Label>
+                        <Input
+                          id="editExampleTranslation"
+                          value={editExampleTranslation}
+                          onChange={(e) => setEditExampleTranslation(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editNote" className="mb-1">備註</Label>
+                        <Input
+                          id="editNote"
+                          value={editNote}
+                          onChange={(e) => setEditNote(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editMastery" className="mb-1">掌握度 (0-100)</Label>
+                        <Input
+                          id="editMastery"
+                          type="number"
+                          value={editMastery}
+                          onChange={(e) => setEditMastery(Number(e.target.value))}
+                          className="mb-2"
+                        />
+                        <div className="flex items-center space-x-2 mb-2">
+                          <input
+                            id="editFavorite"
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={editFavorite}
+                            onChange={(e) => setEditFavorite(e.target.checked)}
+                          />
+                          <Label htmlFor="editFavorite">收藏</Label>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            variant="outline"
+                            onClick={() => setEditTarget(null)}
+                          >
+                            取消
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>編輯單字</DialogTitle>
-                          </DialogHeader>
-                          <Label htmlFor="editWord" className="mb-1">單字</Label>
-                          <Input
-                            id="editWord"
-                            autoFocus
-                            value={editWord}
-                            onChange={(e) => setEditWord(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Label htmlFor="editTranslation" className="mb-1">翻譯</Label>
-                          <Input
-                            id="editTranslation"
-                            value={editTranslation}
-                            onChange={(e) => setEditTranslation(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Label htmlFor="editPartOfSpeech" className="mb-1">詞性（以逗號分隔）</Label>
-                          <Input
-                            id="editPartOfSpeech"
-                            value={editPartOfSpeech}
-                            onChange={(e) => setEditPartOfSpeech(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Label htmlFor="editExampleSentence" className="mb-1">例句</Label>
-                          <Input
-                            id="editExampleSentence"
-                            value={editExampleSentence}
-                            onChange={(e) => setEditExampleSentence(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Label htmlFor="editExampleTranslation" className="mb-1">例句翻譯</Label>
-                          <Input
-                            id="editExampleTranslation"
-                            value={editExampleTranslation}
-                            onChange={(e) => setEditExampleTranslation(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Label htmlFor="editNote" className="mb-1">備註</Label>
-                          <Input
-                            id="editNote"
-                            value={editNote}
-                            onChange={(e) => setEditNote(e.target.value)}
-                            className="mb-2"
-                          />
-                          <Label htmlFor="editMastery" className="mb-1">掌握度 (0-100)</Label>
-                          <Input
-                            id="editMastery"
-                            type="number"
-                            value={editMastery}
-                            onChange={(e) => setEditMastery(Number(e.target.value))}
-                            className="mb-2"
-                          />
-                          <div className="flex items-center space-x-2 mb-2">
-                            <input
-                              id="editFavorite"
-                              type="checkbox"
-                              className="h-4 w-4"
-                              checked={editFavorite}
-                              onChange={(e) => setEditFavorite(e.target.checked)}
-                            />
-                            <Label htmlFor="editFavorite">收藏</Label>
-                          </div>
-                          <DialogFooter>
-                            <Button
-                              variant="outline"
-                              onClick={() => setEditTarget(null)}
-                            >
-                              取消
-                            </Button>
-                            <Button
-                              onClick={handleUpdate}
-                              disabled={updating || !editWord.trim()}
-                            >
-                              {updating ? "儲存中..." : "儲存"}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive">
-                            刪除
+                          <Button
+                            onClick={handleUpdate}
+                            disabled={updating || !editWord.trim()}
+                          >
+                            {updating ? "儲存中..." : "儲存"}
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>確定要刪除「{w.word}」嗎？</AlertDialogTitle>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel
-                              onClick={() => setDeletingId(null)}
-                            >
-                              取消
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(w.id)}
-                              disabled={deletingId === w.id}
-                            >
-                              {deletingId === w.id ? "刪除中..." : "刪除"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive">
+                          刪除
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>確定要刪除「{w.word}」嗎？</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setDeletingId(null)}>
+                            取消
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(w.id)}
+                            disabled={deletingId === w.id}
+                          >
+                            {deletingId === w.id ? "刪除中..." : "刪除"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
