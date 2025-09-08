@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,6 +39,23 @@ import {
 } from "@/lib/firestore-service";
 import { useAuth } from "@/components/auth-provider";
 
+// ✅ 用 dynamic 並把 default 明確轉成元件型別，避免 TS 認不出 default
+import dynamic from "next/dynamic";
+
+// 明確宣告 props 型別，供 dynamic Generic 使用
+type WordListProps = { wordbookId: string };
+
+// ✅ 用命名匯出避免 TS 找不到 default
+const WordList = dynamic<WordListProps>(
+  () => import("@/components/words/word-list").then((m) => m.WordList),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="text-sm text-muted-foreground">載入單字清單…</p>
+    ),
+  }
+);
+
 export default function WordbookList() {
   const { user } = useAuth();
 
@@ -69,11 +86,8 @@ export default function WordbookList() {
       data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setWordbooks(data);
     } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("讀取失敗");
-      }
+      if (e instanceof Error) setError(e.message);
+      else setError("讀取失敗");
     } finally {
       setLoading(false);
     }
@@ -138,7 +152,6 @@ export default function WordbookList() {
 
   return (
     <div className="w-full max-w-3xl space-y-6">
-      {/* 標題 + 新增列 */}
       <Card>
         <CardHeader>
           <CardTitle>我的單字本</CardTitle>
@@ -165,7 +178,6 @@ export default function WordbookList() {
 
       <Separator />
 
-      {/* 清單區域 */}
       <div className="space-y-3">
         {loading && (
           <div className="text-sm text-muted-foreground">載入中...</div>
@@ -183,7 +195,18 @@ export default function WordbookList() {
               <CardTitle>{wb.name}</CardTitle>
             </CardHeader>
             <CardFooter className="flex gap-2 justify-end">
-              {/* 改名 Dialog */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="secondary">查看單字</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>單字列表 - {wb.name}</DialogTitle>
+                  </DialogHeader>
+                  <WordList wordbookId={wb.id} />
+                </DialogContent>
+              </Dialog>
+
               <Dialog
                 open={renameOpen && renameTarget?.id === wb.id}
                 onOpenChange={(o) => {
@@ -224,7 +247,6 @@ export default function WordbookList() {
                 </DialogContent>
               </Dialog>
 
-              {/* 刪除 AlertDialog */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
