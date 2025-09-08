@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use as usePromise } from "react";
 import { WordList } from "@/components/words/word-list";
 import { useAuth } from "@/components/auth-provider";
 import { getWordbook } from "@/lib/firestore-service";
@@ -11,11 +11,11 @@ import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 
 interface PageProps {
-  params: { wordbookId: string };
+  params: Promise<{ wordbookId: string }>;
 }
 
 export default function WordbookPage({ params }: PageProps) {
-  const { wordbookId } = params;
+  const { wordbookId } = usePromise(params);
   const { user, auth } = useAuth();
   const { t } = useTranslation();
   const [name, setName] = useState("");
