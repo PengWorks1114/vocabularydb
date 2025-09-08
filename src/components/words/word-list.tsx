@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Star, ChevronUp, ChevronDown } from "lucide-react";
 
 interface WordListProps {
   wordbookId: string;
@@ -187,6 +188,32 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
+  const toggleFavorite = async (word: Word) => {
+    if (!user) return;
+    const newVal = !word.favorite;
+    try {
+      await updateWord(user.uid, wordbookId, word.id, { favorite: newVal });
+      setWords((prev) =>
+        prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w))
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const changeMastery = async (word: Word, delta: number) => {
+    if (!user) return;
+    const newVal = Math.min(100, Math.max(0, (word.mastery || 0) + delta));
+    try {
+      await updateWord(user.uid, wordbookId, word.id, { mastery: newVal });
+      setWords((prev) =>
+        prev.map((w) => (w.id === word.id ? { ...w, mastery: newVal } : w))
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (loading) {
     return <div className="text-sm text-muted-foreground">載入中...</div>;
   }
@@ -293,32 +320,70 @@ export function WordList({ wordbookId }: WordListProps) {
         <div className="w-full">
           <div className="min-w-[1000px] text-sm">
             <div className="flex bg-muted">
-              <div className="w-12 px-2 py-1">收藏</div>
-              <div className="flex-1 px-2 py-1">單字</div>
-              <div className="flex-1 px-2 py-1">拼音</div>
-              <div className="flex-1 px-2 py-1">翻譯</div>
-              <div className="flex-1 px-2 py-1">詞性</div>
-              <div className="flex-[2] px-2 py-1">例句</div>
-              <div className="flex-[2] px-2 py-1">例句翻譯</div>
-              <div className="w-20 px-2 py-1">掌握度</div>
-              <div className="flex-1 px-2 py-1">備註</div>
-              <div className="w-28 px-2 py-1">建立日期</div>
+              <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
+              <div className="flex-1 px-2 py-1 border-r border-gray-200">單字</div>
+              <div className="flex-1 px-2 py-1 border-r border-gray-200">拼音</div>
+              <div className="flex-1 px-2 py-1 border-r border-gray-200">翻譯</div>
+              <div className="flex-1 px-2 py-1 border-r border-gray-200">詞性</div>
+              <div className="flex-[2] px-2 py-1 border-r border-gray-200">例句</div>
+              <div className="flex-[2] px-2 py-1 border-r border-gray-200">例句翻譯</div>
+              <div className="w-20 px-2 py-1 border-r border-gray-200">掌握度</div>
+              <div className="flex-1 px-2 py-1 border-r border-gray-200">備註</div>
+              <div className="w-28 px-2 py-1 border-r border-gray-200">建立日期</div>
               <div className="w-40 px-2 py-1">操作</div>
             </div>
             {words.map((w) => (
               <div key={w.id} className="flex border-b items-center">
-                <div className="w-12 px-2 py-1 text-center">
-                  {w.favorite ? <span className="text-yellow-500">★</span> : ""}
+                <div className="w-12 px-2 py-1 text-center border-r border-gray-200">
+                  <button onClick={() => toggleFavorite(w)} className="mx-auto">
+                    <Star
+                      className={`h-4 w-4 ${
+                        w.favorite
+                          ? "fill-yellow-500 text-yellow-500"
+                          : "text-black"
+                      }`}
+                    />
+                  </button>
                 </div>
-                <div className="flex-1 px-2 py-1 font-medium">{w.word}</div>
-                <div className="flex-1 px-2 py-1">{w.pinyin || '-'}</div>
-                <div className="flex-1 px-2 py-1">{w.translation || '-'}</div>
-                <div className="flex-1 px-2 py-1">{w.partOfSpeech.join(', ') || '-'}</div>
-                <div className="flex-[2] px-2 py-1">{w.exampleSentence || '-'}</div>
-                <div className="flex-[2] px-2 py-1">{w.exampleTranslation || '-'}</div>
-                <div className="w-20 px-2 py-1">{w.mastery}</div>
-                <div className="flex-1 px-2 py-1">{w.note || '-'}</div>
-                <div className="w-28 px-2 py-1">
+                <div className="flex-1 px-2 py-1 font-medium border-r border-gray-200">
+                  {w.word}
+                </div>
+                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                  {w.pinyin || '-'}
+                </div>
+                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                  {w.translation || '-'}
+                </div>
+                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                  {w.partOfSpeech.join(', ') || '-'}
+                </div>
+                <div className="flex-[2] px-2 py-1 border-r border-gray-200">
+                  {w.exampleSentence || '-'}
+                </div>
+                <div className="flex-[2] px-2 py-1 border-r border-gray-200">
+                  {w.exampleTranslation || '-'}
+                </div>
+                <div className="w-20 px-2 py-1 flex items-center justify-center gap-1 border-r border-gray-200">
+                  <span>{w.mastery}</span>
+                  <div className="flex flex-col ml-1">
+                    <button
+                      className="p-0 hover:text-blue-500"
+                      onClick={() => changeMastery(w, 1)}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </button>
+                    <button
+                      className="p-0 hover:text-blue-500"
+                      onClick={() => changeMastery(w, -1)}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 px-2 py-1 border-r border-gray-200">
+                  {w.note || '-'}
+                </div>
+                <div className="w-28 px-2 py-1 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || '-'}
                 </div>
                 <div className="w-40 px-2 py-1">
