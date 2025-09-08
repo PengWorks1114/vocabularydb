@@ -33,7 +33,7 @@ export default function HomeClient() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p>Loading...</p>
+        <p>{t("loading")}</p>
       </div>
     );
   }
@@ -43,10 +43,15 @@ export default function HomeClient() {
       {user ? (
         <div className="mx-auto w-full max-w-4xl space-y-6">
           <div className="flex items-center justify-between">
-            <p className="text-xl font-bold">歡迎，{user.email}！</p>
-            <Button onClick={handleLogout} variant="outline">
-              登出
-            </Button>
+            <p className="text-xl font-bold">
+              {t("welcomeUser", { email: user.email || "" })}
+            </p>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <Button onClick={handleLogout} variant="outline">
+                {t("logout")}
+              </Button>
+            </div>
           </div>
 
           {/* ✅ 單字本清單（讀取 / 新增 / 改名 / 刪除） */}

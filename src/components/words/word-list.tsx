@@ -190,7 +190,7 @@ export function WordList({ wordbookId }: WordListProps) {
       const data = await getWordsByWordbookId(user.uid, wordbookId);
       setWords(sortWords(data));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "讀取失敗");
+      setError(e instanceof Error ? e.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -312,8 +312,8 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const handleBulkDelete = async () => {
     if (!user || selectedIds.length === 0) return;
-    if (!window.confirm("是否刪除?")) return;
-    if (!window.confirm("真的要刪除嗎? 刪除後就不能再復原內容喔!")) return;
+    if (!window.confirm(t("wordList.deleteConfirm1"))) return;
+    if (!window.confirm(t("wordList.deleteConfirm2"))) return;
     try {
       await Promise.all(
         selectedIds.map((id) => deleteWord(user.uid, wordbookId, id))
@@ -409,14 +409,19 @@ export function WordList({ wordbookId }: WordListProps) {
       setSelectedIds(displayWords.map((w) => w.id));
     }
   };
-  const emptyMessage = search.trim() || tagFilter.length
-    ? "沒有符合的單字"
-    : showFavorites
-    ? "尚無收藏單字"
-    : "尚無單字";
+  const emptyMessage =
+    search.trim() || tagFilter.length
+      ? t("wordList.noMatchingWords")
+      : showFavorites
+      ? t("wordList.noFavoriteWords")
+      : t("wordList.noWords");
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">載入中...</div>;
+    return (
+      <div className="text-sm text-muted-foreground">
+        {t("wordList.loading")}
+      </div>
+    );
   }
 
   if (error) {
@@ -432,13 +437,13 @@ export function WordList({ wordbookId }: WordListProps) {
           if (!o) resetCreateForm();
         }}>
           <DialogTrigger asChild>
-            <Button>新增單字</Button>
+            <Button>{t("wordList.addWord")}</Button>
           </DialogTrigger>
           <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>新增單字</DialogTitle>
+            <DialogTitle>{t("wordList.addWord")}</DialogTitle>
           </DialogHeader>
-          <Label htmlFor="newWord" className="mb-1">單字</Label>
+          <Label htmlFor="newWord" className="mb-1">{t("wordList.word")}</Label>
           <Input
             id="newWord"
             autoFocus
@@ -446,21 +451,21 @@ export function WordList({ wordbookId }: WordListProps) {
             onChange={(e) => setNewWord(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newPinyin" className="mb-1">拼音</Label>
+          <Label htmlFor="newPinyin" className="mb-1">{t("wordList.pinyin")}</Label>
           <Input
             id="newPinyin"
             value={newPinyin}
             onChange={(e) => setNewPinyin(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newTranslation" className="mb-1">翻譯</Label>
+          <Label htmlFor="newTranslation" className="mb-1">{t("wordList.translation")}</Label>
           <Input
             id="newTranslation"
             value={newTranslation}
             onChange={(e) => setNewTranslation(e.target.value)}
             className="mb-2"
           />
-          <Label className="mb-1">詞性</Label>
+          <Label className="mb-1">{t("wordList.partOfSpeech")}</Label>
           <div className="flex flex-wrap gap-2 mb-2">
             {posTags.map((tag) => (
               <label key={tag.id} className="flex items-center space-x-1">
@@ -485,38 +490,38 @@ export function WordList({ wordbookId }: WordListProps) {
               variant="outline"
               onClick={() => setPosDialogOpen(true)}
             >
-              管理詞性
+              {t("wordList.manageTags")}
             </Button>
           </div>
-          <Label htmlFor="newExampleSentence" className="mb-1">例句</Label>
+          <Label htmlFor="newExampleSentence" className="mb-1">{t("wordList.example")}</Label>
           <Input
             id="newExampleSentence"
             value={newExampleSentence}
             onChange={(e) => setNewExampleSentence(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newExampleTranslation" className="mb-1">例句翻譯</Label>
+          <Label htmlFor="newExampleTranslation" className="mb-1">{t("wordList.exampleTranslation")}</Label>
           <Input
             id="newExampleTranslation"
             value={newExampleTranslation}
             onChange={(e) => setNewExampleTranslation(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newRelatedWords" className="mb-1">相關單字</Label>
+          <Label htmlFor="newRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
           <Input
             id="newRelatedWords"
             value={newRelatedWords}
             onChange={(e) => setNewRelatedWords(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newNote" className="mb-1">備註</Label>
+          <Label htmlFor="newNote" className="mb-1">{t("wordList.note")}</Label>
           <Input
             id="newNote"
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newMastery" className="mb-1">掌握度 (0-100)</Label>
+          <Label htmlFor="newMastery" className="mb-1">{t("wordList.masteryWithRange")}</Label>
           <Input
             id="newMastery"
             type="number"
@@ -532,14 +537,14 @@ export function WordList({ wordbookId }: WordListProps) {
               checked={newFavorite}
               onChange={(e) => setNewFavorite(e.target.checked)}
             />
-            <Label htmlFor="newFavorite">收藏</Label>
+            <Label htmlFor="newFavorite">{t("wordList.favorite")}</Label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              取消
+              {t("wordList.cancel")}
             </Button>
             <Button onClick={handleCreate} disabled={creating || !newWord.trim()}>
-              {creating ? "新增中..." : "新增"}
+              {creating ? t("wordList.creating") : t("wordList.create")}
             </Button>
           </DialogFooter>
           </DialogContent>
@@ -554,7 +559,9 @@ export function WordList({ wordbookId }: WordListProps) {
           }
           onClick={() => setShowFavorites((prev) => !prev)}
         >
-          {showFavorites ? "顯示全部" : "顯示最愛"}
+          {showFavorites
+            ? t("wordList.showAll")
+            : t("wordList.showFavorites")}
         </Button>
         )}
         {bulkMode ? (
@@ -566,27 +573,27 @@ export function WordList({ wordbookId }: WordListProps) {
                 setSelectedIds([]);
               }}
             >
-              取消管理
+              {t("wordList.cancelManage")}
             </Button>
             <Button
               className="bg-red-500 text-white hover:bg-red-600"
               onClick={handleBulkDelete}
               disabled={!selectedIds.length}
             >
-              批量刪除
+              {t("wordList.bulkDelete")}
             </Button>
-            <Button>匯出CSV</Button>
+            <Button>{t("wordList.exportCsv")}</Button>
           </>
         ) : (
           <Button
             className="bg-green-500 text-black hover:bg-green-600"
             onClick={() => setBulkMode(true)}
           >
-            批量管理
+            {t("wordList.bulkManage")}
           </Button>
         )}
         <Input
-          placeholder="搜尋"
+          placeholder={t("wordList.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="ml-auto w-40"
@@ -596,7 +603,7 @@ export function WordList({ wordbookId }: WordListProps) {
       <Dialog open={posDialogOpen} onOpenChange={setPosDialogOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>管理詞性</DialogTitle>
+            <DialogTitle>{t("wordList.manageTags")}</DialogTitle>
           </DialogHeader>
           {posTags.map((tag) => (
             <div key={tag.id} className="flex items-center gap-2 mb-2">
@@ -643,14 +650,14 @@ export function WordList({ wordbookId }: WordListProps) {
                 variant="outline"
                 onClick={() => handleDeleteTag(tag.id)}
               >
-                刪除
+                {t("wordList.delete")}
               </Button>
             </div>
           ))}
           <div className="flex items-center gap-2 mt-4">
             <Input
               className="w-32"
-              placeholder="新詞性"
+              placeholder={t("wordList.newTag")}
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
             />
@@ -666,7 +673,7 @@ export function WordList({ wordbookId }: WordListProps) {
               ))}
             </select>
             <Button size="sm" onClick={handleAddTag} disabled={!newTagName.trim()}>
-              新增
+              {t("wordList.add")}
             </Button>
           </div>
       </DialogContent>
@@ -675,7 +682,7 @@ export function WordList({ wordbookId }: WordListProps) {
       <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>篩選詞性</DialogTitle>
+            <DialogTitle>{t("wordList.filterTags")}</DialogTitle>
           </DialogHeader>
           {posTags.map((tag) => (
             <label key={tag.id} className="flex items-center gap-2 mb-2">
@@ -696,9 +703,9 @@ export function WordList({ wordbookId }: WordListProps) {
           ))}
           <DialogFooter>
             <Button variant="outline" onClick={() => setFilterOpen(false)}>
-              取消
+              {t("wordList.cancel")}
             </Button>
-            <Button onClick={applyTagFilter}>確定</Button>
+            <Button onClick={applyTagFilter}>{t("wordList.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -716,25 +723,25 @@ export function WordList({ wordbookId }: WordListProps) {
                 />
               </div>
             )}
-            <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">單字</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">拼音</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">翻譯</div>
+            <div className="w-12 px-2 py-1 border-r border-gray-200">{t("wordList.favorite")}</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.word")}</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.pinyin")}</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.translation")}</div>
             <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">
               <button className="flex items-center" onClick={openFilterDialog}>
-                詞性
+                {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
-            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">相關單字</div>
+            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.example")}</div>
+            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.exampleTranslation")}</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.relatedWords")}</div>
             <div className="w-20 px-2 py-1 border-r border-gray-200">
               <button
                 className="flex items-center"
                 onClick={() => toggleSort("mastery")}
               >
-                掌握度
+                {t("wordList.mastery")}
                 {sortBy === "mastery" ? (
                   sortDir === "desc" ? (
                     <ChevronDown className="h-4 w-4 ml-1" />
@@ -746,10 +753,10 @@ export function WordList({ wordbookId }: WordListProps) {
                 )}
               </button>
             </div>
-            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">備註</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">{t("wordList.note")}</div>
             <div className="w-28 px-2 py-1 border-r border-gray-200">
-              <button className="flex items-center" onClick={() => toggleSort("createdAt")}>
-                建立日期
+              <button className="flex items-center" onClick={() => toggleSort("createdAt")}> 
+                {t("wordList.createdAt")}
                 {sortBy === "createdAt" ? (
                   sortDir === "desc" ? (
                     <ChevronDown className="h-4 w-4 ml-1" />
@@ -761,7 +768,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 )}
               </button>
             </div>
-            <div className="w-40 px-2 py-1">操作</div>
+            <div className="w-40 px-2 py-1">{t("wordList.actions")}</div>
           </div>
           {displayWords.length ? (
             displayWords.map((w) => (
@@ -862,16 +869,16 @@ export function WordList({ wordbookId }: WordListProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => openEdit(w)}
-                          aria-label="編輯"
+                          aria-label={t("wordList.edit")}
                         >
                           ✏️
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>編輯單字</DialogTitle>
+                          <DialogTitle>{t("wordList.editWord")}</DialogTitle>
                         </DialogHeader>
-                        <Label htmlFor="editWord" className="mb-1">單字</Label>
+                        <Label htmlFor="editWord" className="mb-1">{t("wordList.word")}</Label>
                         <Input
                           id="editWord"
                           autoFocus
@@ -879,21 +886,21 @@ export function WordList({ wordbookId }: WordListProps) {
                           onChange={(e) => setEditWord(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editPinyin" className="mb-1">拼音</Label>
+                        <Label htmlFor="editPinyin" className="mb-1">{t("wordList.pinyin")}</Label>
                         <Input
                           id="editPinyin"
                           value={editPinyin}
                           onChange={(e) => setEditPinyin(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editTranslation" className="mb-1">翻譯</Label>
+                        <Label htmlFor="editTranslation" className="mb-1">{t("wordList.translation")}</Label>
                         <Input
                           id="editTranslation"
                           value={editTranslation}
                           onChange={(e) => setEditTranslation(e.target.value)}
                           className="mb-2"
                         />
-                        <Label className="mb-1">詞性</Label>
+                        <Label className="mb-1">{t("wordList.partOfSpeech")}</Label>
                         <div className="flex flex-wrap gap-2 mb-2">
                           {posTags.map((tag) => (
                             <label key={tag.id} className="flex items-center space-x-1">
@@ -918,38 +925,38 @@ export function WordList({ wordbookId }: WordListProps) {
                             variant="outline"
                             onClick={() => setPosDialogOpen(true)}
                           >
-                            管理詞性
+                            {t("wordList.manageTags")}
                           </Button>
                         </div>
-                        <Label htmlFor="editExampleSentence" className="mb-1">例句</Label>
+                        <Label htmlFor="editExampleSentence" className="mb-1">{t("wordList.example")}</Label>
                         <Input
                           id="editExampleSentence"
                           value={editExampleSentence}
                           onChange={(e) => setEditExampleSentence(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editExampleTranslation" className="mb-1">例句翻譯</Label>
+                        <Label htmlFor="editExampleTranslation" className="mb-1">{t("wordList.exampleTranslation")}</Label>
                         <Input
                           id="editExampleTranslation"
                           value={editExampleTranslation}
                           onChange={(e) => setEditExampleTranslation(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editRelatedWords" className="mb-1">相關單字</Label>
+                        <Label htmlFor="editRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
                         <Input
                           id="editRelatedWords"
                           value={editRelatedWords}
                           onChange={(e) => setEditRelatedWords(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editNote" className="mb-1">備註</Label>
+                        <Label htmlFor="editNote" className="mb-1">{t("wordList.note")}</Label>
                         <Input
                           id="editNote"
                           value={editNote}
                           onChange={(e) => setEditNote(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editMastery" className="mb-1">掌握度 (0-100)</Label>
+                        <Label htmlFor="editMastery" className="mb-1">{t("wordList.masteryWithRange")}</Label>
                         <Input
                           id="editMastery"
                           type="number"
@@ -965,20 +972,20 @@ export function WordList({ wordbookId }: WordListProps) {
                             checked={editFavorite}
                             onChange={(e) => setEditFavorite(e.target.checked)}
                           />
-                          <Label htmlFor="editFavorite">收藏</Label>
+                          <Label htmlFor="editFavorite">{t("wordList.favorite")}</Label>
                         </div>
                         <DialogFooter>
                           <Button
                             variant="outline"
                             onClick={() => setEditTarget(null)}
                           >
-                            取消
+                            {t("wordList.cancel")}
                           </Button>
                           <Button
                             onClick={handleUpdate}
                             disabled={updating || !editWord.trim()}
                           >
-                            {updating ? "儲存中..." : "儲存"}
+                            {updating ? t("wordList.saving") : t("wordList.save")}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -988,24 +995,28 @@ export function WordList({ wordbookId }: WordListProps) {
                         <Button
                           size="sm"
                           variant="outline"
-                          aria-label="刪除"
+                          aria-label={t("wordList.delete")}
                         >
                           🗑️
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>確定要刪除「{w.word}」嗎？</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            {t("wordList.confirmDeleteWord", { word: w.word })}
+                          </AlertDialogTitle>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel onClick={() => setDeletingId(null)}>
-                            取消
+                            {t("wordList.cancel")}
                           </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(w.id)}
                             disabled={deletingId === w.id}
                           >
-                            {deletingId === w.id ? "刪除中..." : "刪除"}
+                            {deletingId === w.id
+                              ? t("wordList.deleting")
+                              : t("wordList.delete")}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

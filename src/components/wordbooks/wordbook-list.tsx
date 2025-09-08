@@ -39,9 +39,11 @@ import {
 } from "@/lib/firestore-service";
 import { useAuth } from "@/components/auth-provider";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 export default function WordbookList() {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [wordbooks, setWordbooks] = useState<Wordbook[]>([]);
@@ -71,7 +73,7 @@ export default function WordbookList() {
       setWordbooks(data);
     } catch (e) {
       if (e instanceof Error) setError(e.message);
-      else setError("讀取失敗");
+      else setError(t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -138,12 +140,12 @@ export default function WordbookList() {
     <div className="w-full max-w-3xl space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>我的單字本</CardTitle>
+          <CardTitle>{t("wordbookList.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <Input
-              placeholder="輸入單字本名稱..."
+              placeholder={t("wordbookList.namePlaceholder")}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
@@ -154,7 +156,7 @@ export default function WordbookList() {
               onClick={handleCreate}
               disabled={creating || !newName.trim()}
             >
-              {creating ? "建立中..." : "新增"}
+              {creating ? t("wordbookList.creating") : t("wordbookList.create")}
             </Button>
           </div>
         </CardContent>
@@ -164,12 +166,14 @@ export default function WordbookList() {
 
       <div className="space-y-3">
         {loading && (
-          <div className="text-sm text-muted-foreground">載入中...</div>
+          <div className="text-sm text-muted-foreground">
+            {t("wordbookList.loading")}
+          </div>
         )}
         {error && <div className="text-sm text-red-500">{error}</div>}
         {!loading && !wordbooks.length && (
           <div className="text-sm text-muted-foreground">
-            目前沒有單字本，先新增一個吧！
+            {t("wordbookList.empty")}
           </div>
         )}
 
@@ -180,7 +184,7 @@ export default function WordbookList() {
             </CardHeader>
             <CardFooter className="flex gap-2 justify-end">
               <Button asChild variant="secondary">
-                <Link href={`/wordbooks/${wb.id}`}>查看單字</Link>
+                <Link href={`/wordbooks/${wb.id}`}>{t("wordbookList.view")}</Link>
               </Button>
 
               <Dialog
@@ -191,12 +195,12 @@ export default function WordbookList() {
               >
                 <DialogTrigger asChild>
                   <Button variant="outline" onClick={() => openRename(wb)}>
-                    改名
+                    {t("wordbookList.rename")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>重新命名</DialogTitle>
+                    <DialogTitle>{t("wordbookList.renameTitle")}</DialogTitle>
                   </DialogHeader>
                   <Input
                     autoFocus
@@ -211,13 +215,15 @@ export default function WordbookList() {
                       variant="outline"
                       onClick={() => setRenameOpen(false)}
                     >
-                      取消
+                      {t("wordbookList.cancel")}
                     </Button>
                     <Button
                       onClick={handleRename}
                       disabled={renaming || !renameValue.trim()}
                     >
-                      {renaming ? "儲存中..." : "儲存"}
+                      {renaming
+                        ? t("wordbookList.saving")
+                        : t("wordbookList.save")}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -229,25 +235,26 @@ export default function WordbookList() {
                     variant="destructive"
                     onClick={() => setDeleteTarget(wb)}
                   >
-                    刪除
+                    {t("wordbookList.delete")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      確定要刪除「
-                      {deleteTarget?.id === wb.id ? wb.name : wb.name}」嗎？
+                      {t("wordbookList.confirmDelete", { name: wb.name })}
                     </AlertDialogTitle>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setDeleteTarget(null)}>
-                      取消
+                      {t("wordbookList.cancel")}
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
                       disabled={deleting}
                     >
-                      {deleting ? "刪除中..." : "刪除"}
+                      {deleting
+                        ? t("wordbookList.deleting")
+                        : t("wordbookList.delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

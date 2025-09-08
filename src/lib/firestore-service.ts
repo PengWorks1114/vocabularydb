@@ -3,6 +3,7 @@ import {
   doc,
   addDoc,
   getDocs,
+  getDoc,
   deleteDoc,
   updateDoc,
   Timestamp,
@@ -86,6 +87,17 @@ export const updateWordbookName = async (
 ): Promise<void> => {
   const wordbookRef = doc(db, "users", userId, "wordbooks", wordbookId);
   await updateDoc(wordbookRef, { name: newName });
+};
+
+// 取得單一本的資訊
+export const getWordbook = async (
+  userId: string,
+  wordbookId: string
+): Promise<Wordbook | null> => {
+  const ref = doc(db, "users", userId, "wordbooks", wordbookId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...(snap.data() as Wordbook) };
 };
 
 // ------------------- 單字 CRUD -------------------
