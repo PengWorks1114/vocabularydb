@@ -77,3 +77,90 @@ export const updateWordbookName = async (
   const wordbookRef = doc(db, "users", userId, "wordbooks", wordbookId);
   await updateDoc(wordbookRef, { name: newName });
 };
+
+// ------------------- 單字 CRUD -------------------
+
+// 取得指定單字本的所有單字
+export const getWordsByWordbookId = async (
+  userId: string,
+  wordbookId: string
+): Promise<Word[]> => {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words"
+  );
+  const snapshot = await getDocs(colRef);
+  const words: Word[] = [];
+  snapshot.forEach((docSnap) => {
+    words.push({ id: docSnap.id, ...docSnap.data() } as Word);
+  });
+  return words;
+};
+
+// 新增單字
+export const createWord = async (
+  userId: string,
+  wordbookId: string,
+  wordData: Omit<Word, "id" | "createdAt" | "wordbookId">
+): Promise<Word> => {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words"
+  );
+  const docRef = await addDoc(colRef, {
+    ...wordData,
+    wordbookId,
+    createdAt: Timestamp.now(),
+  });
+  return {
+    id: docRef.id,
+    ...wordData,
+    wordbookId,
+    createdAt: Timestamp.now(),
+  };
+};
+
+// 更新單字
+export const updateWord = async (
+  userId: string,
+  wordbookId: string,
+  wordId: string,
+  updateData: Partial<Word>
+): Promise<void> => {
+  const ref = doc(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words",
+    wordId
+  );
+  await updateDoc(ref, updateData);
+};
+
+// 刪除單字
+export const deleteWord = async (
+  userId: string,
+  wordbookId: string,
+  wordId: string
+): Promise<void> => {
+  const ref = doc(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words",
+    wordId
+  );
+  await deleteDoc(ref);
+};

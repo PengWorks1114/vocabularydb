@@ -1,161 +1,59 @@
-// src/lib/firestore-service.ts
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  updateDoc,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+  getWordsByWordbookId,
+  type Word,
+} from "@/lib/firestore-service";
 
-// ------------------- 型別 -------------------
-
-export interface Wordbook {
-  id: string;
-  name: string;
-  createdAt: Timestamp;
-  userId: string;
-}
-
-export interface Word {
-  id: string;
-  word: string;
-  favorite: boolean;
-  translation: string;
-  partOfSpeech: string[];
-  exampleSentence: string;
-  exampleTranslation: string;
-  mastery: number;
-  note: string;
+interface WordListProps {
   wordbookId: string;
-  createdAt: Timestamp;
 }
 
-// ------------------- 單字本 CRUD -------------------
+// 簡單的單字列表顯示元件
+export function WordList({ wordbookId }: WordListProps) {
+  const { user } = useAuth();
+  const [words, setWords] = useState<Word[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export const getWordbooksByUserId = async (
-  userId: string
-): Promise<Wordbook[]> => {
-  const colRef = collection(db, "users", userId, "wordbooks");
-  const snapshot = await getDocs(colRef);
-  const wordbooks: Wordbook[] = [];
-  snapshot.forEach((docSnap) => {
-    wordbooks.push({ id: docSnap.id, ...docSnap.data() } as Wordbook);
-  });
-  return wordbooks;
-};
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+    getWordsByWordbookId(user.uid, wordbookId)
+      .then((data) => {
+        data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        setWords(data);
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "讀取失敗");
+      })
+      .finally(() => setLoading(false));
+  }, [user?.uid, wordbookId]);
 
-export const createWordbook = async (
-  userId: string,
-  name: string
-): Promise<Wordbook> => {
-  const colRef = collection(db, "users", userId, "wordbooks");
-  const docRef = await addDoc(colRef, {
-    name,
-    userId,
-    createdAt: Timestamp.now(),
-  });
-  return { id: docRef.id, name, userId, createdAt: Timestamp.now() };
-};
+  if (loading) {
+    return <div className="text-sm text-muted-foreground">載入中...</div>;
+  }
 
-export const deleteWordbook = async (
-  userId: string,
-  wordbookId: string
-): Promise<void> => {
-  const ref = doc(db, "users", userId, "wordbooks", wordbookId);
-  await deleteDoc(ref);
-};
+  if (error) {
+    return <div className="text-sm text-red-500">{error}</div>;
+  }
 
-export const updateWordbookName = async (
-  userId: string,
-  wordbookId: string,
-  newName: string
-): Promise<void> => {
-  const ref = doc(db, "users", userId, "wordbooks", wordbookId);
-  await updateDoc(ref, { name: newName });
-};
+  if (!words.length) {
+    return <div className="text-sm text-muted-foreground">尚無單字</div>;
+  }
 
-// ------------------- 單字 CRUD -------------------
-
-export const getWordsByWordbookId = async (
-  userId: string,
-  wordbookId: string
-): Promise<Word[]> => {
-  const colRef = collection(
-    db,
-    "users",
-    userId,
-    "wordbooks",
-    wordbookId,
-    "words"
+  return (
+    <ul className="space-y-2">
+      {words.map((w) => (
+        <li key={w.id} className="flex gap-2">
+          <span className="font-medium">{w.word}</span>
+          <span className="text-muted-foreground">- {w.translation}</span>
+        </li>
+      ))}
+    </ul>
   );
-  const snapshot = await getDocs(colRef);
-  const words: Word[] = [];
-  snapshot.forEach((docSnap) => {
-    words.push({ id: docSnap.id, ...docSnap.data() } as Word);
-  });
-  return words;
-};
+}
 
-export const createWord = async (
-  userId: string,
-  wordbookId: string,
-  wordData: Omit<Word, "id" | "createdAt" | "wordbookId">
-): Promise<Word> => {
-  const colRef = collection(
-    db,
-    "users",
-    userId,
-    "wordbooks",
-    wordbookId,
-    "words"
-  );
-  const docRef = await addDoc(colRef, {
-    ...wordData,
-    wordbookId,
-    createdAt: Timestamp.now(),
-  });
-  return {
-    id: docRef.id,
-    ...wordData,
-    wordbookId,
-    createdAt: Timestamp.now(),
-  };
-};
-
-export const updateWord = async (
-  userId: string,
-  wordbookId: string,
-  wordId: string,
-  updateData: Partial<Word>
-): Promise<void> => {
-  const ref = doc(
-    db,
-    "users",
-    userId,
-    "wordbooks",
-    wordbookId,
-    "words",
-    wordId
-  );
-  await updateDoc(ref, updateData);
-};
-
-export const deleteWord = async (
-  userId: string,
-  wordbookId: string,
-  wordId: string
-): Promise<void> => {
-  const ref = doc(
-    db,
-    "users",
-    userId,
-    "wordbooks",
-    wordbookId,
-    "words",
-    wordId
-  );
-  await deleteDoc(ref);
-};
