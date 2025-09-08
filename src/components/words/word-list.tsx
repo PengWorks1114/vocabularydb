@@ -634,63 +634,58 @@ export function WordList({ wordbookId }: WordListProps) {
         </DialogContent>
       </Dialog>
 
-      {!displayWords.length ? (
-        <div className="text-sm text-muted-foreground">{emptyMessage}</div>
-      ) : (
-        <div className="w-full">
-          <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
-            <div className="flex bg-muted sticky top-0 z-10">
-              <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">單字</div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">拼音</div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">翻譯</div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">
-                <button className="flex items-center" onClick={openFilterDialog}>
-                  詞性
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </button>
-              </div>
-              <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
-              <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">相關單字</div>
-              <div className="w-20 px-2 py-1 border-r border-gray-200">
-                <button
-                  className="flex items-center"
-                  onClick={() => toggleSort("mastery")}
-                >
-                  掌握度
-                  {sortBy === "mastery" ? (
-                    sortDir === "desc" ? (
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4 ml-1" />
-                    )
-                  ) : (
-                    <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                  )}
-                </button>
-              </div>
-              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">備註</div>
-              <div className="w-28 px-2 py-1 border-r border-gray-200">
-                <button
-                  className="flex items-center"
-                  onClick={() => toggleSort("createdAt")}
-                >
-                  建立日期
-                  {sortBy === "createdAt" ? (
-                    sortDir === "desc" ? (
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4 ml-1" />
-                    )
-                  ) : (
-                    <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                  )}
-                </button>
-              </div>
-              <div className="w-40 px-2 py-1">操作</div>
+      <div className="w-full">
+        <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
+          <div className="flex bg-muted sticky top-0 z-10">
+            <div className="w-12 px-2 py-1 border-r border-gray-200">收藏</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">單字</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">拼音</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">翻譯</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">
+              <button className="flex items-center" onClick={openFilterDialog}>
+                詞性
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </button>
             </div>
-            {displayWords.map((w) => (
+            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
+            <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">相關單字</div>
+            <div className="w-20 px-2 py-1 border-r border-gray-200">
+              <button
+                className="flex items-center"
+                onClick={() => toggleSort("mastery")}
+              >
+                掌握度
+                {sortBy === "mastery" ? (
+                  sortDir === "desc" ? (
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 ml-1" />
+                  )
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                )}
+              </button>
+            </div>
+            <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">備註</div>
+            <div className="w-28 px-2 py-1 border-r border-gray-200">
+              <button className="flex items-center" onClick={() => toggleSort("createdAt")}>
+                建立日期
+                {sortBy === "createdAt" ? (
+                  sortDir === "desc" ? (
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 ml-1" />
+                  )
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                )}
+              </button>
+            </div>
+            <div className="w-40 px-2 py-1">操作</div>
+          </div>
+          {displayWords.length ? (
+            displayWords.map((w) => (
               <div key={w.id} className="flex border-b">
                 <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
@@ -707,10 +702,10 @@ export function WordList({ wordbookId }: WordListProps) {
                   {w.word}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.pinyin || '-'}
+                  {w.pinyin || "-"}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.translation || '-'}
+                  {w.translation || "-"}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.partOfSpeech.length ? (
@@ -734,13 +729,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.exampleSentence || '-'}
+                  {w.exampleSentence || "-"}
                 </div>
                 <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.exampleTranslation || '-'}
+                  {w.exampleTranslation || "-"}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.relatedWords || '-'}
+                  {w.relatedWords || "-"}
                 </div>
                 <div className="w-20 px-2 py-2 flex items-start justify-center gap-1 border-r border-gray-200">
                   <span>{w.mastery}</span>
@@ -760,10 +755,10 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.note || '-'}
+                  {w.note || "-"}
                 </div>
                 <div className="w-28 px-2 py-2 border-r border-gray-200">
-                  {w.createdAt?.toDate().toLocaleDateString() || '-'}
+                  {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
                 <div className="w-40 px-2 py-2">
                   <div className="flex gap-2">
@@ -929,10 +924,14 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+              {emptyMessage}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
