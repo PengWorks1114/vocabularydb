@@ -27,6 +27,7 @@ export interface Word {
   partOfSpeech: string[];
   exampleSentence: string;
   exampleTranslation: string;
+  relatedWords: string;
   mastery: number;
   note: string;
   wordbookId: string;

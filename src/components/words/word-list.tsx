@@ -70,6 +70,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newPartOfSpeech, setNewPartOfSpeech] = useState("");
   const [newExampleSentence, setNewExampleSentence] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
+  const [newRelatedWords, setNewRelatedWords] = useState("");
   const [newMastery, setNewMastery] = useState(0);
   const [newNote, setNewNote] = useState("");
   const [newFavorite, setNewFavorite] = useState(false);
@@ -83,6 +84,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [editPartOfSpeech, setEditPartOfSpeech] = useState("");
   const [editExampleSentence, setEditExampleSentence] = useState("");
   const [editExampleTranslation, setEditExampleTranslation] = useState("");
+  const [editRelatedWords, setEditRelatedWords] = useState("");
   const [editMastery, setEditMastery] = useState(0);
   const [editNote, setEditNote] = useState("");
   const [editFavorite, setEditFavorite] = useState(false);
@@ -138,6 +140,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setNewPartOfSpeech("");
     setNewExampleSentence("");
     setNewExampleTranslation("");
+    setNewRelatedWords("");
     setNewMastery(0);
     setNewNote("");
     setNewFavorite(false);
@@ -157,6 +160,7 @@ export function WordList({ wordbookId }: WordListProps) {
           .filter(Boolean),
         exampleSentence: newExampleSentence.trim(),
         exampleTranslation: newExampleTranslation.trim(),
+        relatedWords: newRelatedWords.trim(),
         mastery: Number(newMastery) || 0,
         note: newNote.trim(),
         favorite: newFavorite,
@@ -179,6 +183,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditPartOfSpeech(w.partOfSpeech.join(", "));
     setEditExampleSentence(w.exampleSentence);
     setEditExampleTranslation(w.exampleTranslation);
+    setEditRelatedWords(w.relatedWords || "");
     setEditMastery(w.mastery);
     setEditNote(w.note);
     setEditFavorite(w.favorite);
@@ -198,6 +203,7 @@ export function WordList({ wordbookId }: WordListProps) {
           .filter(Boolean),
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
+        relatedWords: editRelatedWords.trim(),
         mastery: Number(editMastery) || 0,
         note: editNote.trim(),
         favorite: editFavorite,
@@ -257,7 +263,9 @@ export function WordList({ wordbookId }: WordListProps) {
     if (showFavorites && !w.favorite) return false;
     if (!search.trim()) return true;
     const term = normalize(search.trim());
-    return [w.word, w.translation].some((f) => normalize(f).includes(term));
+    return [w.word, w.translation, w.relatedWords || ""].some((f) =>
+      normalize(f).includes(term)
+    );
   });
   const emptyMessage = search.trim()
     ? "沒有符合的單字"
@@ -330,6 +338,13 @@ export function WordList({ wordbookId }: WordListProps) {
             onChange={(e) => setNewExampleTranslation(e.target.value)}
             className="mb-2"
           />
+          <Label htmlFor="newRelatedWords" className="mb-1">相關單字</Label>
+          <Input
+            id="newRelatedWords"
+            value={newRelatedWords}
+            onChange={(e) => setNewRelatedWords(e.target.value)}
+            className="mb-2"
+          />
           <Label htmlFor="newNote" className="mb-1">備註</Label>
           <Input
             id="newNote"
@@ -396,6 +411,7 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">詞性</div>
               <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句</div>
               <div className="flex-[2] min-w-0 px-2 py-1 border-r border-gray-200">例句翻譯</div>
+              <div className="flex-1 min-w-0 px-2 py-1 border-r border-gray-200">相關單字</div>
               <div className="w-20 px-2 py-1 border-r border-gray-200">
                 <button
                   className="flex items-center"
@@ -463,6 +479,9 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.exampleTranslation || '-'}
+                </div>
+                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                  {w.relatedWords || '-'}
                 </div>
                 <div className="w-20 px-2 py-2 flex items-center justify-center gap-1 border-r border-gray-200">
                   <span>{w.mastery}</span>
@@ -550,6 +569,13 @@ export function WordList({ wordbookId }: WordListProps) {
                           id="editExampleTranslation"
                           value={editExampleTranslation}
                           onChange={(e) => setEditExampleTranslation(e.target.value)}
+                          className="mb-2"
+                        />
+                        <Label htmlFor="editRelatedWords" className="mb-1">相關單字</Label>
+                        <Input
+                          id="editRelatedWords"
+                          value={editRelatedWords}
+                          onChange={(e) => setEditRelatedWords(e.target.value)}
                           className="mb-2"
                         />
                         <Label htmlFor="editNote" className="mb-1">備註</Label>
