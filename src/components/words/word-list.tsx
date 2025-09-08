@@ -36,38 +36,40 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Star, ChevronUp, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface WordListProps {
   wordbookId: string;
 }
 
 const colorOptions = [
-  "gray",
-  "brown",
-  "orange",
-  "yellow",
-  "green",
-  "blue",
-  "purple",
-  "pink",
-  "red",
+  { value: "gray", labelKey: "colors.gray" },
+  { value: "brown", labelKey: "colors.brown" },
+  { value: "orange", labelKey: "colors.orange" },
+  { value: "yellow", labelKey: "colors.yellow" },
+  { value: "green", labelKey: "colors.green" },
+  { value: "blue", labelKey: "colors.blue" },
+  { value: "purple", labelKey: "colors.purple" },
+  { value: "pink", labelKey: "colors.pink" },
+  { value: "red", labelKey: "colors.red" },
 ];
 
 const colorClasses: Record<string, string> = {
-  gray: "bg-gray-200 text-gray-800",
-  brown: "bg-amber-200 text-amber-800",
-  orange: "bg-orange-200 text-orange-800",
-  yellow: "bg-yellow-200 text-yellow-800",
-  green: "bg-green-200 text-green-800",
-  blue: "bg-blue-200 text-blue-800",
-  purple: "bg-purple-200 text-purple-800",
-  pink: "bg-pink-200 text-pink-800",
-  red: "bg-red-200 text-red-800",
+  gray: "bg-gray-300 text-gray-900",
+  brown: "bg-amber-300 text-amber-900",
+  orange: "bg-orange-300 text-orange-900",
+  yellow: "bg-yellow-300 text-yellow-900",
+  green: "bg-green-300 text-green-900",
+  blue: "bg-blue-300 text-blue-900",
+  purple: "bg-purple-300 text-purple-900",
+  pink: "bg-pink-300 text-pink-900",
+  red: "bg-red-300 text-red-900",
 };
 
 // 單字管理元件：顯示、建立、編輯、刪除
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -536,8 +538,8 @@ export function WordList({ wordbookId }: WordListProps) {
                 }}
               >
                 {colorOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                  <option key={c.value} value={c.value}>
+                    {t(c.labelKey)}
                   </option>
                 ))}
               </select>
@@ -563,8 +565,8 @@ export function WordList({ wordbookId }: WordListProps) {
               onChange={(e) => setNewTagColor(e.target.value)}
             >
               {colorOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+                <option key={c.value} value={c.value}>
+                  {t(c.labelKey)}
                 </option>
               ))}
             </select>
