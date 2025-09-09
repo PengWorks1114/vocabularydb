@@ -73,6 +73,13 @@ const colorClasses: Record<string, string> = {
   red: "bg-red-300 text-red-900",
 };
 
+const masteryOptions = [
+  { key: "unknown", value: 0, cls: "bg-red-500 text-white" },
+  { key: "impression", value: 25, cls: "bg-orange-500 text-white" },
+  { key: "familiar", value: 50, cls: "bg-yellow-500 text-black" },
+  { key: "memorized", value: 90, cls: "bg-green-600 text-white" },
+];
+
 // Word management component: display, create, edit, delete
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
@@ -539,18 +546,23 @@ export function WordList({ wordbookId }: WordListProps) {
             className="mb-2"
           />
           <Label className="mb-1">{t("wordList.mastery")}</Label>
-          <div className="mb-2 space-y-1">
-            {[{ key: "unknown", value: 0 }, { key: "impression", value: 25 }, { key: "familiar", value: 50 }, { key: "memorized", value: 90 }].map((opt) => (
-              <div key={opt.key} className="flex items-center space-x-2">
+          <div className="mb-2 flex flex-wrap gap-2">
+            {masteryOptions.map((opt) => (
+              <label
+                key={opt.key}
+                className={`${opt.cls} px-2 py-1 rounded cursor-pointer ${
+                  newMastery === opt.value ? "ring-2 ring-offset-2 ring-black" : ""
+                }`}
+              >
                 <input
                   type="radio"
-                  id={`new-${opt.key}`}
                   name="newMastery"
+                  className="sr-only"
                   checked={newMastery === opt.value}
                   onChange={() => setNewMastery(opt.value)}
                 />
-                <Label htmlFor={`new-${opt.key}`}>{t(`wordList.masteryLevels.${opt.key}`)}</Label>
-              </div>
+                {t(`wordList.masteryLevels.${opt.key}`)}
+              </label>
             ))}
           </div>
           <div className="flex items-center space-x-2">
@@ -987,18 +999,23 @@ export function WordList({ wordbookId }: WordListProps) {
                           className="mb-2"
                         />
           <Label className="mb-1">{t("wordList.mastery")}</Label>
-          <div className="mb-2 space-y-1">
-            {[{ key: "unknown", value: 0 }, { key: "impression", value: 25 }, { key: "familiar", value: 50 }, { key: "memorized", value: 90 }].map((opt) => (
-              <div key={opt.key} className="flex items-center space-x-2">
+          <div className="mb-2 flex flex-wrap gap-2">
+            {masteryOptions.map((opt) => (
+              <label
+                key={opt.key}
+                className={`${opt.cls} px-2 py-1 rounded cursor-pointer ${
+                  editMastery === opt.value ? "ring-2 ring-offset-2 ring-black" : ""
+                }`}
+              >
                 <input
                   type="radio"
-                  id={`edit-${opt.key}`}
                   name="editMastery"
+                  className="sr-only"
                   checked={editMastery === opt.value}
                   onChange={() => setEditMastery(opt.value)}
                 />
-                <Label htmlFor={`edit-${opt.key}`}>{t(`wordList.masteryLevels.${opt.key}`)}</Label>
-              </div>
+                {t(`wordList.masteryLevels.${opt.key}`)}
+              </label>
             ))}
           </div>
                         <div className="flex items-center space-x-2 mb-2">
