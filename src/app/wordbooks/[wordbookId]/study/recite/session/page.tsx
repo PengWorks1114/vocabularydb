@@ -104,9 +104,11 @@ function computeMastery(current: number, choice: Answer): number {
     case "memorized":
       return 100;
     case "impression":
-      return Math.round(current + (40 - current) * 0.3);
+      // move slightly toward 40
+      return Math.round(current + (40 - current) * 0.15);
     case "familiar":
-      return Math.round(current + (70 - current) * 0.3);
+      // move slightly toward 70
+      return Math.round(current + (70 - current) * 0.15);
   }
 }
 
@@ -205,6 +207,14 @@ export default function ReciteSessionPage({ params }: PageProps) {
     sessionWords.length > 0
       ? ((index + (showDetails ? 1 : 0)) / sessionWords.length) * 100
       : 0;
+  const progressColor =
+    progressPercent < 25
+      ? "bg-red-500"
+      : progressPercent < 50
+      ? "bg-orange-500"
+      : progressPercent < 75
+      ? "bg-yellow-500"
+      : "bg-green-500";
 
   return (
     <div className="p-8 space-y-6">
@@ -251,31 +261,47 @@ export default function ReciteSessionPage({ params }: PageProps) {
                 <div>
                   {t("wordList.pinyin")}: {sessionWords[index].pinyin}
                 </div>
-                <div>
+                <div className="whitespace-pre-line">
                   {t("wordList.example")}: {sessionWords[index].exampleSentence}
                 </div>
-                <div>
-                  {t("wordList.exampleTranslation")}:
-                  {" "}
+                <div className="whitespace-pre-line">
+                  {t("wordList.exampleTranslation")}:{" "}
                   {sessionWords[index].exampleTranslation}
                 </div>
               </div>
             )}
             {!showDetails ? (
-              <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => handleAnswer("unknown")}>
-                  {t("wordList.masteryLevels.unknown")}
-                </Button>
-                <Button onClick={() => handleAnswer("impression")}>
-                  {t("wordList.masteryLevels.impression")}
-                </Button>
-                <Button onClick={() => handleAnswer("familiar")}>
-                  {t("wordList.masteryLevels.familiar")}
-                </Button>
-                <Button onClick={() => handleAnswer("memorized")}>
-                  {t("wordList.masteryLevels.memorized")}
-                </Button>
-              </div>
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 px-2 py-1 text-lg bg-red-500 text-white hover:bg-red-600"
+                    onClick={() => handleAnswer("unknown")}
+                  >
+                    {t("wordList.masteryLevels.unknown")}
+                  </Button>
+                  <Button
+                    className="flex-1 px-2 py-1 text-lg bg-orange-500 text-white hover:bg-orange-600"
+                    onClick={() => handleAnswer("impression")}
+                  >
+                    {t("wordList.masteryLevels.impression")}
+                  </Button>
+                  <Button
+                    className="flex-1 px-2 py-1 text-lg bg-yellow-500 text-black hover:bg-yellow-600"
+                    onClick={() => handleAnswer("familiar")}
+                  >
+                    {t("wordList.masteryLevels.familiar")}
+                  </Button>
+                  <Button
+                    className="flex-1 px-2 py-1 text-lg bg-green-500 text-black hover:bg-green-600"
+                    onClick={() => handleAnswer("memorized")}
+                  >
+                    {t("wordList.masteryLevels.memorized")}
+                  </Button>
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  {t("recite.answerHint")}
+                </p>
+              </>
             ) : (
               <Button className="w-full" onClick={next}>
                 {t("recite.next")}
@@ -284,7 +310,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
           </div>
           <div className="h-2 bg-muted rounded">
             <div
-              className="h-2 bg-primary rounded"
+              className={`h-2 rounded ${progressColor}`}
               style={{ width: `${progressPercent}%` }}
             />
           </div>

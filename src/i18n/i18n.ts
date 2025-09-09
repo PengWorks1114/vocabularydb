@@ -49,6 +49,8 @@ i18n
             mode: "Selection mode",
             start: "Start",
             progress: "Progress: {{current}}/{{total}}",
+            answerHint:
+              "Mastery: don't know, vague memory, roughly remember, fully remember!",
             again: "Repeat same words",
             next: "Next",
             nextSet: "Next {{count}} words",
@@ -195,6 +197,8 @@ i18n
             mode: "抽選方式",
             start: "開始背誦",
             progress: "進度：{{current}}/{{total}}",
+            answerHint:
+              "掌握度: 完全不會 印象模糊 大概記得 完全會!",
             again: "再背一次",
             next: "下一個",
             nextSet: "下一批{{count}}個",
@@ -340,6 +344,8 @@ i18n
             mode: "抽出方法",
             start: "開始",
             progress: "進捗：{{current}}/{{total}}",
+            answerHint:
+              "習得度: 全く分からない ぼんやり覚えている だいたい覚えている 完全に覚えた!",
             again: "同じ単語でもう一度",
             next: "次へ",
             nextSet: "次の{{count}}語",
