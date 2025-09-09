@@ -11,7 +11,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
-// 以前：import { auth } from "@/lib/firebase";
+// Previously: import { auth } from "@/lib/firebase";
 import { auth } from "@/lib/firebase-client";
 
 import {
@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-// 定義表單驗證 Schema
+// Define form validation schema
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z
@@ -48,7 +48,7 @@ export function AuthForm() {
     },
   });
 
-  // 處理表單送出
+  // Handle form submission
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setError(null);
@@ -62,10 +62,10 @@ export function AuthForm() {
           values.password
         );
       }
-      // 成功後，可能導向主頁或關閉對話框
+      // On success, navigate to the home page or close the dialog
       console.log("Authentication successful!");
     } catch (err: unknown) {
-      // 檢查 err 是否為一個 Error 物件
+      // Check if err is an Error object
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -77,7 +77,7 @@ export function AuthForm() {
     }
   }
 
-  // 處理 Google 登入
+  // Handle Google login
   async function handleGoogleLogin() {
     setIsLoading(true);
     setError(null);
@@ -86,7 +86,7 @@ export function AuthForm() {
       await signInWithPopup(auth, provider);
       console.log("Google login successful!");
     } catch (err: unknown) {
-      // 檢查 err 是否為一個 Error 物件
+      // Check if err is an Error object
       if (err instanceof Error) {
         setError(err.message);
       } else {
