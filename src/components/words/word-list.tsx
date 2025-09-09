@@ -38,6 +38,13 @@ import {
 import { Star, ChevronUp, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+function masteryLevelMin(score: number) {
+  if (score >= 90) return 90;
+  if (score >= 50) return 50;
+  if (score >= 25) return 25;
+  return 0;
+}
+
 interface WordListProps {
   wordbookId: string;
 }
@@ -270,7 +277,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditExampleSentence(w.exampleSentence);
     setEditExampleTranslation(w.exampleTranslation);
     setEditRelatedWords(w.relatedWords || "");
-    setEditMastery(w.mastery || 0);
+    setEditMastery(masteryLevelMin(w.mastery || 0));
     setEditNote(w.note);
     setEditFavorite(w.favorite);
   };
@@ -517,18 +524,21 @@ export function WordList({ wordbookId }: WordListProps) {
             onChange={(e) => setNewNote(e.target.value)}
             className="mb-2"
           />
-          <Label htmlFor="newMastery" className="mb-1">{t("wordList.masteryWithRange")}</Label>
-          <Input
-            id="newMastery"
-            type="number"
-            min={0}
-            max={100}
-            value={newMastery}
-            onChange={(e) =>
-              setNewMastery(Math.min(100, Math.max(0, Number(e.target.value))))
-            }
-            className="mb-2"
-          />
+          <Label className="mb-1">{t("wordList.mastery")}</Label>
+          <div className="mb-2 space-y-1">
+            {[{ key: "unknown", value: 0 }, { key: "impression", value: 25 }, { key: "familiar", value: 50 }, { key: "memorized", value: 90 }].map((opt) => (
+              <div key={opt.key} className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id={`new-${opt.key}`}
+                  name="newMastery"
+                  checked={newMastery === opt.value}
+                  onChange={() => setNewMastery(opt.value)}
+                />
+                <Label htmlFor={`new-${opt.key}`}>{t(`wordList.masteryLevels.${opt.key}`)}</Label>
+              </div>
+            ))}
+          </div>
           <div className="flex items-center space-x-2">
             <input
               id="newFavorite"
@@ -841,10 +851,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     let cls = "bg-red-500 text-white";
                     if (s >= 90) {
                       label = t("wordList.masteryLevels.memorized");
-                      cls = "bg-green-500 text-white";
+                      cls = "bg-green-600 text-white";
                     } else if (s >= 50) {
                       label = t("wordList.masteryLevels.familiar");
-                      cls = "bg-gradient-to-r from-yellow-400 to-green-400 text-black";
+                      cls = "bg-yellow-500 text-black";
                     } else if (s >= 25) {
                       label = t("wordList.masteryLevels.impression");
                       cls = "bg-orange-500 text-white";
@@ -960,18 +970,21 @@ export function WordList({ wordbookId }: WordListProps) {
                           onChange={(e) => setEditNote(e.target.value)}
                           className="mb-2"
                         />
-          <Label htmlFor="editMastery" className="mb-1">{t("wordList.masteryWithRange")}</Label>
-          <Input
-            id="editMastery"
-            type="number"
-            min={0}
-            max={100}
-            value={editMastery}
-            onChange={(e) =>
-              setEditMastery(Math.min(100, Math.max(0, Number(e.target.value))))
-            }
-            className="mb-2"
-          />
+          <Label className="mb-1">{t("wordList.mastery")}</Label>
+          <div className="mb-2 space-y-1">
+            {[{ key: "unknown", value: 0 }, { key: "impression", value: 25 }, { key: "familiar", value: 50 }, { key: "memorized", value: 90 }].map((opt) => (
+              <div key={opt.key} className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id={`edit-${opt.key}`}
+                  name="editMastery"
+                  checked={editMastery === opt.value}
+                  onChange={() => setEditMastery(opt.value)}
+                />
+                <Label htmlFor={`edit-${opt.key}`}>{t(`wordList.masteryLevels.${opt.key}`)}</Label>
+              </div>
+            ))}
+          </div>
                         <div className="flex items-center space-x-2 mb-2">
                           <input
                             id="editFavorite"

@@ -70,7 +70,7 @@ i18n
             relatedWords: "Related Words",
             masteryWithRange: "Mastery (0-100)",
             mastery: "Mastery",
-            points: "pts",
+            points: "%",
             masteryLevels: {
               unknown: "Unfamiliar",
               impression: "Recognized",
@@ -179,7 +179,7 @@ i18n
             relatedWords: "相關單字",
             masteryWithRange: "掌握度 (0-100)",
             mastery: "掌握度",
-            points: "分",
+            points: "%",
             masteryLevels: {
               unknown: "陌生",
               impression: "有印象",
@@ -288,7 +288,7 @@ i18n
             relatedWords: "関連単語",
             masteryWithRange: "習得度 (0-100)",
             mastery: "習得度",
-            points: "点",
+            points: "%",
             masteryLevels: {
               unknown: "未習得",
               impression: "見覚えあり",
