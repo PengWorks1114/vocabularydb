@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { AuthForm } from "@/components/auth-form";
 import { useAuth } from "@/components/auth-provider";
-import "@/i18n/i18n-client";
+import "@/i18n/i18n";
 import { signOut } from "firebase/auth";
 
 // Wordbook list component

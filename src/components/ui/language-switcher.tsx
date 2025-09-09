@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import "@/i18n/i18n-client";
+import "@/i18n/i18n";
 import {
   Select,
   SelectContent,
