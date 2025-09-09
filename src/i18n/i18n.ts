@@ -7,6 +7,7 @@ i18n
     lng: "zh-Hant",
     fallbackLng: "zh-Hant",
     debug: true,
+    initImmediate: false,
     interpolation: {
       escapeValue: false,
     },
@@ -72,6 +73,7 @@ i18n
           },
           backToList: "Back to wordbooks",
           backToStudy: "Back to study",
+          backToWordbook: "Back to wordbook",
           wordbookList: {
             title: "My Wordbooks",
             namePlaceholder: "Enter wordbook name...",
@@ -220,6 +222,7 @@ i18n
           },
           backToList: "返回單字本列表",
           backToStudy: "返回背誦頁",
+          backToWordbook: "返回單字本",
           wordbookList: {
             title: "我的單字本",
             namePlaceholder: "輸入單字本名稱...",
@@ -367,6 +370,7 @@ i18n
           },
           backToList: "単語帳一覧に戻る",
           backToStudy: "暗記ページに戻る",
+          backToWordbook: "単語帳に戻る",
           wordbookList: {
             title: "私の単語帳",
             namePlaceholder: "単語帳名を入力...",

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 import { CircleProgress } from "@/components/ui/circle-progress";
+import "@/i18n/i18n";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;

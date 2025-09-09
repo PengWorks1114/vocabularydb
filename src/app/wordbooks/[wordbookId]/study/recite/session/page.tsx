@@ -13,6 +13,7 @@ import {
   updateWord,
   Word,
 } from "@/lib/firestore-service";
+import "@/i18n/i18n";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
@@ -331,6 +332,11 @@ export default function ReciteSessionPage({ params }: PageProps) {
             <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
               <Button className="w-full" variant="outline">
                 {t("recite.finish")}
+              </Button>
+            </Link>
+            <Link href={`/wordbooks/${wordbookId}`} className="w-full">
+              <Button className="w-full" variant="outline">
+                {t("backToWordbook")}
               </Button>
             </Link>
           </div>

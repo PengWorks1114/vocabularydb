@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import "@/i18n/i18n";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
