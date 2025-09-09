@@ -247,7 +247,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleSentence: newExampleSentence.trim(),
         exampleTranslation: newExampleTranslation.trim(),
         relatedWords: newRelatedWords.trim(),
-        mastery: Number(newMastery) || 0,
+        mastery: Math.min(100, Math.max(0, Number(newMastery) || 0)),
         note: newNote.trim(),
         favorite: newFavorite,
       });
@@ -270,7 +270,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditExampleSentence(w.exampleSentence);
     setEditExampleTranslation(w.exampleTranslation);
     setEditRelatedWords(w.relatedWords || "");
-    setEditMastery(w.mastery);
+    setEditMastery(w.mastery || 0);
     setEditNote(w.note);
     setEditFavorite(w.favorite);
   };
@@ -287,7 +287,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
         relatedWords: editRelatedWords.trim(),
-        mastery: Number(editMastery) || 0,
+        mastery: Math.min(100, Math.max(0, Number(editMastery) || 0)),
         note: editNote.trim(),
         favorite: editFavorite,
       };
@@ -340,19 +340,6 @@ export function WordList({ wordbookId }: WordListProps) {
       await updateWord(user.uid, wordbookId, word.id, { favorite: newVal });
       setWords((prev) =>
         sortWords(prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w)))
-      );
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const changeMastery = async (word: Word, delta: number) => {
-    if (!user) return;
-    const newVal = Math.min(100, Math.max(0, (word.mastery || 0) + delta));
-    try {
-      await updateWord(user.uid, wordbookId, word.id, { mastery: newVal });
-      setWords((prev) =>
-        sortWords(prev.map((w) => (w.id === word.id ? { ...w, mastery: newVal } : w)))
       );
     } catch (e) {
       console.error(e);
@@ -534,8 +521,12 @@ export function WordList({ wordbookId }: WordListProps) {
           <Input
             id="newMastery"
             type="number"
+            min={0}
+            max={100}
             value={newMastery}
-            onChange={(e) => setNewMastery(Number(e.target.value))}
+            onChange={(e) =>
+              setNewMastery(Math.min(100, Math.max(0, Number(e.target.value))))
+            }
             className="mb-2"
           />
           <div className="flex items-center space-x-2">
@@ -745,7 +736,7 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button
                 className={`flex items-center ${headerTextClass}`}
                 onClick={() => toggleSort("mastery")}
@@ -842,22 +833,26 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.relatedWords || "-"}
                 </div>
-                <div className="w-20 px-2 py-2 flex items-start justify-center gap-1 border-r border-gray-200">
-                  <span>{w.mastery}</span>
-                  <div className="flex flex-col ml-1">
-                    <button
-                      className="p-0 hover:text-blue-500"
-                      onClick={() => changeMastery(w, 1)}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </button>
-                    <button
-                      className="p-0 hover:text-blue-500"
-                      onClick={() => changeMastery(w, -1)}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </div>
+                <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
+                  <span>{w.mastery ?? 0}{t("wordList.points")}</span>
+                  {(() => {
+                    const s = w.mastery || 0;
+                    let label = t("wordList.masteryLevels.unknown");
+                    let cls = "bg-red-500 text-white";
+                    if (s >= 90) {
+                      label = t("wordList.masteryLevels.memorized");
+                      cls = "bg-green-500 text-white";
+                    } else if (s >= 50) {
+                      label = t("wordList.masteryLevels.familiar");
+                      cls = "bg-gradient-to-r from-yellow-400 to-green-400 text-black";
+                    } else if (s >= 25) {
+                      label = t("wordList.masteryLevels.impression");
+                      cls = "bg-orange-500 text-white";
+                    }
+                    return (
+                      <span className={`mt-1 px-2 py-0.5 rounded text-xs ${cls}`}>{label}</span>
+                    );
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.note || "-"}
@@ -965,14 +960,18 @@ export function WordList({ wordbookId }: WordListProps) {
                           onChange={(e) => setEditNote(e.target.value)}
                           className="mb-2"
                         />
-                        <Label htmlFor="editMastery" className="mb-1">{t("wordList.masteryWithRange")}</Label>
-                        <Input
-                          id="editMastery"
-                          type="number"
-                          value={editMastery}
-                          onChange={(e) => setEditMastery(Number(e.target.value))}
-                          className="mb-2"
-                        />
+          <Label htmlFor="editMastery" className="mb-1">{t("wordList.masteryWithRange")}</Label>
+          <Input
+            id="editMastery"
+            type="number"
+            min={0}
+            max={100}
+            value={editMastery}
+            onChange={(e) =>
+              setEditMastery(Math.min(100, Math.max(0, Number(e.target.value))))
+            }
+            className="mb-2"
+          />
                         <div className="flex items-center space-x-2 mb-2">
                           <input
                             id="editFavorite"
