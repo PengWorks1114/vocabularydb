@@ -218,7 +218,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
       : "bg-green-500";
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <Link
           href={`/wordbooks/${wordbookId}/study/recite`}
@@ -236,7 +236,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
           </Button>
         </div>
       </div>
-      <h1 className="text-center text-2xl font-bold">
+      <h1 className="text-center text-3xl sm:text-4xl font-bold">
         <span suppressHydrationWarning>
           {mounted ? t("studyPage.recite") : ""}
         </span>
@@ -244,14 +244,14 @@ export default function ReciteSessionPage({ params }: PageProps) {
 
       {step === "reciting" && sessionWords.length > 0 && (
         <div className="max-w-md mx-auto space-y-4">
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-base sm:text-lg text-muted-foreground">
             {t("recite.progress", {
               current: index + 1,
               total: sessionWords.length,
             })}
           </p>
-          <div className="border rounded p-6 space-y-4 text-center">
-            <div className="text-2xl font-bold">
+          <div className="border rounded p-4 sm:p-6 space-y-4 text-center">
+            <div className="text-3xl sm:text-4xl font-bold">
               {sessionWords[index].word}
             </div>
             {showDetails && (
@@ -275,31 +275,31 @@ export default function ReciteSessionPage({ params }: PageProps) {
               <>
                 <div className="flex gap-2">
                   <Button
-                    className="flex-1 px-2 py-1 text-lg bg-red-500 text-white hover:bg-red-600"
+                    className="flex-1 px-2 py-2 text-lg sm:text-xl bg-red-500 text-white hover:bg-red-600"
                     onClick={() => handleAnswer("unknown")}
                   >
                     {t("wordList.masteryLevels.unknown")}
                   </Button>
                   <Button
-                    className="flex-1 px-2 py-1 text-lg bg-orange-500 text-white hover:bg-orange-600"
+                    className="flex-1 px-2 py-2 text-lg sm:text-xl bg-orange-500 text-white hover:bg-orange-600"
                     onClick={() => handleAnswer("impression")}
                   >
                     {t("wordList.masteryLevels.impression")}
                   </Button>
                   <Button
-                    className="flex-1 px-2 py-1 text-lg bg-yellow-500 text-black hover:bg-yellow-600"
+                    className="flex-1 px-2 py-2 text-lg sm:text-xl bg-yellow-500 text-black hover:bg-yellow-600"
                     onClick={() => handleAnswer("familiar")}
                   >
                     {t("wordList.masteryLevels.familiar")}
                   </Button>
                   <Button
-                    className="flex-1 px-2 py-1 text-lg bg-green-500 text-black hover:bg-green-600"
+                    className="flex-1 px-2 py-2 text-lg sm:text-xl bg-green-500 text-black hover:bg-green-600"
                     onClick={() => handleAnswer("memorized")}
                   >
                     {t("wordList.masteryLevels.memorized")}
                   </Button>
                 </div>
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-base text-muted-foreground">
                   {t("recite.answerHint")}
                 </p>
               </>
@@ -309,9 +309,9 @@ export default function ReciteSessionPage({ params }: PageProps) {
               </Button>
             )}
           </div>
-          <div className="h-2 bg-muted rounded">
+          <div className="h-3 sm:h-4 bg-muted rounded">
             <div
-              className={`h-2 rounded ${progressColor}`}
+              className={`h-3 sm:h-4 rounded ${progressColor}`}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
