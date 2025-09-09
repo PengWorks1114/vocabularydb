@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "@/i18n/i18n-client";
 import { AuthProvider } from "@/components/auth-provider";
 import { NavBar } from "@/components/nav-bar";
 
@@ -25,11 +26,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh-Hant">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* 這裡用 AuthProvider 包起來，讓整個 app 都能用 useAuth */}
+        {/* Wrap with AuthProvider so the entire app can use useAuth */}
         <AuthProvider>
           <NavBar />
           {children}

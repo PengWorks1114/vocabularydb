@@ -51,17 +51,17 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
   const [wordbooks, setWordbooks] = useState<Wordbook[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // 新增
+  // Create new wordbook
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // 改名
+  // Rename
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Wordbook | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [renaming, setRenaming] = useState(false);
 
-  // 刪除
+  // Delete or trash
   const [deleteTarget, setDeleteTarget] = useState<Wordbook | null>(null);
   const [deleting, setDeleting] = useState(false);
 

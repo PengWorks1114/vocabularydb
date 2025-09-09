@@ -2,13 +2,12 @@
 
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: "en",
+    lng: "zh-Hant",
+    fallbackLng: "zh-Hant",
     debug: true,
     interpolation: {
       escapeValue: false,
@@ -23,6 +22,14 @@ i18n
           loading: "Loading...",
           loadFailed: "Failed to load",
           welcomeUser: "Welcome, {{email}}!",
+          languageSwitcher: {
+            placeholder: "Language",
+          },
+          languages: {
+            "zh-Hant": "Chinese",
+            ja: "Japanese",
+            en: "English",
+          },
           nav: {
             wordbooks: "Wordbooks",
             trash: "Trash",
@@ -117,6 +124,14 @@ i18n
           loading: "載入中...",
           loadFailed: "讀取失敗",
           welcomeUser: "歡迎，{{email}}！",
+          languageSwitcher: {
+            placeholder: "語言",
+          },
+          languages: {
+            "zh-Hant": "繁體中文",
+            ja: "日本語",
+            en: "English",
+          },
           nav: {
             wordbooks: "單字本一覽",
             trash: "垃圾桶",
@@ -211,6 +226,14 @@ i18n
           loading: "読み込み中...",
           loadFailed: "読み込みに失敗しました",
           welcomeUser: "{{email}}さん、ようこそ！",
+          languageSwitcher: {
+            placeholder: "言語",
+          },
+          languages: {
+            "zh-Hant": "繁体字中国語",
+            ja: "日本語",
+            en: "英語",
+          },
           nav: {
             wordbooks: "単語帳一覧",
             trash: "ゴミ箱",

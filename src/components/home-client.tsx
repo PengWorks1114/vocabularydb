@@ -17,7 +17,7 @@ import { useAuth } from "@/components/auth-provider";
 import "@/i18n/i18n-client";
 import { signOut } from "firebase/auth";
 
-// ✅ 單字本清單元件
+// Wordbook list component
 import WordbookList from "@/components/wordbooks/wordbook-list";
 
 export default function HomeClient() {
@@ -61,7 +61,7 @@ export default function HomeClient() {
             </div>
           </div>
 
-          {/* ✅ 單字本清單（讀取 / 新增 / 改名 / 刪除） */}
+          {/* Wordbook list (load / create / rename / delete) */}
           <WordbookList />
         </div>
       ) : (

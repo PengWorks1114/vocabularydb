@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// 定義單字本的資料型別
+// Define wordbook type
 export interface Wordbook {
   id: string;
   name: string;
@@ -20,7 +20,7 @@ export interface Wordbook {
   trashedAt?: Timestamp | null;
 }
 
-// 定義單字的資料型別
+// Define word type
 export interface Word {
   id: string;
   word: string;
@@ -37,7 +37,7 @@ export interface Word {
   createdAt: Timestamp;
 }
 
-// 自訂詞性標籤
+// Custom part-of-speech tags
 export interface PartOfSpeechTag {
   id: string;
   name: string;
@@ -45,7 +45,7 @@ export interface PartOfSpeechTag {
   userId: string;
 }
 
-// 取得使用者所有單字本
+// Get all wordbooks for a user
 export const getWordbooksByUserId = async (
   userId: string
 ): Promise<Wordbook[]> => {
@@ -59,7 +59,7 @@ export const getWordbooksByUserId = async (
   return wordbooks;
 };
 
-// 建立新的單字本
+// Create a new wordbook
 export const createWordbook = async (
   userId: string,
   name: string
@@ -82,7 +82,7 @@ export const createWordbook = async (
   };
 };
 
-// 永久刪除單字本
+// Permanently delete a wordbook
 export const deleteWordbook = async (
   userId: string,
   wordbookId: string
@@ -94,7 +94,7 @@ export const deleteWordbook = async (
   await deleteDoc(docRef);
 };
 
-// 將單字本移到垃圾桶
+// Move a wordbook to trash
 export const trashWordbook = async (
   userId: string,
   wordbookId: string
@@ -103,7 +103,7 @@ export const trashWordbook = async (
   await updateDoc(docRef, { trashed: true, trashedAt: Timestamp.now() });
 };
 
-// 取得使用者垃圾桶中的單字本
+// Get a user's wordbooks in trash
 export const getTrashedWordbooksByUserId = async (
   userId: string
 ): Promise<Wordbook[]> => {
@@ -117,7 +117,7 @@ export const getTrashedWordbooksByUserId = async (
   return wordbooks;
 };
 
-// 清空垃圾桶
+// Empty trash
 export const clearTrashedWordbooks = async (userId: string): Promise<void> => {
   const trashed = await getTrashedWordbooksByUserId(userId);
   await Promise.all(
@@ -125,7 +125,7 @@ export const clearTrashedWordbooks = async (userId: string): Promise<void> => {
   );
 };
 
-// 更新單字本名稱
+// Update wordbook name
 export const updateWordbookName = async (
   userId: string,
   wordbookId: string,
@@ -135,7 +135,7 @@ export const updateWordbookName = async (
   await updateDoc(wordbookRef, { name: newName });
 };
 
-// 取得單一本的資訊
+// Get a single wordbook's info
 export const getWordbook = async (
   userId: string,
   wordbookId: string
@@ -146,9 +146,9 @@ export const getWordbook = async (
   return { id: snap.id, ...(snap.data() as Wordbook) };
 };
 
-// ------------------- 單字 CRUD -------------------
+// ------------------- Word CRUD -------------------
 
-// 取得指定單字本的所有單字
+// Get all words for a wordbook
 export const getWordsByWordbookId = async (
   userId: string,
   wordbookId: string
@@ -169,7 +169,7 @@ export const getWordsByWordbookId = async (
   return words;
 };
 
-// 新增單字
+// Create word
 export const createWord = async (
   userId: string,
   wordbookId: string,
@@ -196,7 +196,7 @@ export const createWord = async (
   };
 };
 
-// 更新單字
+// Update word
 export const updateWord = async (
   userId: string,
   wordbookId: string,
@@ -215,7 +215,7 @@ export const updateWord = async (
   await updateDoc(ref, updateData);
 };
 
-// 刪除單字
+// Delete word
 export const deleteWord = async (
   userId: string,
   wordbookId: string,
@@ -233,9 +233,9 @@ export const deleteWord = async (
   await deleteDoc(ref);
 };
 
-// ------------------- 詞性標籤 CRUD -------------------
+// ------------------- Part-of-speech tag CRUD -------------------
 
-// 取得使用者的全部詞性標籤
+// Get all part-of-speech tags for a user
 export const getPartOfSpeechTags = async (
   userId: string
 ): Promise<PartOfSpeechTag[]> => {
@@ -248,7 +248,7 @@ export const getPartOfSpeechTags = async (
   return tags;
 };
 
-// 新增詞性標籤
+// Create part-of-speech tag
 export const createPartOfSpeechTag = async (
   userId: string,
   data: Omit<PartOfSpeechTag, "id" | "userId">
@@ -258,7 +258,7 @@ export const createPartOfSpeechTag = async (
   return { id: docRef.id, ...data, userId };
 };
 
-// 更新詞性標籤
+// Update part-of-speech tag
 export const updatePartOfSpeechTag = async (
   userId: string,
   tagId: string,
@@ -268,7 +268,7 @@ export const updatePartOfSpeechTag = async (
   await updateDoc(ref, data);
 };
 
-// 刪除詞性標籤
+// Delete part-of-speech tag
 export const deletePartOfSpeechTag = async (
   userId: string,
   tagId: string

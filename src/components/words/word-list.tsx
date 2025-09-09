@@ -66,7 +66,7 @@ const colorClasses: Record<string, string> = {
   red: "bg-red-300 text-red-900",
 };
 
-// 單字管理元件：顯示、建立、編輯、刪除
+// Word management component: display, create, edit, delete
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
@@ -109,7 +109,7 @@ export function WordList({ wordbookId }: WordListProps) {
     });
   };
 
-  // 新增
+  // Create
   const [creating, setCreating] = useState(false);
   const [newWord, setNewWord] = useState("");
   const [newPinyin, setNewPinyin] = useState("");
@@ -123,7 +123,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newFavorite, setNewFavorite] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
-  // 編輯
+  // Edit
   const [editTarget, setEditTarget] = useState<Word | null>(null);
   const [editWord, setEditWord] = useState("");
   const [editPinyin, setEditPinyin] = useState("");
@@ -137,7 +137,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [editFavorite, setEditFavorite] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  // 刪除
+  // Delete
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const toggleNewTag = (id: string) => {
