@@ -11,10 +11,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// 避免 HMR 重複初始化
+// Avoid re-initializing during HMR
 export const firebaseApp = getApps().length
   ? getApp()
   : initializeApp(firebaseConfig);
 
-// ✅ Firestore instance
+// Firestore instance
 export const db = getFirestore(firebaseApp);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -17,23 +17,30 @@ import { useAuth } from "@/components/auth-provider";
 import "@/i18n/i18n-client";
 import { signOut } from "firebase/auth";
 
-// ✅ 單字本清單元件
+// Wordbook list component
 import WordbookList from "@/components/wordbooks/wordbook-list";
 
 export default function HomeClient() {
   const { t } = useTranslation();
   const { user, loading, auth } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleAuthSuccess = () => setIsAuthOpen(false);
   const handleLogout = async () => {
     await signOut(auth);
   };
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p>Loading...</p>
+        <p suppressHydrationWarning>
+          {mounted ? t("loading") : ""}
+        </p>
       </div>
     );
   }
@@ -43,13 +50,18 @@ export default function HomeClient() {
       {user ? (
         <div className="mx-auto w-full max-w-4xl space-y-6">
           <div className="flex items-center justify-between">
-            <p className="text-xl font-bold">歡迎，{user.email}！</p>
-            <Button onClick={handleLogout} variant="outline">
-              登出
-            </Button>
+            <p className="text-xl font-bold">
+              {t("welcomeUser", { email: user.email || "" })}
+            </p>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <Button onClick={handleLogout} variant="outline">
+                {t("logout")}
+              </Button>
+            </div>
           </div>
 
-          {/* ✅ 單字本清單（讀取 / 新增 / 改名 / 刪除） */}
+          {/* Wordbook list (load / create / rename / delete) */}
           <WordbookList />
         </div>
       ) : (
