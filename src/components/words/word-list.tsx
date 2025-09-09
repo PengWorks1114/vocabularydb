@@ -497,18 +497,20 @@ export function WordList({ wordbookId }: WordListProps) {
             </Button>
           </div>
           <Label htmlFor="newExampleSentence" className="mb-1">{t("wordList.example")}</Label>
-          <Input
+          <textarea
             id="newExampleSentence"
             value={newExampleSentence}
             onChange={(e) => setNewExampleSentence(e.target.value)}
-            className="mb-2"
+            rows={3}
+            className="mb-2 w-full rounded border px-2 py-1"
           />
           <Label htmlFor="newExampleTranslation" className="mb-1">{t("wordList.exampleTranslation")}</Label>
-          <Input
+          <textarea
             id="newExampleTranslation"
             value={newExampleTranslation}
             onChange={(e) => setNewExampleTranslation(e.target.value)}
-            className="mb-2"
+            rows={3}
+            className="mb-2 w-full rounded border px-2 py-1"
           />
           <Label htmlFor="newRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
           <Input
@@ -743,7 +745,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
@@ -764,7 +766,7 @@ export function WordList({ wordbookId }: WordListProps) {
               </button>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div className={`w-28 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("createdAt")}>
                 {t("wordList.createdAt")}
                 {sortBy === "createdAt" ? (
@@ -778,7 +780,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 )}
               </button>
             </div>
-            <div className={`w-40 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
+            <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {displayWords.length ? (
             displayWords.map((w) => (
@@ -834,7 +836,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     "-"
                   )}
                 </div>
-                <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div className="flex-[3] min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.exampleSentence || "-"}
                 </div>
                 <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
@@ -867,10 +869,10 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.note || "-"}
                 </div>
-                <div className="w-28 px-2 py-2 border-r border-gray-200">
+                <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-40 px-2 py-2">
+                <div className="w-28 px-2 py-2">
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
@@ -943,18 +945,20 @@ export function WordList({ wordbookId }: WordListProps) {
                           </Button>
                         </div>
                         <Label htmlFor="editExampleSentence" className="mb-1">{t("wordList.example")}</Label>
-                        <Input
+                        <textarea
                           id="editExampleSentence"
                           value={editExampleSentence}
                           onChange={(e) => setEditExampleSentence(e.target.value)}
-                          className="mb-2"
+                          rows={3}
+                          className="mb-2 w-full rounded border px-2 py-1"
                         />
                         <Label htmlFor="editExampleTranslation" className="mb-1">{t("wordList.exampleTranslation")}</Label>
-                        <Input
+                        <textarea
                           id="editExampleTranslation"
                           value={editExampleTranslation}
                           onChange={(e) => setEditExampleTranslation(e.target.value)}
-                          className="mb-2"
+                          rows={3}
+                          className="mb-2 w-full rounded border px-2 py-1"
                         />
                         <Label htmlFor="editRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
                         <Input
