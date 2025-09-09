@@ -1,9 +1,9 @@
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
 
-i18n
-  .use(initReactI18next)
-  .init({
+export function initI18n() {
+  if (i18n.isInitialized) return i18n;
+
+  i18n.init({
     lng: "zh-Hant",
     fallbackLng: "zh-Hant",
     debug: true,
@@ -460,5 +460,8 @@ i18n
       },
     },
   });
+
+  return i18n;
+}
 
 export default i18n;

@@ -13,7 +13,7 @@ import {
   updateWord,
   Word,
 } from "@/lib/firestore-service";
-import "@/i18n/i18n";
+import "@/i18n/i18n-client";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
