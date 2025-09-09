@@ -8,6 +8,21 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useAuth } from "@/components/auth-provider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
@@ -69,63 +84,73 @@ export default function ReciteSettingsPage({ params }: PageProps) {
           </Button>
         </div>
       </div>
-      <h1 className="text-center text-2xl font-bold">
-        <span suppressHydrationWarning>
-          {mounted ? t("recite.settingsTitle") : ""}
-        </span>
-      </h1>
-      <div className="max-w-md mx-auto space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            {t("recite.count")}
-          </label>
-          <select
-            className="w-full border rounded p-2"
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-          >
-            {[5, 10, 15, 20, 30].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            {t("recite.mode")}
-          </label>
-          <select
-            className="w-full border rounded p-2"
-            value={mode}
-            onChange={(e) => setMode(e.target.value as Mode)}
-          >
-            {(
-              [
-                "random",
-                "masteryLow",
-                "masteryHigh",
-                "freqLow",
-                "freqHigh",
-                "recent",
-                "old",
-                "onlyUnknown",
-                "onlyImpression",
-                "onlyFamiliar",
-                "onlyMemorized",
-                "onlyFavorite",
-              ] as Mode[]
-            ).map((m) => (
-              <option key={m} value={m}>
-                {t(`recite.modes.${m}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button className="w-full" onClick={start}>
-          {t("recite.start")}
-        </Button>
-      </div>
+      <Card className="max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-center">
+            <span suppressHydrationWarning>
+              {mounted ? t("recite.settingsTitle") : ""}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="count-select">{t("recite.count")}</Label>
+            <Select
+              value={String(count)}
+              onValueChange={(value) => setCount(Number(value))}
+            >
+              <SelectTrigger id="count-select" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 15, 20, 30].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="mode-select">{t("recite.mode")}</Label>
+            <Select
+              value={mode}
+              onValueChange={(value) => setMode(value as Mode)}
+            >
+              <SelectTrigger id="mode-select" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(
+                  [
+                    "random",
+                    "masteryLow",
+                    "masteryHigh",
+                    "freqLow",
+                    "freqHigh",
+                    "recent",
+                    "old",
+                    "onlyUnknown",
+                    "onlyImpression",
+                    "onlyFamiliar",
+                    "onlyMemorized",
+                    "onlyFavorite",
+                  ] as Mode[]
+                ).map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {t(`recite.modes.${m}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button className="w-full" onClick={start}>
+            {t("recite.start")}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
