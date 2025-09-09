@@ -7,6 +7,8 @@ import {
   deleteDoc,
   updateDoc,
   Timestamp,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -273,6 +275,35 @@ export const deletePartOfSpeechTag = async (
   userId: string,
   tagId: string
 ): Promise<void> => {
-  const ref = doc(db, "users", userId, "posTags", tagId);
-  await deleteDoc(ref);
+  const tagRef = doc(db, "users", userId, "posTags", tagId);
+
+  // Remove the tag from any words that reference it
+  const wordbooksRef = collection(db, "users", userId, "wordbooks");
+  const wordbooksSnap = await getDocs(wordbooksRef);
+  await Promise.all(
+    wordbooksSnap.docs.map(async (wb) => {
+      const wordsRef = collection(
+        db,
+        "users",
+        userId,
+        "wordbooks",
+        wb.id,
+        "words"
+      );
+      const wordsSnap = await getDocs(
+        query(wordsRef, where("partOfSpeech", "array-contains", tagId))
+      );
+      await Promise.all(
+        wordsSnap.docs.map((docSnap) => {
+          const data = docSnap.data();
+          const updated = (data.partOfSpeech || []).filter(
+            (t: string) => t !== tagId
+          );
+          return updateDoc(docSnap.ref, { partOfSpeech: updated });
+        })
+      );
+    })
+  );
+
+  await deleteDoc(tagRef);
 };

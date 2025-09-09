@@ -370,11 +370,23 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const handleDeleteTag = async (id: string) => {
     if (!user) return;
+    if (!window.confirm(t("wordList.deleteTagConfirm1"))) return;
+    if (!window.confirm(t("wordList.deleteTagConfirm2"))) return;
     try {
       await deletePartOfSpeechTag(user.uid, id);
       setPosTags((prev) => prev.filter((t) => t.id !== id));
       setNewPartOfSpeech((p) => p.filter((t) => t !== id));
       setEditPartOfSpeech((p) => p.filter((t) => t !== id));
+      setTagFilter((f) => f.filter((t) => t !== id));
+      setTempTagFilter((f) => f.filter((t) => t !== id));
+      setWords((prev) =>
+        sortWords(
+          prev.map((w) => ({
+            ...w,
+            partOfSpeech: w.partOfSpeech.filter((t) => t !== id),
+          }))
+        )
+      );
     } catch (e) {
       console.error(e);
     }
@@ -836,10 +848,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     "-"
                   )}
                 </div>
-                <div className="flex-[3] min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {w.exampleSentence || "-"}
                 </div>
-                <div className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {w.exampleTranslation || "-"}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">

@@ -108,6 +108,9 @@ i18n
             deleteConfirm1: "Delete selected?",
             deleteConfirm2: "Really delete? This cannot be undone!",
             confirmDeleteWord: 'Delete "{{word}}"?',
+            deleteTagConfirm1: "Delete this tag?",
+            deleteTagConfirm2:
+              "Really delete this tag? Words using it will lose this tag.",
           },
           colors: {
             gray: "Gray",
@@ -217,6 +220,8 @@ i18n
             deleteConfirm1: "是否刪除?",
             deleteConfirm2: "真的要刪除嗎? 刪除後就不能再復原內容喔!",
             confirmDeleteWord: "確定要刪除『{{word}}』嗎？",
+            deleteTagConfirm1: "是否刪除此詞性？",
+            deleteTagConfirm2: "真的要刪除這個詞性嗎？使用此詞性的所有單字將會移除該詞性。",
           },
           colors: {
             gray: "灰色",
@@ -326,6 +331,9 @@ i18n
             deleteConfirm1: "削除しますか？",
             deleteConfirm2: "本当に削除しますか？削除すると元に戻せません！",
             confirmDeleteWord: '「{{word}}」を削除しますか？',
+            deleteTagConfirm1: "この品詞タグを削除しますか？",
+            deleteTagConfirm2:
+              "本当に削除しますか？このタグを使っている単語からも削除されます。",
           },
           colors: {
             gray: "グレー",
