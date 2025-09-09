@@ -14,11 +14,12 @@
     "jsx": "preserve",
     "incremental": true,
     "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
     "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+        {
+          "name": "next"
+        }
+      ],
     "paths": {
       "@/*": ["./src/*"],
       "firebase/*": ["./node_modules/firebase/*"]
