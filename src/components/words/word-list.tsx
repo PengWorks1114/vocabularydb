@@ -459,6 +459,7 @@ export function WordList({ wordbookId }: WordListProps) {
     return [
       w.word,
       w.translation,
+      w.pinyin || "",
       w.exampleSentence || "",
       w.exampleTranslation || "",
       w.relatedWords || "",
@@ -484,6 +485,12 @@ export function WordList({ wordbookId }: WordListProps) {
       : showFavorites
       ? t("wordList.noFavoriteWords")
       : t("wordList.noWords");
+
+  const overallMastery =
+    words.length > 0
+      ? words.reduce((sum, w) => sum + (w.mastery || 0), 0) / words.length
+      : 0;
+  const masteryColor = `hsl(${(overallMastery / 100) * 120}, 80%, 45%)`;
 
   if (loading || !mounted) {
     return (
@@ -655,6 +662,11 @@ export function WordList({ wordbookId }: WordListProps) {
             : t("wordList.showFavorites")}
         </Button>
         )}
+        {!bulkMode && (
+        <Button className="bg-orange-500 text-black hover:bg-orange-600">
+          {t("wordList.studyWords")}
+        </Button>
+        )}
         {bulkMode ? (
           <>
             <Button
@@ -683,12 +695,24 @@ export function WordList({ wordbookId }: WordListProps) {
             {t("wordList.bulkManage")}
           </Button>
         )}
-        <Input
-          placeholder={t("wordList.searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="ml-auto w-40"
-        />
+        <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span>{t("wordList.overallMastery")}</span>
+            <div className="h-2 w-24 rounded bg-gray-200">
+              <div
+                className="h-2 rounded"
+                style={{ width: `${overallMastery}%`, backgroundColor: masteryColor }}
+              />
+            </div>
+            <span>{overallMastery.toFixed(1)}%</span>
+          </div>
+          <Input
+            placeholder={t("wordList.searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-40"
+          />
+        </div>
       </div>
 
       <Dialog open={posDialogOpen} onOpenChange={setPosDialogOpen}>
