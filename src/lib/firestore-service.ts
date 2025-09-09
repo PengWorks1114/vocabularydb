@@ -33,6 +33,7 @@ export interface Word {
   exampleSentence: string;
   exampleTranslation: string;
   relatedWords: string;
+  usageFrequency: number;
   mastery: number;
   note: string;
   wordbookId: string;

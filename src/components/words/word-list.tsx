@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Star, ChevronUp, ChevronDown } from "lucide-react";
+import { Heart, Star, ChevronUp, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 function masteryLevelMin(score: number) {
@@ -43,6 +43,44 @@ function masteryLevelMin(score: number) {
   if (score >= 50) return 50;
   if (score >= 25) return 25;
   return 0;
+}
+
+function StarRating({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      {Array.from({ length: 5 }).map((_, i) => {
+        const full = value >= i + 1;
+        const half = !full && value >= i + 0.5;
+        return (
+          <button
+            key={i}
+            type="button"
+            className="relative h-5 w-5"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const v = i + (x < rect.width / 2 ? 0.5 : 1);
+              onChange(v === value ? 0 : v);
+            }}
+          >
+            <Star className="h-5 w-5 text-gray-300" />
+            {(full || half) && (
+              <Star
+                className="h-5 w-5 text-yellow-400 fill-yellow-400 absolute top-0 left-0"
+                style={half ? { clipPath: "inset(0 50% 0 0)" } : {}}
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 interface WordListProps {
@@ -93,7 +131,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("gray");
 
-  const [sortBy, setSortBy] = useState<"createdAt" | "mastery">("createdAt");
+  const [sortBy, setSortBy] = useState<"createdAt" | "mastery" | "usageFrequency">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
   const [search, setSearch] = useState("");
@@ -111,14 +149,18 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const sortWords = (list: Word[]) => {
     return [...list].sort((a, b) => {
-      const aVal =
-        sortBy === "createdAt"
-          ? a.createdAt?.toMillis() || 0
-          : a.mastery || 0;
-      const bVal =
-        sortBy === "createdAt"
-          ? b.createdAt?.toMillis() || 0
-          : b.mastery || 0;
+      let aVal: number;
+      let bVal: number;
+      if (sortBy === "createdAt") {
+        aVal = a.createdAt?.toMillis() || 0;
+        bVal = b.createdAt?.toMillis() || 0;
+      } else if (sortBy === "mastery") {
+        aVal = a.mastery || 0;
+        bVal = b.mastery || 0;
+      } else {
+        aVal = a.usageFrequency || 0;
+        bVal = b.usageFrequency || 0;
+      }
       return sortDir === "asc" ? aVal - bVal : bVal - aVal;
     });
   };
@@ -132,6 +174,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newExampleSentence, setNewExampleSentence] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
   const [newRelatedWords, setNewRelatedWords] = useState("");
+  const [newUsageFrequency, setNewUsageFrequency] = useState(0);
   const [newMastery, setNewMastery] = useState(0);
   const [newNote, setNewNote] = useState("");
   const [newFavorite, setNewFavorite] = useState(false);
@@ -146,6 +189,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [editExampleSentence, setEditExampleSentence] = useState("");
   const [editExampleTranslation, setEditExampleTranslation] = useState("");
   const [editRelatedWords, setEditRelatedWords] = useState("");
+  const [editUsageFrequency, setEditUsageFrequency] = useState(0);
   const [editMastery, setEditMastery] = useState(0);
   const [editNote, setEditNote] = useState("");
   const [editFavorite, setEditFavorite] = useState(false);
@@ -166,7 +210,9 @@ export function WordList({ wordbookId }: WordListProps) {
     );
   };
 
-  const toggleSort = (column: "createdAt" | "mastery") => {
+  const toggleSort = (
+    column: "createdAt" | "mastery" | "usageFrequency"
+  ) => {
     if (sortBy === column) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
@@ -244,6 +290,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setNewExampleSentence("");
     setNewExampleTranslation("");
     setNewRelatedWords("");
+    setNewUsageFrequency(0);
     setNewMastery(0);
     setNewNote("");
     setNewFavorite(false);
@@ -261,6 +308,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleSentence: newExampleSentence.trim(),
         exampleTranslation: newExampleTranslation.trim(),
         relatedWords: newRelatedWords.trim(),
+        usageFrequency: newUsageFrequency,
         mastery: Math.min(100, Math.max(0, Number(newMastery) || 0)),
         note: newNote.trim(),
         favorite: newFavorite,
@@ -284,6 +332,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditExampleSentence(w.exampleSentence);
     setEditExampleTranslation(w.exampleTranslation);
     setEditRelatedWords(w.relatedWords || "");
+    setEditUsageFrequency(w.usageFrequency || 0);
     setEditMastery(masteryLevelMin(w.mastery || 0));
     setEditNote(w.note);
     setEditFavorite(w.favorite);
@@ -301,6 +350,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
         relatedWords: editRelatedWords.trim(),
+        usageFrequency: editUsageFrequency,
         mastery: Math.min(100, Math.max(0, Number(editMastery) || 0)),
         note: editNote.trim(),
         favorite: editFavorite,
@@ -538,6 +588,11 @@ export function WordList({ wordbookId }: WordListProps) {
             onChange={(e) => setNewRelatedWords(e.target.value)}
             className="mb-2"
           />
+          <Label className="mb-1">{t("wordList.usageFrequency")}</Label>
+          <div className="mb-2 flex items-center gap-2">
+            <StarRating value={newUsageFrequency} onChange={setNewUsageFrequency} />
+            <span>{newUsageFrequency}⭐</span>
+          </div>
           <Label htmlFor="newNote" className="mb-1">{t("wordList.note")}</Label>
           <Input
             id="newNote"
@@ -760,7 +815,23 @@ export function WordList({ wordbookId }: WordListProps) {
               </div>
             )}
             <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.word")}</div>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+              <button
+                className={`flex items-center ${headerTextClass}`}
+                onClick={() => toggleSort("usageFrequency")}
+              >
+                {t("wordList.word")}
+                {sortBy === "usageFrequency" ? (
+                  sortDir === "desc" ? (
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 ml-1" />
+                  )
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                )}
+              </button>
+            </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
@@ -821,17 +892,18 @@ export function WordList({ wordbookId }: WordListProps) {
                 )}
                 <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
-                    <Star
+                    <Heart
                       className={`h-4 w-4 ${
                         w.favorite
-                          ? "fill-yellow-500 text-yellow-500"
-                          : "text-black"
+                          ? "fill-red-500 text-red-500"
+                          : "text-red-500"
                       }`}
                     />
                   </button>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
-                  {w.word}
+                  <div>{w.word}</div>
+                  <div className="text-xs text-muted-foreground">{(w.usageFrequency || 0)}⭐</div>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.pinyin || "-"}
@@ -991,6 +1063,11 @@ export function WordList({ wordbookId }: WordListProps) {
                           onChange={(e) => setEditRelatedWords(e.target.value)}
                           className="mb-2"
                         />
+                        <Label className="mb-1">{t("wordList.usageFrequency")}</Label>
+                        <div className="mb-2 flex items-center gap-2">
+                          <StarRating value={editUsageFrequency} onChange={setEditUsageFrequency} />
+                          <span>{editUsageFrequency}⭐</span>
+                        </div>
                         <Label htmlFor="editNote" className="mb-1">{t("wordList.note")}</Label>
                         <Input
                           id="editNote"
