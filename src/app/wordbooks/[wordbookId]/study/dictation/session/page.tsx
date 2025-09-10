@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, use, useCallback, useEffect, useState } from "react";
+import { FormEvent, use, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -126,6 +125,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [input, setInput] = useState("");
   const [correct, setCorrect] = useState<boolean | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -237,6 +237,12 @@ export default function DictationSessionPage({ params }: PageProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [showDetails, next]);
 
+  useEffect(() => {
+    if (step === "dictating") {
+      inputRef.current?.focus();
+    }
+  }, [index, step]);
+
   const repeatSet = () => {
     setIndex(0);
     setShowDetails(false);
@@ -257,8 +263,9 @@ export default function DictationSessionPage({ params }: PageProps) {
 
   const currentWord = sessionWords[index];
   const prompt = direction === "word" ? currentWord?.word : currentWord?.translation;
-  const answer = direction === "word" ? currentWord?.translation : currentWord?.word;
-  const placeholder = answer ? Array.from(answer).map(() => "_").join(" ") : "";
+  const answerText =
+    direction === "word" ? currentWord?.translation ?? "" : currentWord?.word ?? "";
+  const answerChars = Array.from(answerText);
 
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
@@ -292,34 +299,56 @@ export default function DictationSessionPage({ params }: PageProps) {
           </p>
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold">{prompt}</div>
-            {!showDetails ? (
-              <form onSubmit={submit} className="space-y-4">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={placeholder}
-                  className="text-center text-xl tracking-widest"
-                />
-              </form>
-            ) : (
-              <div className="space-y-2 text-left text-lg">
-                <div className="text-xl font-bold text-red-600">
-                  {t("wordList.translation")}: {currentWord.translation}
+              {!showDetails ? (
+                <form onSubmit={submit} className="space-y-4">
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="sr-only"
+                    autoComplete="off"
+                  />
+                  <div
+                    className="flex justify-center gap-2 text-2xl"
+                    onClick={() => inputRef.current?.focus()}
+                  >
+                    {answerChars.map((ch, i) =>
+                      ch === " " ? (
+                        <span key={i} className="w-4" />
+                      ) : (
+                        <span
+                          key={i}
+                          className="w-8 border-b-4 border-black text-center"
+                        >
+                          {input[i] ?? ""}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-2 text-left text-lg">
+                  <div
+                    className={`text-2xl font-bold text-center ${
+                      correct ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {correct ? t("dictation.correct") : t("dictation.wrong")}
+                  </div>
+                  <div className="text-xl font-bold text-red-600">
+                    {t("wordList.translation")}: {currentWord.translation}
+                  </div>
+                  <div>
+                    {t("wordList.pinyin")}: {currentWord.pinyin}
+                  </div>
+                  <div className="whitespace-pre-line">
+                    {t("wordList.example")}: {currentWord.exampleSentence}
+                  </div>
+                  <div className="whitespace-pre-line">
+                    {t("wordList.exampleTranslation")}: {currentWord.exampleTranslation}
+                  </div>
                 </div>
-                <div>
-                  {t("wordList.pinyin")}: {currentWord.pinyin}
-                </div>
-                <div className="whitespace-pre-line">
-                  {t("wordList.example")}: {currentWord.exampleSentence}
-                </div>
-                <div className="whitespace-pre-line">
-                  {t("wordList.exampleTranslation")}: {currentWord.exampleTranslation}
-                </div>
-                <div className="font-bold">
-                  {correct ? t("dictation.correct") : t("dictation.wrong")}
-                </div>
-              </div>
-            )}
+              )}
             {showDetails && (
               <Button className="w-full text-base" onClick={next}>
                 {t("dictation.next")}
