@@ -171,8 +171,8 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const headerTextClass = `${i18n.language !== "zh-Hant" ? "text-xs" : ""} whitespace-nowrap`;
 
-  const sortWords = (list: Word[]) => {
-    return [...list].sort((a, b) => {
+  const sortedWords = useMemo(() => {
+    return [...words].sort((a, b) => {
       let aVal: number;
       let bVal: number;
       if (sortBy === "createdAt") {
@@ -193,7 +193,7 @@ export function WordList({ wordbookId }: WordListProps) {
       }
       return sortDir === "asc" ? aVal - bVal : bVal - aVal;
     });
-  };
+  }, [words, sortBy, sortDir]);
 
   // Create
   const [creating, setCreating] = useState(false);
@@ -322,9 +322,8 @@ export function WordList({ wordbookId }: WordListProps) {
   });
 
   useEffect(() => {
-    setWords(sortWords(fetchedWords));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedWords, sortBy, sortDir]);
+    setWords(fetchedWords);
+  }, [fetchedWords]);
 
   const tagKey = useRef<string | null>(null);
   useEffect(() => {
@@ -381,7 +380,7 @@ export function WordList({ wordbookId }: WordListProps) {
         note: newNote.trim(),
         favorite: newFavorite,
       });
-      setWords((prev) => sortWords([created, ...prev]));
+      setWords((prev) => [created, ...prev]);
       resetCreateForm();
       setCreateOpen(false);
     } catch (e) {
@@ -432,9 +431,7 @@ export function WordList({ wordbookId }: WordListProps) {
         relatedWords: relatedWords || {},
       };
       await updateWord(user.uid, wordbookId, editTarget.id, updated);
-      setWords((prev) =>
-        sortWords(prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w)))
-      );
+      setWords((prev) => prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w)));
       setEditTarget(null);
     } catch (e) {
       console.error(e);
@@ -448,7 +445,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setDeletingId(wordId);
     try {
       await deleteWord(user.uid, wordbookId, wordId);
-      setWords((prev) => sortWords(prev.filter((w) => w.id !== wordId)));
+      setWords((prev) => prev.filter((w) => w.id !== wordId));
     } catch (e) {
       console.error(e);
     } finally {
@@ -466,12 +463,10 @@ export function WordList({ wordbookId }: WordListProps) {
         reviewDate: now,
       });
       setWords((prev) =>
-        sortWords(
-          prev.map((x) =>
-            x.id === w.id
-              ? { ...x, studyCount: newCount, reviewDate: now }
-              : x
-          )
+        prev.map((x) =>
+          x.id === w.id
+            ? { ...x, studyCount: newCount, reviewDate: now }
+            : x
         )
       );
     } catch (e) {
@@ -492,12 +487,10 @@ export function WordList({ wordbookId }: WordListProps) {
         mastery: masteryQuickValue,
       });
       setWords((prev) =>
-        sortWords(
-          prev.map((x) =>
-            x.id === masteryQuickWord.id
-              ? { ...x, mastery: masteryQuickValue }
-              : x
-          )
+        prev.map((x) =>
+          x.id === masteryQuickWord.id
+            ? { ...x, mastery: masteryQuickValue }
+            : x
         )
       );
     } catch (e) {
@@ -527,12 +520,10 @@ export function WordList({ wordbookId }: WordListProps) {
         partOfSpeech: posQuickValue,
       });
       setWords((prev) =>
-        sortWords(
-          prev.map((x) =>
-            x.id === posQuickWord.id
-              ? { ...x, partOfSpeech: posQuickValue }
-              : x
-          )
+        prev.map((x) =>
+          x.id === posQuickWord.id
+            ? { ...x, partOfSpeech: posQuickValue }
+            : x
         )
       );
     } catch (e) {
@@ -556,12 +547,10 @@ export function WordList({ wordbookId }: WordListProps) {
         usageFrequency: usageQuickValue,
       });
       setWords((prev) =>
-        sortWords(
-          prev.map((x) =>
-            x.id === usageQuickWord.id
-              ? { ...x, usageFrequency: usageQuickValue }
-              : x
-          )
+        prev.map((x) =>
+          x.id === usageQuickWord.id
+            ? { ...x, usageFrequency: usageQuickValue }
+            : x
         )
       );
     } catch (e) {
@@ -579,12 +568,10 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       await resetWordsProgress(user.uid, wordbookId, selectedIds);
       setWords((prev) =>
-        sortWords(
-          prev.map((w) =>
-            selectedIds.includes(w.id)
-              ? { ...w, mastery: 0, studyCount: 0, reviewDate: null }
-              : w
-          )
+        prev.map((w) =>
+          selectedIds.includes(w.id)
+            ? { ...w, mastery: 0, studyCount: 0, reviewDate: null }
+            : w
         )
       );
       setSelectedIds([]);
@@ -599,9 +586,7 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!window.confirm(t("wordList.deleteConfirm2"))) return;
     try {
       await bulkDeleteWords(user.uid, wordbookId, selectedIds);
-      setWords((prev) =>
-        sortWords(prev.filter((w) => !selectedIds.includes(w.id)))
-      );
+      setWords((prev) => prev.filter((w) => !selectedIds.includes(w.id)));
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
@@ -612,7 +597,7 @@ export function WordList({ wordbookId }: WordListProps) {
     const header =
       "word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note";
     const sanitize = (s: string) => s.replace(/,/g, " ").replace(/\n/g, " ");
-    const lines = words.map((w) => {
+    const lines = sortedWords.map((w) => {
       const parts = [
         w.word,
         w.pinyin || "",
@@ -646,7 +631,7 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       await updateWord(user.uid, wordbookId, word.id, { favorite: newVal });
       setWords((prev) =>
-        sortWords(prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w)))
+        prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w))
       );
     } catch (e) {
       console.error(e);
@@ -680,12 +665,10 @@ export function WordList({ wordbookId }: WordListProps) {
       setTagFilter((f) => f.filter((t) => t !== id));
       setTempTagFilter((f) => f.filter((t) => t !== id));
       setWords((prev) =>
-        sortWords(
-          prev.map((w) => ({
-            ...w,
-            partOfSpeech: w.partOfSpeech.filter((t) => t !== id),
-          }))
-        )
+        prev.map((w) => ({
+          ...w,
+          partOfSpeech: w.partOfSpeech.filter((t) => t !== id),
+        }))
       );
     } catch (e) {
       console.error(e);
@@ -694,7 +677,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const displayWords = useMemo(
     () =>
-      words.filter((w) => {
+      sortedWords.filter((w) => {
         if (showFavorites && !w.favorite) return false;
         if (tagFilter.length && !tagFilter.every((t) => w.partOfSpeech?.includes(t))) {
           return false;
@@ -711,7 +694,7 @@ export function WordList({ wordbookId }: WordListProps) {
           w.relatedWords?.opposite || "",
         ].some((f) => normalize(f).includes(term));
       }),
-    [words, showFavorites, tagFilter, search]
+    [sortedWords, showFavorites, tagFilter, search]
   );
   const totalPages = Math.max(1, Math.ceil(displayWords.length / PER_PAGE));
   const visibleWords = useMemo(
