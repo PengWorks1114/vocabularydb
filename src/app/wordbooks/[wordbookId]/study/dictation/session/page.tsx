@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { use, useCallback, useEffect, useState } from "react";
+import { FormEvent, use, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -31,6 +32,10 @@ type Mode =
   | "onlyFamiliar"
   | "onlyMemorized"
   | "onlyFavorite";
+
+type Direction = "word" | "translation";
+
+type Step = "dictating" | "finished" | "noWords";
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
@@ -97,47 +102,30 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
   return words.slice(0, count);
 }
 
-function computeMastery(current: number, choice: Answer): number {
-  const getRegion = (value: number): Answer => {
-    if (value >= 90) return "memorized";
-    if (value >= 50) return "familiar";
-    if (value >= 25) return "impression";
-    return "unknown";
-  };
-
-  const currentRegion = getRegion(current);
-
-  switch (choice) {
-    case "unknown":
-      return currentRegion === "unknown" ? current : 0;
-    case "impression":
-      return currentRegion === "impression" ? Math.min(100, current + 5) : 25;
-    case "familiar":
-      return currentRegion === "familiar" ? Math.min(100, current + 10) : 50;
-    case "memorized":
-      return currentRegion === "memorized"
-        ? Math.min(100, current + 1)
-        : 90;
+function computeMastery(current: number, correct: boolean): number {
+  if (correct) {
+    return current >= 90 ? Math.min(100, current + 1) : Math.min(100, current + 10);
   }
+  return Math.max(0, current - 25);
 }
 
-type Answer = "unknown" | "impression" | "familiar" | "memorized";
-type Step = "reciting" | "finished" | "noWords";
-
-export default function ReciteSessionPage({ params }: PageProps) {
+export default function DictationSessionPage({ params }: PageProps) {
   const { wordbookId } = use(params);
   const { auth } = useAuth();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const count = Number(searchParams?.get("count") ?? 5);
   const mode = (searchParams?.get("mode") as Mode) ?? "random";
+  const direction = (searchParams?.get("direction") as Direction) ?? "word";
   const [mounted, setMounted] = useState(false);
   const [words, setWords] = useState<Word[]>([]);
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
-  const [step, setStep] = useState<Step>("reciting");
+  const [step, setStep] = useState<Step>("dictating");
   const [index, setIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
+  const [input, setInput] = useState("");
+  const [correct, setCorrect] = useState<boolean | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -146,18 +134,15 @@ export default function ReciteSessionPage({ params }: PageProps) {
   useEffect(() => {
     const load = async () => {
       if (!auth.currentUser) return;
-      const all = await getWordsByWordbookId(
-        auth.currentUser.uid,
-        wordbookId
-      );
+      const all = await getWordsByWordbookId(auth.currentUser.uid, wordbookId);
       setWords(all);
       let drawn = drawWords(all, count, mode);
       if (drawn.length === 0 && mode.startsWith("only")) {
+        setStep("noWords");
         setSessionWords([]);
         setUsedIds(new Set());
         setIndex(0);
         setShowDetails(false);
-        setStep("noWords");
         return;
       }
       if (drawn.length === 0) {
@@ -167,7 +152,8 @@ export default function ReciteSessionPage({ params }: PageProps) {
       setUsedIds(new Set(drawn.map((w) => w.id)));
       setIndex(0);
       setShowDetails(false);
-      setStep("reciting");
+      setInput("");
+      setStep("dictating");
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,13 +186,18 @@ export default function ReciteSessionPage({ params }: PageProps) {
     setUsedIds(newUsed);
     setIndex(0);
     setShowDetails(false);
-    setStep("reciting");
+    setInput("");
+    setStep("dictating");
   };
 
-  const handleAnswer = async (choice: Answer) => {
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
     const word = sessionWords[index];
+    const answer = direction === "word" ? word.translation : word.word;
+    const isCorrect = input.trim().toLowerCase() === answer.trim().toLowerCase();
+    setCorrect(isCorrect);
     if (!auth.currentUser) return;
-    const newMastery = computeMastery(word.mastery, choice);
+    const newMastery = computeMastery(word.mastery, isCorrect);
     await updateWord(auth.currentUser.uid, wordbookId, word.id, {
       mastery: newMastery,
     });
@@ -230,6 +221,8 @@ export default function ReciteSessionPage({ params }: PageProps) {
     } else {
       setIndex(index + 1);
       setShowDetails(false);
+      setInput("");
+      setCorrect(null);
     }
   }, [index, sessionWords.length]);
 
@@ -247,7 +240,9 @@ export default function ReciteSessionPage({ params }: PageProps) {
   const repeatSet = () => {
     setIndex(0);
     setShowDetails(false);
-    setStep("reciting");
+    setInput("");
+    setCorrect(null);
+    setStep("dictating");
   };
 
   const nextSet = () => {
@@ -260,15 +255,20 @@ export default function ReciteSessionPage({ params }: PageProps) {
       : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
+  const currentWord = sessionWords[index];
+  const prompt = direction === "word" ? currentWord?.word : currentWord?.translation;
+  const answer = direction === "word" ? currentWord?.translation : currentWord?.word;
+  const placeholder = answer ? Array.from(answer).map(() => "_").join(" ") : "";
+
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
       <div className="flex items-center justify-between">
         <Link
-          href={`/wordbooks/${wordbookId}/study/recite`}
+          href={`/wordbooks/${wordbookId}/study/dictation`}
           className="text-sm text-muted-foreground"
           suppressHydrationWarning
         >
-          &larr; {mounted ? t("recite.settingsTitle") : ""}
+          &larr; {mounted ? t("dictation.settingsTitle") : ""}
         </Link>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
@@ -281,103 +281,55 @@ export default function ReciteSessionPage({ params }: PageProps) {
       </div>
       <h1 className="text-center text-3xl font-bold sm:text-4xl">
         <span suppressHydrationWarning>
-          {mounted ? t("studyPage.recite") : ""}
+          {mounted ? t("studyPage.dictation") : ""}
         </span>
       </h1>
 
-      {step === "reciting" && sessionWords.length > 0 && (
+      {step === "dictating" && sessionWords.length > 0 && (
         <div className="max-w-md mx-auto space-y-4">
           <p className="text-center text-base text-muted-foreground">
-            {t("recite.progress", {
-              current: index + 1,
-              total: sessionWords.length,
-            })}
+            {t("dictation.progress", { current: index + 1, total: sessionWords.length })}
           </p>
           <div className="border rounded p-6 space-y-4 text-center">
-            <div className="text-3xl font-bold">
-              {sessionWords[index].word}
-            </div>
-            {showDetails && (
+            <div className="text-3xl font-bold">{prompt}</div>
+            {!showDetails ? (
+              <form onSubmit={submit} className="space-y-4">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={placeholder}
+                  className="text-center text-xl tracking-widest"
+                />
+              </form>
+            ) : (
               <div className="space-y-2 text-left text-lg">
                 <div className="text-xl font-bold text-red-600">
-                  {t("wordList.translation")}: {sessionWords[index].translation}
+                  {t("wordList.translation")}: {currentWord.translation}
                 </div>
                 <div>
-                  {t("wordList.pinyin")}: {sessionWords[index].pinyin}
+                  {t("wordList.pinyin")}: {currentWord.pinyin}
                 </div>
                 <div className="whitespace-pre-line">
-                  {t("wordList.example")}: {sessionWords[index].exampleSentence}
+                  {t("wordList.example")}: {currentWord.exampleSentence}
                 </div>
                 <div className="whitespace-pre-line">
-                  {t("wordList.exampleTranslation")}: {sessionWords[index].exampleTranslation}
+                  {t("wordList.exampleTranslation")}: {currentWord.exampleTranslation}
+                </div>
+                <div className="font-bold">
+                  {correct ? t("dictation.correct") : t("dictation.wrong")}
                 </div>
               </div>
             )}
-            {!showDetails ? (
-              <>
-                <div className="grid grid-cols-4 gap-1">
-                  <Button
-                    size="sm"
-                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-base"
-                    onClick={() => handleAnswer("unknown")}
-                  >
-                    {t("wordList.masteryLevels.unknown")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 text-base"
-                    onClick={() => handleAnswer("impression")}
-                  >
-                    {t("wordList.masteryLevels.impression")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 text-base"
-                    onClick={() => handleAnswer("familiar")}
-                  >
-                    {t("wordList.masteryLevels.familiar")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-base"
-                    onClick={() => handleAnswer("memorized")}
-                  >
-                    {t("wordList.masteryLevels.memorized")}
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-center text-sm text-muted-foreground">
-                    {t("recite.masteryTitle")}
-                  </p>
-                  <div className="grid grid-cols-4 gap-1 text-xs text-muted-foreground">
-                    <p className="text-center">
-                      {t("recite.hints.unknown")}
-                    </p>
-                    <p className="text-center">
-                      {t("recite.hints.impression")}
-                    </p>
-                    <p className="text-center">
-                      {t("recite.hints.familiar")}
-                    </p>
-                    <p className="text-center">
-                      {t("recite.hints.memorized")}
-                    </p>
-                  </div>
-                </div>
-              </>
-            ) : (
+            {showDetails && (
               <Button className="w-full text-base" onClick={next}>
-                {t("recite.next")}
+                {t("dictation.next")}
               </Button>
             )}
           </div>
           <div className="h-3 bg-muted rounded">
             <div
               className="h-3 rounded"
-              style={{
-                width: `${progressPercent}%`,
-                backgroundColor: progressColor,
-              }}
+              style={{ width: `${progressPercent}%`, backgroundColor: progressColor }}
             />
           </div>
         </div>
@@ -386,9 +338,9 @@ export default function ReciteSessionPage({ params }: PageProps) {
       {step === "noWords" && (
         <div className="max-w-md mx-auto space-y-4 text-center">
           <p>{t(`recite.noWords.${mode}`)}</p>
-          <Link href={`/wordbooks/${wordbookId}/study/recite`} className="w-full">
+          <Link href={`/wordbooks/${wordbookId}/study/dictation`} className="w-full">
             <Button className="w-full" variant="outline">
-              {t("recite.finish")}
+              {t("dictation.finish")}
             </Button>
           </Link>
         </div>
@@ -397,7 +349,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
       {step === "finished" && (
         <div className="max-w-md mx-auto space-y-4 text-center">
           <p>
-            {t("recite.progress", {
+            {t("dictation.progress", {
               current: sessionWords.length,
               total: sessionWords.length,
             })}
@@ -407,12 +359,12 @@ export default function ReciteSessionPage({ params }: PageProps) {
               onClick={repeatSet}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
-              {t("recite.again")}
+              {t("dictation.again")}
             </Button>
-            <Button onClick={nextSet}>{t("recite.nextSet", { count })}</Button>
+            <Button onClick={nextSet}>{t("dictation.nextSet", { count })}</Button>
             <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
               <Button className="w-full" variant="outline">
-                {t("recite.finish")}
+                {t("dictation.finish")}
               </Button>
             </Link>
             <Link href={`/wordbooks/${wordbookId}`} className="w-full">
