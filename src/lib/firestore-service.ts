@@ -32,7 +32,10 @@ export interface Word {
   partOfSpeech: string[];
   exampleSentence: string;
   exampleTranslation: string;
-  relatedWords: string;
+  relatedWords?: {
+    same?: string;
+    opposite?: string;
+  };
   usageFrequency: number;
   mastery: number;
   note: string;

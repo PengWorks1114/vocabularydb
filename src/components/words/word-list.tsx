@@ -186,7 +186,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newPartOfSpeech, setNewPartOfSpeech] = useState<string[]>([]);
   const [newExampleSentence, setNewExampleSentence] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
-  const [newRelatedWords, setNewRelatedWords] = useState("");
+  const [newSynonym, setNewSynonym] = useState("");
+  const [newAntonym, setNewAntonym] = useState("");
   const [newUsageFrequency, setNewUsageFrequency] = useState(0);
   const [newMastery, setNewMastery] = useState(0);
   const [newNote, setNewNote] = useState("");
@@ -201,7 +202,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [editPartOfSpeech, setEditPartOfSpeech] = useState<string[]>([]);
   const [editExampleSentence, setEditExampleSentence] = useState("");
   const [editExampleTranslation, setEditExampleTranslation] = useState("");
-  const [editRelatedWords, setEditRelatedWords] = useState("");
+  const [editSynonym, setEditSynonym] = useState("");
+  const [editAntonym, setEditAntonym] = useState("");
   const [editUsageFrequency, setEditUsageFrequency] = useState(0);
   const [editMastery, setEditMastery] = useState(0);
   const [editNote, setEditNote] = useState("");
@@ -330,7 +332,8 @@ export function WordList({ wordbookId }: WordListProps) {
     setNewPartOfSpeech([]);
     setNewExampleSentence("");
     setNewExampleTranslation("");
-    setNewRelatedWords("");
+    setNewSynonym("");
+    setNewAntonym("");
     setNewUsageFrequency(0);
     setNewMastery(0);
     setNewNote("");
@@ -341,6 +344,13 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!user || !newWord.trim()) return;
     setCreating(true);
     try {
+      const relatedWords =
+        newSynonym.trim() || newAntonym.trim()
+          ? {
+              ...(newSynonym.trim() && { same: newSynonym.trim() }),
+              ...(newAntonym.trim() && { opposite: newAntonym.trim() }),
+            }
+          : undefined;
       const created = await createWord(user.uid, wordbookId, {
         word: newWord.trim(),
         pinyin: newPinyin.trim(),
@@ -348,7 +358,7 @@ export function WordList({ wordbookId }: WordListProps) {
         partOfSpeech: newPartOfSpeech,
         exampleSentence: newExampleSentence.trim(),
         exampleTranslation: newExampleTranslation.trim(),
-        relatedWords: newRelatedWords.trim(),
+        ...(relatedWords ? { relatedWords } : {}),
         usageFrequency: newUsageFrequency,
         mastery: Math.min(100, Math.max(0, Number(newMastery) || 0)),
         note: newNote.trim(),
@@ -372,7 +382,8 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditPartOfSpeech(w.partOfSpeech || []);
     setEditExampleSentence(w.exampleSentence);
     setEditExampleTranslation(w.exampleTranslation);
-    setEditRelatedWords(w.relatedWords || "");
+    setEditSynonym(w.relatedWords?.same || "");
+    setEditAntonym(w.relatedWords?.opposite || "");
     setEditUsageFrequency(w.usageFrequency || 0);
     setEditMastery(masteryLevelMin(w.mastery || 0));
     setEditNote(w.note);
@@ -383,18 +394,25 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!user || !editTarget) return;
     setUpdating(true);
     try {
-      const updated = {
+      const relatedWords =
+        editSynonym.trim() || editAntonym.trim()
+          ? {
+              ...(editSynonym.trim() && { same: editSynonym.trim() }),
+              ...(editAntonym.trim() && { opposite: editAntonym.trim() }),
+            }
+          : undefined;
+      const updated: Partial<Word> = {
         word: editWord.trim(),
         pinyin: editPinyin.trim(),
         translation: editTranslation.trim(),
         partOfSpeech: editPartOfSpeech,
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
-        relatedWords: editRelatedWords.trim(),
         usageFrequency: editUsageFrequency,
         mastery: Math.min(100, Math.max(0, Number(editMastery) || 0)),
         note: editNote.trim(),
         favorite: editFavorite,
+        relatedWords: relatedWords || {},
       };
       await updateWord(user.uid, wordbookId, editTarget.id, updated);
       setWords((prev) =>
@@ -503,7 +521,8 @@ export function WordList({ wordbookId }: WordListProps) {
       w.pinyin || "",
       w.exampleSentence || "",
       w.exampleTranslation || "",
-      w.relatedWords || "",
+      w.relatedWords?.same || "",
+      w.relatedWords?.opposite || "",
     ].some((f) => normalize(f).includes(term));
   });
   const allSelected =
@@ -629,13 +648,33 @@ export function WordList({ wordbookId }: WordListProps) {
             rows={3}
             className="mb-2 w-full rounded border px-2 py-1"
           />
-          <Label htmlFor="newRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
-          <Input
-            id="newRelatedWords"
-            value={newRelatedWords}
-            onChange={(e) => setNewRelatedWords(e.target.value)}
-            className="mb-2"
-          />
+          <Label className="mb-1">{t("wordList.relatedWords")}</Label>
+          <div className="mb-2 flex gap-2">
+            <div className="flex-1">
+              <div className="mb-1 text-xs">
+                <span className="px-1 rounded bg-blue-100 text-blue-800">
+                  {t("wordList.synonym")}
+                </span>
+              </div>
+              <Input
+                id="newSynonym"
+                value={newSynonym}
+                onChange={(e) => setNewSynonym(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <div className="mb-1 text-xs">
+                <span className="px-1 rounded bg-gray-200 text-gray-800">
+                  {t("wordList.antonym")}
+                </span>
+              </div>
+              <Input
+                id="newAntonym"
+                value={newAntonym}
+                onChange={(e) => setNewAntonym(e.target.value)}
+              />
+            </div>
+          </div>
           <Label className="mb-1">{t("wordList.usageFrequency")}</Label>
           <div className="mb-2 flex items-center gap-2">
             <StarRating value={newUsageFrequency} onChange={setNewUsageFrequency} />
@@ -871,7 +910,7 @@ export function WordList({ wordbookId }: WordListProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full">
+      <div className="w-full overflow-x-auto">
         <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
             {bulkMode && (
@@ -1037,7 +1076,29 @@ export function WordList({ wordbookId }: WordListProps) {
                   {highlight(w.exampleTranslation || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {highlight(w.relatedWords || "-")}
+                  <div className="space-y-1">
+                    {w.relatedWords?.same && (
+                      <div className="flex items-start text-xs">
+                        <span className="px-1 mr-1 rounded bg-blue-100 text-blue-800">
+                          {t("wordList.synonym")}
+                        </span>
+                        <span className="break-words">
+                          {highlight(w.relatedWords.same)}
+                        </span>
+                      </div>
+                    )}
+                    {w.relatedWords?.opposite && (
+                      <div className="flex items-start text-xs">
+                        <span className="px-1 mr-1 rounded bg-gray-200 text-gray-800">
+                          {t("wordList.antonym")}
+                        </span>
+                        <span className="break-words">
+                          {highlight(w.relatedWords.opposite)}
+                        </span>
+                      </div>
+                    )}
+                    {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
+                  </div>
                 </div>
                 <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
@@ -1160,13 +1221,33 @@ export function WordList({ wordbookId }: WordListProps) {
                           rows={3}
                           className="mb-2 w-full rounded border px-2 py-1"
                         />
-                        <Label htmlFor="editRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
-                        <Input
-                          id="editRelatedWords"
-                          value={editRelatedWords}
-                          onChange={(e) => setEditRelatedWords(e.target.value)}
-                          className="mb-2"
-                        />
+                        <Label className="mb-1">{t("wordList.relatedWords")}</Label>
+                        <div className="mb-2 flex gap-2">
+                          <div className="flex-1">
+                            <div className="mb-1 text-xs">
+                              <span className="px-1 rounded bg-blue-100 text-blue-800">
+                                {t("wordList.synonym")}
+                              </span>
+                            </div>
+                            <Input
+                              id="editSynonym"
+                              value={editSynonym}
+                              onChange={(e) => setEditSynonym(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="mb-1 text-xs">
+                              <span className="px-1 rounded bg-gray-200 text-gray-800">
+                                {t("wordList.antonym")}
+                              </span>
+                            </div>
+                            <Input
+                              id="editAntonym"
+                              value={editAntonym}
+                              onChange={(e) => setEditAntonym(e.target.value)}
+                            />
+                          </div>
+                        </div>
                         <Label className="mb-1">{t("wordList.usageFrequency")}</Label>
                         <div className="mb-2 flex items-center gap-2">
                           <StarRating value={editUsageFrequency} onChange={setEditUsageFrequency} />
