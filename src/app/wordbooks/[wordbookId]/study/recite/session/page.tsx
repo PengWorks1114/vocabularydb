@@ -51,10 +51,10 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
       words = words.filter((w) => w.mastery >= 25 && w.mastery < 50);
       break;
     case "onlyFamiliar":
-      words = words.filter((w) => w.mastery >= 50 && w.mastery < 75);
+      words = words.filter((w) => w.mastery >= 50 && w.mastery < 90);
       break;
     case "onlyMemorized":
-      words = words.filter((w) => w.mastery >= 75);
+      words = words.filter((w) => w.mastery >= 90);
       break;
     case "onlyFavorite":
       words = words.filter((w) => w.favorite);
@@ -102,7 +102,7 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
 
 function computeMastery(current: number, choice: Answer): number {
   const getRegion = (value: number): Answer => {
-    if (value >= 75) return "memorized";
+    if (value >= 90) return "memorized";
     if (value >= 50) return "familiar";
     if (value >= 25) return "impression";
     return "unknown";
@@ -118,7 +118,7 @@ function computeMastery(current: number, choice: Answer): number {
     case "familiar":
       return currentRegion === "familiar" ? Math.min(100, current + 10) : 50;
     case "memorized":
-      return currentRegion === "memorized" ? current : 75;
+      return currentRegion === "memorized" ? current : 90;
   }
 }
 
