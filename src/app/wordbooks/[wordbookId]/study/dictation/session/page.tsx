@@ -48,8 +48,18 @@ function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-function drawWords(all: Word[], count: number, mode: Mode): Word[] {
+function drawWords(
+  all: Word[],
+  count: number,
+  mode: Mode,
+  direction: Direction
+): Word[] {
   let words = [...all];
+  if (direction === "word") {
+    words = words.filter((w) => w.translation);
+  } else {
+    words = words.filter((w) => w.word);
+  }
   switch (mode) {
     case "onlyUnknown":
       words = words.filter((w) => w.mastery < 25);
@@ -141,6 +151,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [input, setInput] = useState("");
   const [correct, setCorrect] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isComposing, setIsComposing] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -151,7 +162,7 @@ export default function DictationSessionPage({ params }: PageProps) {
       if (!auth.currentUser) return;
       const all = await getWordsByWordbookId(auth.currentUser.uid, wordbookId);
       setWords(all);
-      let drawn = drawWords(all, count, mode);
+      let drawn = drawWords(all, count, mode, direction);
       if (drawn.length === 0 && mode.startsWith("only")) {
         setStep("noWords");
         setSessionWords([]);
@@ -161,7 +172,7 @@ export default function DictationSessionPage({ params }: PageProps) {
         return;
       }
       if (drawn.length === 0) {
-        drawn = drawWords(all, count, "random");
+        drawn = drawWords(all, count, "random", direction);
       }
       setSessionWords(drawn);
       setUsedIds(new Set(drawn.map((w) => w.id)));
@@ -185,14 +196,14 @@ export default function DictationSessionPage({ params }: PageProps) {
       available = [...words];
       newUsed = new Set();
     }
-    let drawn = drawWords(available, count, mode);
+    let drawn = drawWords(available, count, mode, direction);
     if (drawn.length === 0 && mode.startsWith("only")) {
       setSessionWords([]);
       setStep("noWords");
       return;
     }
     if (drawn.length === 0) {
-      drawn = drawWords(words, count, "random");
+      drawn = drawWords(words, count, "random", direction);
       newUsed = new Set(drawn.map((w) => w.id));
     } else {
       drawn.forEach((w) => newUsed.add(w.id));
@@ -207,9 +218,12 @@ export default function DictationSessionPage({ params }: PageProps) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isComposing) return;
     const word = sessionWords[index];
-    const answer = direction === "word" ? word.translation : word.word;
-    const isCorrect = input.trim().toLowerCase() === answer.trim().toLowerCase();
+    const answer =
+      direction === "word" ? word.translation ?? "" : word.word ?? "";
+    const isCorrect =
+      input.trim().toLowerCase() === answer.trim().toLowerCase();
     setCorrect(isCorrect);
     if (!auth.currentUser) return;
     const newMastery = computeMastery(word.mastery, isCorrect);
@@ -316,35 +330,42 @@ export default function DictationSessionPage({ params }: PageProps) {
           </p>
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold">{prompt}</div>
-              {!showDetails ? (
-                <form onSubmit={submit} className="space-y-4">
+            {!showDetails ? (
+              <form onSubmit={submit} className="space-y-4">
+                <div
+                  className="relative mt-4 flex justify-center gap-2 text-2xl"
+                  onClick={() => inputRef.current?.focus()}
+                >
                   <input
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="sr-only"
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={() => setIsComposing(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && isComposing) {
+                        e.preventDefault();
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0"
                     autoComplete="off"
                   />
-                  <div
-                    className="flex justify-center gap-2 text-2xl"
-                    onClick={() => inputRef.current?.focus()}
-                  >
-                    {answerChars.map((ch, i) =>
-                      ch === " " ? (
-                        <span key={i} className="w-4" />
-                      ) : (
-                        <span
-                          key={i}
-                          className="w-8 border-b-4 border-black text-center"
-                        >
-                          {input[i] ?? ""}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-2 text-left text-lg">
+                  {answerChars.map((ch, i) =>
+                    ch === " " ? (
+                      <span key={i} className="w-4" />
+                    ) : (
+                      <span
+                        key={i}
+                        className="w-8 border-b-4 border-black text-center"
+                      >
+                        {input[i] ?? ""}
+                      </span>
+                    )
+                  )}
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-2 text-left text-lg">
                   <div
                     className={`text-2xl font-bold text-center ${
                       correct ? "text-green-600" : "text-red-600"
