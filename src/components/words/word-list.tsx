@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Heart, Star, ChevronUp, ChevronDown } from "lucide-react";
+import { Heart, Star, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 
@@ -119,6 +119,13 @@ const masteryOptions = [
   { key: "memorized", value: 90, cls: "bg-green-600 text-white" },
 ];
 
+type SortField =
+  | "createdAt"
+  | "reviewDate"
+  | "mastery"
+  | "usageFrequency"
+  | "studyCount";
+
 // Word management component: display, create, edit, delete
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
@@ -132,13 +139,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("gray");
 
-  const [sortBy, setSortBy] = useState<
-    | "createdAt"
-    | "reviewDate"
-    | "mastery"
-    | "usageFrequency"
-    | "studyCount"
-  >("createdAt");
+  const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
   const [search, setSearch] = useState("");
@@ -223,22 +224,6 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditPartOfSpeech((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
     );
-  };
-
-  const toggleSort = (
-    column:
-      | "createdAt"
-      | "reviewDate"
-      | "mastery"
-      | "usageFrequency"
-      | "studyCount"
-  ) => {
-    if (sortBy === column) {
-      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy(column);
-      setSortDir("desc");
-    }
   };
 
   const openFilterDialog = () => {
@@ -860,6 +845,25 @@ export function WordList({ wordbookId }: WordListProps) {
             </div>
             <span>{overallMastery.toFixed(1)}%</span>
           </div>
+          <select
+            className="border rounded p-1 text-sm"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortField)}
+          >
+            <option value="createdAt">{t("wordList.createdAt")}</option>
+            <option value="reviewDate">{t("wordList.reviewDate")}</option>
+            <option value="usageFrequency">{t("wordList.usageFrequency")}</option>
+            <option value="mastery">{t("wordList.mastery")}</option>
+            <option value="studyCount">{t("wordList.studyCount")}</option>
+          </select>
+          <label className="flex items-center gap-1 text-sm">
+            <input
+              type="checkbox"
+              checked={sortDir === "asc"}
+              onChange={(e) => setSortDir(e.target.checked ? "asc" : "desc")}
+            />
+            {t("wordList.reverseOrder")}
+          </label>
           <Input
             placeholder={t("wordList.searchPlaceholder")}
             value={search}
@@ -994,21 +998,7 @@ export function WordList({ wordbookId }: WordListProps) {
             )}
             <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button
-                className={`flex items-center ${headerTextClass}`}
-                onClick={() => toggleSort("usageFrequency")}
-              >
-                {t("wordList.word")}
-                {sortBy === "usageFrequency" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
+              <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
@@ -1021,66 +1011,11 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button
-                className={`flex items-center ${headerTextClass}`}
-                onClick={() => toggleSort("mastery")}
-              >
-                {t("wordList.mastery")}
-                {sortBy === "mastery" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
-            </div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("reviewDate")}>
-                {t("wordList.reviewDate")}
-                {sortBy === "reviewDate" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
-            </div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("studyCount")}>
-                {t("wordList.studyCount")}
-                {sortBy === "studyCount" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
-            </div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("createdAt")}>
-                {t("wordList.createdAt")}
-                {sortBy === "createdAt" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
-            </div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {displayWords.length ? (
