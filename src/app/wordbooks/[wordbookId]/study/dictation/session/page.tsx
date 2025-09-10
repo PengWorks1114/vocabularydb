@@ -228,19 +228,32 @@ export default function DictationSessionPage({ params }: PageProps) {
     if (!auth.currentUser) return;
     const newMastery = computeMastery(word.mastery, isCorrect);
     const now = Timestamp.now();
+    const newCount = (word.studyCount || 0) + 1;
     await updateWord(auth.currentUser.uid, wordbookId, word.id, {
       mastery: newMastery,
       reviewDate: now,
+      studyCount: newCount,
     });
     setSessionWords((prev) => {
       const copy = [...prev];
-      copy[index] = { ...word, mastery: newMastery, reviewDate: now };
+      copy[index] = {
+        ...word,
+        mastery: newMastery,
+        reviewDate: now,
+        studyCount: newCount,
+      };
       return copy;
     });
     setWords((prev) => {
       const copy = [...prev];
       const i = copy.findIndex((w) => w.id === word.id);
-      if (i !== -1) copy[i] = { ...word, mastery: newMastery, reviewDate: now };
+      if (i !== -1)
+        copy[i] = {
+          ...word,
+          mastery: newMastery,
+          reviewDate: now,
+          studyCount: newCount,
+        };
       return copy;
     });
     setShowDetails(true);

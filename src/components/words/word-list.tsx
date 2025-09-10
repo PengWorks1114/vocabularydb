@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -133,7 +133,11 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newTagColor, setNewTagColor] = useState("gray");
 
   const [sortBy, setSortBy] = useState<
-    "createdAt" | "reviewDate" | "mastery" | "usageFrequency"
+    | "createdAt"
+    | "reviewDate"
+    | "mastery"
+    | "usageFrequency"
+    | "studyCount"
   >("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
@@ -163,6 +167,9 @@ export function WordList({ wordbookId }: WordListProps) {
       } else if (sortBy === "mastery") {
         aVal = a.mastery || 0;
         bVal = b.mastery || 0;
+      } else if (sortBy === "studyCount") {
+        aVal = a.studyCount || 0;
+        bVal = b.studyCount || 0;
       } else {
         aVal = a.usageFrequency || 0;
         bVal = b.usageFrequency || 0;
@@ -217,7 +224,12 @@ export function WordList({ wordbookId }: WordListProps) {
   };
 
   const toggleSort = (
-    column: "createdAt" | "reviewDate" | "mastery" | "usageFrequency"
+    column:
+      | "createdAt"
+      | "reviewDate"
+      | "mastery"
+      | "usageFrequency"
+      | "studyCount"
   ) => {
     if (sortBy === column) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -253,6 +265,29 @@ export function WordList({ wordbookId }: WordListProps) {
       .replace(/[\u30a1-\u30f6]/g, (c) =>
         String.fromCharCode(c.charCodeAt(0) - 0x60)
       );
+
+  const highlight = (text: string) => {
+    if (!search.trim()) return text;
+    const term = search.trim();
+    const normText = normalize(text);
+    const normTerm = normalize(term);
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let index = normText.indexOf(normTerm);
+    if (index === -1) return text;
+    while (index !== -1) {
+      parts.push(text.slice(lastIndex, index));
+      parts.push(
+        <mark key={index} className="bg-yellow-200">
+          {text.slice(index, index + normTerm.length)}
+        </mark>
+      );
+      lastIndex = index + normTerm.length;
+      index = normText.indexOf(normTerm, lastIndex);
+    }
+    parts.push(text.slice(lastIndex));
+    return parts;
+  };
 
   async function load() {
     if (!user) return;
@@ -911,6 +946,20 @@ export function WordList({ wordbookId }: WordListProps) {
               </button>
             </div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("studyCount")}>
+                {t("wordList.studyCount")}
+                {sortBy === "studyCount" ? (
+                  sortDir === "desc" ? (
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 ml-1" />
+                  )
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                )}
+              </button>
+            </div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("createdAt")}>
                 {t("wordList.createdAt")}
                 {sortBy === "createdAt" ? (
@@ -955,10 +1004,10 @@ export function WordList({ wordbookId }: WordListProps) {
                   <div className="text-xs text-muted-foreground">{(w.usageFrequency || 0)}⭐</div>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.pinyin || "-"}
+                  {highlight(w.pinyin || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.translation || "-"}
+                  {highlight(w.translation || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.partOfSpeech.length ? (
@@ -982,13 +1031,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
-                  {w.exampleSentence || "-"}
+                  {highlight(w.exampleSentence || "-")}
                 </div>
                 <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
-                  {w.exampleTranslation || "-"}
+                  {highlight(w.exampleTranslation || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.relatedWords || "-"}
+                  {highlight(w.relatedWords || "-")}
                 </div>
                 <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
@@ -1012,10 +1061,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.note || "-"}
+                  {highlight(w.note || "-")}
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.reviewDate?.toDate().toLocaleDateString() || "-"}
+                </div>
+                <div className="w-24 px-2 py-2 border-r border-gray-200">
+                  {w.studyCount ?? 0}
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
