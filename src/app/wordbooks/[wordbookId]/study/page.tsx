@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { getWordsByWordbookId } from "@/lib/firestore-service";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -22,8 +22,12 @@ export default function StudyPage({ params }: PageProps) {
   const [wordCount, setWordCount] = useState(0);
   const [mounted, setMounted] = useState(false);
 
+  const loadKey = useRef<string>();
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
+    const key = `${user.uid}-${wordbookId}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
     getWordsByWordbookId(user.uid, wordbookId).then((words) => {
       setWordCount(words.length);
       const mastery =
@@ -32,7 +36,7 @@ export default function StudyPage({ params }: PageProps) {
           : 0;
       setOverallMastery(mastery);
     });
-  }, [user, wordbookId]);
+  }, [user?.uid, wordbookId]);
 
   useEffect(() => {
     setMounted(true);

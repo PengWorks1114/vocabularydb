@@ -152,15 +152,20 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [correct, setCorrect] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isComposing, setIsComposing] = useState(false);
+  const loadKey = useRef<string>();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const key = `${uid}-${wordbookId}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
     const load = async () => {
-      if (!auth.currentUser) return;
-      const all = await getWordsByWordbookId(auth.currentUser.uid, wordbookId);
+      const all = await getWordsByWordbookId(uid, wordbookId);
       setWords(all);
       let drawn = drawWords(all, count, mode, direction);
       if (drawn.length === 0 && mode.startsWith("only")) {
@@ -183,7 +188,7 @@ export default function DictationSessionPage({ params }: PageProps) {
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.currentUser, wordbookId]);
+  }, [auth.currentUser?.uid, wordbookId]);
 
   const handleLogout = async () => {
     await signOut(auth);

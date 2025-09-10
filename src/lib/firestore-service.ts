@@ -56,6 +56,7 @@ export interface PartOfSpeechTag {
 // simple in-memory cache to avoid repeated reads for the same wordbook
 const wordCache: Record<string, Word[]> = {};
 const makeCacheKey = (userId: string, wordbookId: string) => `${userId}_${wordbookId}`;
+const posTagCache: Record<string, PartOfSpeechTag[]> = {};
 
 // Get all wordbooks for a user
 export const getWordbooksByUserId = async (
@@ -272,12 +273,14 @@ export const deleteWord = async (
 export const getPartOfSpeechTags = async (
   userId: string
 ): Promise<PartOfSpeechTag[]> => {
+  if (posTagCache[userId]) return posTagCache[userId];
   const colRef = collection(db, "users", userId, "posTags");
   const snapshot = await getDocs(colRef);
   const tags: PartOfSpeechTag[] = [];
   snapshot.forEach((docSnap) => {
     tags.push({ id: docSnap.id, ...docSnap.data() } as PartOfSpeechTag);
   });
+  posTagCache[userId] = tags;
   return tags;
 };
 
@@ -288,7 +291,9 @@ export const createPartOfSpeechTag = async (
 ): Promise<PartOfSpeechTag> => {
   const colRef = collection(db, "users", userId, "posTags");
   const docRef = await addDoc(colRef, { ...data, userId });
-  return { id: docRef.id, ...data, userId };
+  const tag = { id: docRef.id, ...data, userId } as PartOfSpeechTag;
+  if (posTagCache[userId]) posTagCache[userId].push(tag);
+  return tag;
 };
 
 // Update part-of-speech tag
@@ -299,6 +304,11 @@ export const updatePartOfSpeechTag = async (
 ): Promise<void> => {
   const ref = doc(db, "users", userId, "posTags", tagId);
   await updateDoc(ref, data);
+  if (posTagCache[userId]) {
+    posTagCache[userId] = posTagCache[userId].map((t) =>
+      t.id === tagId ? { ...t, ...data } : t
+    );
+  }
 };
 
 // Delete part-of-speech tag
@@ -337,4 +347,7 @@ export const deletePartOfSpeechTag = async (
   );
 
   await deleteDoc(tagRef);
+  if (posTagCache[userId]) {
+    posTagCache[userId] = posTagCache[userId].filter((t) => t.id !== tagId);
+  }
 };

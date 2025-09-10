@@ -164,6 +164,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [usageQuickValue, setUsageQuickValue] = useState(0);
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const loadKey = useRef<string>();
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -325,14 +326,20 @@ export function WordList({ wordbookId }: WordListProps) {
   }
 
   useEffect(() => {
+    if (!user?.uid) return;
+    const key = `${user.uid}-${wordbookId}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, wordbookId]);
 
+  const tagKey = useRef<string>();
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
+    if (tagKey.current === user.uid) return;
+    tagKey.current = user.uid;
     getPartOfSpeechTags(user.uid).then(setPosTags);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
   useEffect(() => {

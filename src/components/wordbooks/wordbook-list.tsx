@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -83,10 +83,15 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     }
   }
 
+  const loadKey = useRef<string>();
   useEffect(() => {
+    if (!user?.uid) return;
+    const key = `${user.uid}-${trashed}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  }, [user?.uid, trashed]);
 
   const handleCreate = async () => {
     if (!user || !newName.trim()) return;

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
@@ -153,18 +153,20 @@ export default function ReciteSessionPage({ params }: PageProps) {
   const [step, setStep] = useState<Step>("reciting");
   const [index, setIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
+  const loadKey = useRef<string>();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const key = `${uid}-${wordbookId}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
     const load = async () => {
-      if (!auth.currentUser) return;
-      const all = await getWordsByWordbookId(
-        auth.currentUser.uid,
-        wordbookId
-      );
+      const all = await getWordsByWordbookId(uid, wordbookId);
       setWords(all);
       let drawn = drawWords(all, count, mode);
       if (drawn.length === 0 && mode.startsWith("only")) {
@@ -186,7 +188,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.currentUser, wordbookId]);
+  }, [auth.currentUser?.uid, wordbookId]);
 
   const handleLogout = async () => {
     await signOut(auth);

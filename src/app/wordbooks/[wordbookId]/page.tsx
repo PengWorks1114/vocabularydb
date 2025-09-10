@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { WordList } from "@/components/words/word-list";
 import { useAuth } from "@/components/auth-provider";
 import { getWordbook } from "@/lib/firestore-service";
@@ -21,10 +21,14 @@ export default function WordbookPage({ params }: PageProps) {
   const [name, setName] = useState("");
   const [mounted, setMounted] = useState(false);
 
+  const loadKey = useRef<string>();
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
+    const key = `${user.uid}-${wordbookId}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
     getWordbook(user.uid, wordbookId).then((wb) => setName(wb?.name || ""));
-  }, [user, wordbookId]);
+  }, [user?.uid, wordbookId]);
 
   useEffect(() => {
     setMounted(true);
