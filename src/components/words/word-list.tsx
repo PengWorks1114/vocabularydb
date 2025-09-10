@@ -456,6 +456,38 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
+  const handleExportCsv = () => {
+    const header =
+      "word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note";
+    const sanitize = (s: string) => s.replace(/,/g, " ").replace(/\n/g, " ");
+    const lines = words.map((w) => {
+      const parts = [
+        w.word,
+        w.pinyin || "",
+        w.translation || "",
+        w.partOfSpeech.join(";"),
+        sanitize(w.exampleSentence || ""),
+        sanitize(w.exampleTranslation || ""),
+        w.relatedWords?.same || "",
+        w.relatedWords?.opposite || "",
+        String(w.usageFrequency ?? 0),
+        String(w.mastery ?? 0),
+        sanitize(w.note || ""),
+      ];
+      return parts.join(",");
+    });
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${wordbookId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const toggleFavorite = async (word: Word) => {
     if (!user) return;
     const newVal = !word.favorite;
@@ -747,24 +779,14 @@ export function WordList({ wordbookId }: WordListProps) {
         </Button>
         )}
         {!bulkMode && (
-        <Button
-          className="bg-orange-500 text-black hover:bg-orange-600"
-          asChild
-        >
-          <Link href={`/wordbooks/${wordbookId}/study`}>
-            {t("wordList.studyWords")}
-          </Link>
-        </Button>
-        )}
-        {!bulkMode && (
-        <Button
-          className="bg-blue-500 text-white hover:bg-blue-600"
-          asChild
-        >
-          <Link href={`/wordbooks/${wordbookId}/import`}>
-            {t("wordList.bulkImport")}
-          </Link>
-        </Button>
+          <Button
+            className="bg-orange-500 text-black hover:bg-orange-600"
+            asChild
+          >
+            <Link href={`/wordbooks/${wordbookId}/study`}>
+              {t("wordList.studyWords")}
+            </Link>
+          </Button>
         )}
         {bulkMode ? (
           <>
@@ -778,13 +800,26 @@ export function WordList({ wordbookId }: WordListProps) {
               {t("wordList.cancelManage")}
             </Button>
             <Button
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              asChild
+            >
+              <Link href={`/wordbooks/${wordbookId}/import`}>
+                {t("wordList.bulkImport")}
+              </Link>
+            </Button>
+            <Button
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              onClick={handleExportCsv}
+            >
+              {t("wordList.exportCsv")}
+            </Button>
+            <Button
               className="bg-red-500 text-white hover:bg-red-600"
               onClick={handleBulkDelete}
               disabled={!selectedIds.length}
             >
               {t("wordList.bulkDelete")}
             </Button>
-            <Button>{t("wordList.exportCsv")}</Button>
           </>
         ) : (
           <Button

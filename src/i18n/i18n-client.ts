@@ -163,8 +163,10 @@ i18n
             exportCsv: "Export CSV",
             bulkImport: "Bulk Import",
             import: "Import",
-            bulkImportExample:
-              "Example: word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note",
+            bulkImportExample: `Example:
+word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note
+apple,,蘋果,n.,This is an apple.,這是一顆蘋果.,水果,,0,0,
+run,,跑,v.,We run.,我們跑,,,0,0,`,
             importSuccess: "Import successful",
             importFailed: "Import failed",
             studyWords: "Study Words",
@@ -352,8 +354,10 @@ i18n
             exportCsv: "匯出CSV",
             bulkImport: "批量匯入",
             import: "匯入",
-            bulkImportExample:
-              "範例: 單字,拼音,翻譯,詞性,例句,例句翻譯,同義詞,反義詞,使用頻率,掌握度,備註",
+            bulkImportExample: `範例:
+單字,拼音,翻譯,詞性,例句,例句翻譯,同義詞,反義詞,使用頻率,掌握度,備註
+apple,,蘋果,名詞,This is an apple.,這是一顆蘋果.,水果,,0,0,
+run,,跑,動詞,We run.,我們跑,,,0,0,`,
             importSuccess: "匯入成功",
             importFailed: "匯入失敗",
             studyWords: "背誦單字",
@@ -540,8 +544,10 @@ i18n
             exportCsv: "CSV出力",
             bulkImport: "一括インポート",
             import: "インポート",
-            bulkImportExample:
-              "例: 単語,ピンイン,翻訳,品詞,例文,例文訳,同義語,反意語,使用頻度,習得度,メモ",
+            bulkImportExample: `例:
+単語,ピンイン,翻訳,品詞,例文,例文訳,同義語,反意語,使用頻度,習得度,メモ
+apple,,蘋果,名詞,This is an apple.,這是一顆蘋果.,水果,,0,0,
+run,,跑,動詞,We run.,我們跑,,,0,0,`,
             importSuccess: "インポート成功",
             importFailed: "インポート失敗",
             studyWords: "単語を暗記",
