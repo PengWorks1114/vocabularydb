@@ -287,15 +287,16 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!word) return highlight(sentence);
     const regex = new RegExp(`(${escapeRegExp(word)})`, "gi");
     const parts = sentence.split(regex);
-    return parts.map((part, idx) =>
-      part.toLowerCase() === word.toLowerCase() ? (
-        <span key={idx} className="text-red-600 font-bold">
-          {part}
+    return parts.map((part, idx) => {
+      const isWord = part.toLowerCase() === word.toLowerCase();
+      return isWord ? (
+        <span key={idx} className="text-red-400">
+          {highlight(part)}
         </span>
       ) : (
         <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
-      )
-    );
+      );
+    });
   };
 
   async function load() {
@@ -1029,7 +1030,13 @@ export function WordList({ wordbookId }: WordListProps) {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setTempTagFilter([])}
+              onClick={() =>
+                setTempTagFilter((prev) =>
+                  posTags
+                    .filter((t) => !prev.includes(t.id))
+                    .map((t) => t.id)
+                )
+              }
             >
               {t("wordList.clearAllTags")}
             </Button>
