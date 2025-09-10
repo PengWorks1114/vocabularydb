@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
   createWord,
   updateWord,
   deleteWord,
+  resetWordsProgress,
+  bulkDeleteWords,
   getPartOfSpeechTags,
   createPartOfSpeechTag,
   updatePartOfSpeechTag,
@@ -35,9 +38,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Heart, Star, ChevronUp, ChevronDown } from "lucide-react";
+import { Heart, Star, ChevronDown, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 
 function masteryLevelMin(score: number) {
   if (score >= 90) return 90;
@@ -119,52 +123,77 @@ const masteryOptions = [
   { key: "memorized", value: 90, cls: "bg-green-600 text-white" },
 ];
 
+type SortField =
+  | "createdAt"
+  | "reviewDate"
+  | "mastery"
+  | "usageFrequency"
+  | "studyCount";
+
+const PER_PAGE = 20;
+
 // Word management component: display, create, edit, delete
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [words, setWords] = useState<Word[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
   const [posDialogOpen, setPosDialogOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("gray");
 
-  const [sortBy, setSortBy] = useState<"createdAt" | "mastery" | "usageFrequency">("createdAt");
+  const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [tempTagFilter, setTempTagFilter] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [masteryQuickOpen, setMasteryQuickOpen] = useState(false);
+  const [masteryQuickWord, setMasteryQuickWord] = useState<Word | null>(null);
+  const [masteryQuickValue, setMasteryQuickValue] = useState(0);
+  const [posQuickOpen, setPosQuickOpen] = useState(false);
+  const [posQuickWord, setPosQuickWord] = useState<Word | null>(null);
+  const [posQuickValue, setPosQuickValue] = useState<string[]>([]);
+  const [usageQuickOpen, setUsageQuickOpen] = useState(false);
+  const [usageQuickWord, setUsageQuickWord] = useState<Word | null>(null);
+  const [usageQuickValue, setUsageQuickValue] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const headerTextClass = `${i18n.language !== "zh-Hant" ? "text-xs" : ""} whitespace-nowrap`;
 
-  const sortWords = (list: Word[]) => {
-    return [...list].sort((a, b) => {
+  const sortedWords = useMemo(() => {
+    return [...words].sort((a, b) => {
       let aVal: number;
       let bVal: number;
       if (sortBy === "createdAt") {
         aVal = a.createdAt?.toMillis() || 0;
         bVal = b.createdAt?.toMillis() || 0;
+      } else if (sortBy === "reviewDate") {
+        aVal = a.reviewDate?.toMillis() || 0;
+        bVal = b.reviewDate?.toMillis() || 0;
       } else if (sortBy === "mastery") {
         aVal = a.mastery || 0;
         bVal = b.mastery || 0;
+      } else if (sortBy === "studyCount") {
+        aVal = a.studyCount || 0;
+        bVal = b.studyCount || 0;
       } else {
         aVal = a.usageFrequency || 0;
         bVal = b.usageFrequency || 0;
       }
       return sortDir === "asc" ? aVal - bVal : bVal - aVal;
     });
-  };
+  }, [words, sortBy, sortDir]);
 
   // Create
   const [creating, setCreating] = useState(false);
@@ -174,7 +203,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newPartOfSpeech, setNewPartOfSpeech] = useState<string[]>([]);
   const [newExampleSentence, setNewExampleSentence] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
-  const [newRelatedWords, setNewRelatedWords] = useState("");
+  const [newSynonym, setNewSynonym] = useState("");
+  const [newAntonym, setNewAntonym] = useState("");
   const [newUsageFrequency, setNewUsageFrequency] = useState(0);
   const [newMastery, setNewMastery] = useState(0);
   const [newNote, setNewNote] = useState("");
@@ -189,7 +219,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [editPartOfSpeech, setEditPartOfSpeech] = useState<string[]>([]);
   const [editExampleSentence, setEditExampleSentence] = useState("");
   const [editExampleTranslation, setEditExampleTranslation] = useState("");
-  const [editRelatedWords, setEditRelatedWords] = useState("");
+  const [editSynonym, setEditSynonym] = useState("");
+  const [editAntonym, setEditAntonym] = useState("");
   const [editUsageFrequency, setEditUsageFrequency] = useState(0);
   const [editMastery, setEditMastery] = useState(0);
   const [editNote, setEditNote] = useState("");
@@ -209,17 +240,6 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditPartOfSpeech((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
     );
-  };
-
-  const toggleSort = (
-    column: "createdAt" | "mastery" | "usageFrequency"
-  ) => {
-    if (sortBy === column) {
-      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy(column);
-      setSortDir("desc");
-    }
   };
 
   const openFilterDialog = () => {
@@ -249,35 +269,73 @@ export function WordList({ wordbookId }: WordListProps) {
         String.fromCharCode(c.charCodeAt(0) - 0x60)
       );
 
-  async function load() {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getWordsByWordbookId(user.uid, wordbookId);
-      setWords(sortWords(data));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("loadFailed"));
-    } finally {
-      setLoading(false);
+  const escapeRegExp = (str: string) =>
+    str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const highlight = (text: string) => {
+    if (!search.trim()) return text;
+    const term = search.trim();
+    const normText = normalize(text);
+    const normTerm = normalize(term);
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let index = normText.indexOf(normTerm);
+    if (index === -1) return text;
+    while (index !== -1) {
+      parts.push(text.slice(lastIndex, index));
+      parts.push(
+        <mark key={index} className="bg-yellow-200">
+          {text.slice(index, index + normTerm.length)}
+        </mark>
+      );
+      lastIndex = index + normTerm.length;
+      index = normText.indexOf(normTerm, lastIndex);
     }
-  }
+    parts.push(text.slice(lastIndex));
+    return parts;
+  };
+
+  const highlightExample = (sentence: string, word: string) => {
+    if (!word) return highlight(sentence);
+    const regex = new RegExp(`(${escapeRegExp(word)})`, "gi");
+    const parts = sentence.split(regex);
+    return parts.map((part, idx) => {
+      const isWord = part.toLowerCase() === word.toLowerCase();
+      return isWord ? (
+        <span key={idx} className="text-red-400">
+          {highlight(part)}
+        </span>
+      ) : (
+        <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
+      );
+    });
+  };
+
+  const {
+    data: fetchedWords,
+    isLoading: loading,
+    error,
+  } = useQuery<Word[]>({
+    queryKey: ["words", user?.uid, wordbookId],
+    queryFn: () => getWordsByWordbookId(user!.uid, wordbookId),
+    enabled: !!user?.uid,
+  });
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, wordbookId]);
+    if (fetchedWords) setWords(fetchedWords);
+  }, [fetchedWords]);
 
+  const tagKey = useRef<string | null>(null);
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
+    if (tagKey.current === user.uid) return;
+    tagKey.current = user.uid;
     getPartOfSpeechTags(user.uid).then(setPosTags);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
   useEffect(() => {
-    setWords((prev) => sortWords(prev));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy, sortDir]);
+    setPage(1);
+  }, [sortBy, sortDir, search, showFavorites, tagFilter]);
 
   useEffect(() => {
     if (!bulkMode) setSelectedIds([]);
@@ -290,7 +348,8 @@ export function WordList({ wordbookId }: WordListProps) {
     setNewPartOfSpeech([]);
     setNewExampleSentence("");
     setNewExampleTranslation("");
-    setNewRelatedWords("");
+    setNewSynonym("");
+    setNewAntonym("");
     setNewUsageFrequency(0);
     setNewMastery(0);
     setNewNote("");
@@ -301,6 +360,13 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!user || !newWord.trim()) return;
     setCreating(true);
     try {
+      const relatedWords =
+        newSynonym.trim() || newAntonym.trim()
+          ? {
+              ...(newSynonym.trim() && { same: newSynonym.trim() }),
+              ...(newAntonym.trim() && { opposite: newAntonym.trim() }),
+            }
+          : undefined;
       const created = await createWord(user.uid, wordbookId, {
         word: newWord.trim(),
         pinyin: newPinyin.trim(),
@@ -308,13 +374,13 @@ export function WordList({ wordbookId }: WordListProps) {
         partOfSpeech: newPartOfSpeech,
         exampleSentence: newExampleSentence.trim(),
         exampleTranslation: newExampleTranslation.trim(),
-        relatedWords: newRelatedWords.trim(),
+        ...(relatedWords ? { relatedWords } : {}),
         usageFrequency: newUsageFrequency,
         mastery: Math.min(100, Math.max(0, Number(newMastery) || 0)),
         note: newNote.trim(),
         favorite: newFavorite,
       });
-      setWords((prev) => sortWords([created, ...prev]));
+      setWords((prev) => [created, ...prev]);
       resetCreateForm();
       setCreateOpen(false);
     } catch (e) {
@@ -332,7 +398,8 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditPartOfSpeech(w.partOfSpeech || []);
     setEditExampleSentence(w.exampleSentence);
     setEditExampleTranslation(w.exampleTranslation);
-    setEditRelatedWords(w.relatedWords || "");
+    setEditSynonym(w.relatedWords?.same || "");
+    setEditAntonym(w.relatedWords?.opposite || "");
     setEditUsageFrequency(w.usageFrequency || 0);
     setEditMastery(masteryLevelMin(w.mastery || 0));
     setEditNote(w.note);
@@ -343,23 +410,28 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!user || !editTarget) return;
     setUpdating(true);
     try {
-      const updated = {
+      const relatedWords =
+        editSynonym.trim() || editAntonym.trim()
+          ? {
+              ...(editSynonym.trim() && { same: editSynonym.trim() }),
+              ...(editAntonym.trim() && { opposite: editAntonym.trim() }),
+            }
+          : undefined;
+      const updated: Partial<Word> = {
         word: editWord.trim(),
         pinyin: editPinyin.trim(),
         translation: editTranslation.trim(),
         partOfSpeech: editPartOfSpeech,
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
-        relatedWords: editRelatedWords.trim(),
         usageFrequency: editUsageFrequency,
         mastery: Math.min(100, Math.max(0, Number(editMastery) || 0)),
         note: editNote.trim(),
         favorite: editFavorite,
+        relatedWords: relatedWords || {},
       };
       await updateWord(user.uid, wordbookId, editTarget.id, updated);
-      setWords((prev) =>
-        sortWords(prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w)))
-      );
+      setWords((prev) => prev.map((w) => (w.id === editTarget.id ? { ...w, ...updated } : w)));
       setEditTarget(null);
     } catch (e) {
       console.error(e);
@@ -373,11 +445,138 @@ export function WordList({ wordbookId }: WordListProps) {
     setDeletingId(wordId);
     try {
       await deleteWord(user.uid, wordbookId, wordId);
-      setWords((prev) => sortWords(prev.filter((w) => w.id !== wordId)));
+      setWords((prev) => prev.filter((w) => w.id !== wordId));
     } catch (e) {
       console.error(e);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleIncrementStudy = async (w: Word) => {
+    if (!user) return;
+    const newCount = (w.studyCount || 0) + 1;
+    const now = Timestamp.now();
+    try {
+      await updateWord(user.uid, wordbookId, w.id, {
+        studyCount: newCount,
+        reviewDate: now,
+      });
+      setWords((prev) =>
+        prev.map((x) =>
+          x.id === w.id
+            ? { ...x, studyCount: newCount, reviewDate: now }
+            : x
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const openMasteryQuick = (w: Word) => {
+    setMasteryQuickWord(w);
+    setMasteryQuickValue(masteryLevelMin(w.mastery || 0));
+    setMasteryQuickOpen(true);
+  };
+
+  const saveMasteryQuick = async () => {
+    if (!user || !masteryQuickWord) return;
+    try {
+      await updateWord(user.uid, wordbookId, masteryQuickWord.id, {
+        mastery: masteryQuickValue,
+      });
+      setWords((prev) =>
+        prev.map((x) =>
+          x.id === masteryQuickWord.id
+            ? { ...x, mastery: masteryQuickValue }
+            : x
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMasteryQuickOpen(false);
+      setMasteryQuickWord(null);
+    }
+  };
+
+  const openPosQuick = (w: Word) => {
+    setPosQuickWord(w);
+    setPosQuickValue(w.partOfSpeech || []);
+    setPosQuickOpen(true);
+  };
+
+  const togglePosQuick = (id: string) => {
+    setPosQuickValue((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const savePosQuick = async () => {
+    if (!user || !posQuickWord) return;
+    try {
+      await updateWord(user.uid, wordbookId, posQuickWord.id, {
+        partOfSpeech: posQuickValue,
+      });
+      setWords((prev) =>
+        prev.map((x) =>
+          x.id === posQuickWord.id
+            ? { ...x, partOfSpeech: posQuickValue }
+            : x
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPosQuickOpen(false);
+      setPosQuickWord(null);
+    }
+  };
+
+  const openUsageQuick = (w: Word) => {
+    setUsageQuickWord(w);
+    setUsageQuickValue(w.usageFrequency || 0);
+    setUsageQuickOpen(true);
+  };
+
+  const saveUsageQuick = async () => {
+    if (!user || !usageQuickWord) return;
+    try {
+      await updateWord(user.uid, wordbookId, usageQuickWord.id, {
+        usageFrequency: usageQuickValue,
+      });
+      setWords((prev) =>
+        prev.map((x) =>
+          x.id === usageQuickWord.id
+            ? { ...x, usageFrequency: usageQuickValue }
+            : x
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUsageQuickOpen(false);
+      setUsageQuickWord(null);
+    }
+  };
+
+  const handleInitProgress = async () => {
+    if (!user || selectedIds.length === 0) return;
+    if (!window.confirm(t("wordList.resetConfirm1"))) return;
+    if (!window.confirm(t("wordList.resetConfirm2"))) return;
+    try {
+      await resetWordsProgress(user.uid, wordbookId, selectedIds);
+      setWords((prev) =>
+        prev.map((w) =>
+          selectedIds.includes(w.id)
+            ? { ...w, mastery: 0, studyCount: 0, reviewDate: null }
+            : w
+        )
+      );
+      setSelectedIds([]);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -386,16 +585,44 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!window.confirm(t("wordList.deleteConfirm1"))) return;
     if (!window.confirm(t("wordList.deleteConfirm2"))) return;
     try {
-      await Promise.all(
-        selectedIds.map((id) => deleteWord(user.uid, wordbookId, id))
-      );
-      setWords((prev) =>
-        sortWords(prev.filter((w) => !selectedIds.includes(w.id)))
-      );
+      await bulkDeleteWords(user.uid, wordbookId, selectedIds);
+      setWords((prev) => prev.filter((w) => !selectedIds.includes(w.id)));
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleExportCsv = () => {
+    const header =
+      "word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note";
+    const sanitize = (s: string) => s.replace(/,/g, " ").replace(/\n/g, " ");
+    const lines = sortedWords.map((w) => {
+      const parts = [
+        w.word,
+        w.pinyin || "",
+        w.translation || "",
+        w.partOfSpeech.join(";"),
+        sanitize(w.exampleSentence || ""),
+        sanitize(w.exampleTranslation || ""),
+        w.relatedWords?.same || "",
+        w.relatedWords?.opposite || "",
+        String(w.usageFrequency ?? 0),
+        String(w.mastery ?? 0),
+        sanitize(w.note || ""),
+      ];
+      return parts.join(",");
+    });
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${wordbookId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const toggleFavorite = async (word: Word) => {
@@ -404,7 +631,7 @@ export function WordList({ wordbookId }: WordListProps) {
     try {
       await updateWord(user.uid, wordbookId, word.id, { favorite: newVal });
       setWords((prev) =>
-        sortWords(prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w)))
+        prev.map((w) => (w.id === word.id ? { ...w, favorite: newVal } : w))
       );
     } catch (e) {
       console.error(e);
@@ -438,36 +665,51 @@ export function WordList({ wordbookId }: WordListProps) {
       setTagFilter((f) => f.filter((t) => t !== id));
       setTempTagFilter((f) => f.filter((t) => t !== id));
       setWords((prev) =>
-        sortWords(
-          prev.map((w) => ({
-            ...w,
-            partOfSpeech: w.partOfSpeech.filter((t) => t !== id),
-          }))
-        )
+        prev.map((w) => ({
+          ...w,
+          partOfSpeech: w.partOfSpeech.filter((t) => t !== id),
+        }))
       );
     } catch (e) {
       console.error(e);
     }
   };
 
-  const displayWords = words.filter((w) => {
-    if (showFavorites && !w.favorite) return false;
-    if (tagFilter.length && !tagFilter.every((t) => w.partOfSpeech?.includes(t))) {
-      return false;
-    }
-    if (!search.trim()) return true;
-    const term = normalize(search.trim());
-    return [
-      w.word,
-      w.translation,
-      w.pinyin || "",
-      w.exampleSentence || "",
-      w.exampleTranslation || "",
-      w.relatedWords || "",
-    ].some((f) => normalize(f).includes(term));
-  });
+  const displayWords = useMemo(
+    () =>
+      sortedWords.filter((w) => {
+        if (showFavorites && !w.favorite) return false;
+        if (tagFilter.length && !tagFilter.every((t) => w.partOfSpeech?.includes(t))) {
+          return false;
+        }
+        if (!search.trim()) return true;
+        const term = normalize(search.trim());
+        return [
+          w.word,
+          w.translation,
+          w.pinyin || "",
+          w.exampleSentence || "",
+          w.exampleTranslation || "",
+          w.relatedWords?.same || "",
+          w.relatedWords?.opposite || "",
+        ].some((f) => normalize(f).includes(term));
+      }),
+    [sortedWords, showFavorites, tagFilter, search]
+  );
+  const totalPages = Math.max(1, Math.ceil(displayWords.length / PER_PAGE));
+  const visibleWords = useMemo(
+    () =>
+      displayWords.slice((page - 1) * PER_PAGE, page * PER_PAGE),
+    [displayWords, page]
+  );
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
   const allSelected =
-    displayWords.length > 0 && selectedIds.length === displayWords.length;
+    visibleWords.length > 0 && visibleWords.every((w) => selectedIds.includes(w.id));
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -475,9 +717,13 @@ export function WordList({ wordbookId }: WordListProps) {
   };
   const toggleSelectAll = () => {
     if (allSelected) {
-      setSelectedIds([]);
+      setSelectedIds((prev) =>
+        prev.filter((id) => !visibleWords.some((w) => w.id === id))
+      );
     } else {
-      setSelectedIds(displayWords.map((w) => w.id));
+      setSelectedIds((prev) =>
+        Array.from(new Set([...prev, ...visibleWords.map((w) => w.id)]))
+      );
     }
   };
   const emptyMessage =
@@ -505,7 +751,7 @@ export function WordList({ wordbookId }: WordListProps) {
   }
 
   if (error) {
-    return <div className="text-sm text-red-500">{error}</div>;
+    return <div className="text-sm text-red-500">{String(error)}</div>;
   }
 
   return (
@@ -539,11 +785,12 @@ export function WordList({ wordbookId }: WordListProps) {
             className="mb-2"
           />
           <Label htmlFor="newTranslation" className="mb-1">{t("wordList.translation")}</Label>
-          <Input
+          <textarea
             id="newTranslation"
             value={newTranslation}
             onChange={(e) => setNewTranslation(e.target.value)}
-            className="mb-2"
+            rows={3}
+            className="mb-2 w-full rounded border px-2 py-1"
           />
           <Label className="mb-1">{t("wordList.partOfSpeech")}</Label>
           <div className="flex flex-wrap gap-2 mb-2">
@@ -589,24 +836,49 @@ export function WordList({ wordbookId }: WordListProps) {
             rows={3}
             className="mb-2 w-full rounded border px-2 py-1"
           />
-          <Label htmlFor="newRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
-          <Input
-            id="newRelatedWords"
-            value={newRelatedWords}
-            onChange={(e) => setNewRelatedWords(e.target.value)}
-            className="mb-2"
-          />
+          <Label className="mb-1">{t("wordList.relatedWords")}</Label>
+          <div className="mb-2 flex gap-2">
+            <div className="flex-1">
+              <div className="mb-1 text-xs">
+                <span className="px-1 rounded bg-blue-100 text-blue-800">
+                  {t("wordList.synonym")}
+                </span>
+              </div>
+              <textarea
+                id="newSynonym"
+                value={newSynonym}
+                onChange={(e) => setNewSynonym(e.target.value)}
+                rows={3}
+                className="w-full rounded border px-2 py-1"
+              />
+            </div>
+            <div className="flex-1">
+              <div className="mb-1 text-xs">
+                <span className="px-1 rounded bg-gray-200 text-gray-800">
+                  {t("wordList.antonym")}
+                </span>
+              </div>
+              <textarea
+                id="newAntonym"
+                value={newAntonym}
+                onChange={(e) => setNewAntonym(e.target.value)}
+                rows={3}
+                className="w-full rounded border px-2 py-1"
+              />
+            </div>
+          </div>
           <Label className="mb-1">{t("wordList.usageFrequency")}</Label>
           <div className="mb-2 flex items-center gap-2">
             <StarRating value={newUsageFrequency} onChange={setNewUsageFrequency} />
             <span>{newUsageFrequency}⭐</span>
           </div>
           <Label htmlFor="newNote" className="mb-1">{t("wordList.note")}</Label>
-          <Input
+          <textarea
             id="newNote"
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
-            className="mb-2"
+            rows={3}
+            className="mb-2 w-full rounded border px-2 py-1"
           />
           <Label className="mb-1">{t("wordList.mastery")}</Label>
           <div className="mb-2 flex flex-wrap gap-2">
@@ -664,14 +936,14 @@ export function WordList({ wordbookId }: WordListProps) {
         </Button>
         )}
         {!bulkMode && (
-        <Button
-          className="bg-orange-500 text-black hover:bg-orange-600"
-          asChild
-        >
-          <Link href={`/wordbooks/${wordbookId}/study`}>
-            {t("wordList.studyWords")}
-          </Link>
-        </Button>
+          <Button
+            className="bg-orange-500 text-black hover:bg-orange-600"
+            asChild
+          >
+            <Link href={`/wordbooks/${wordbookId}/study`}>
+              {t("wordList.studyWords")}
+            </Link>
+          </Button>
         )}
         {bulkMode ? (
           <>
@@ -685,13 +957,33 @@ export function WordList({ wordbookId }: WordListProps) {
               {t("wordList.cancelManage")}
             </Button>
             <Button
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              asChild
+            >
+              <Link href={`/wordbooks/${wordbookId}/import`}>
+                {t("wordList.bulkImport")}
+              </Link>
+            </Button>
+            <Button
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              onClick={handleExportCsv}
+            >
+              {t("wordList.exportCsv")}
+            </Button>
+            <Button
+              className="bg-yellow-500 text-black hover:bg-yellow-600"
+              onClick={handleInitProgress}
+              disabled={!selectedIds.length}
+            >
+              {t("wordList.resetProgress")}
+            </Button>
+            <Button
               className="bg-red-500 text-white hover:bg-red-600"
               onClick={handleBulkDelete}
               disabled={!selectedIds.length}
             >
               {t("wordList.bulkDelete")}
             </Button>
-            <Button>{t("wordList.exportCsv")}</Button>
           </>
         ) : (
           <Button
@@ -702,6 +994,7 @@ export function WordList({ wordbookId }: WordListProps) {
           </Button>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <span>{t("wordList.wordCount", { count: words.length })}</span>
           <div className="flex items-center gap-2">
             <span>{t("wordList.overallMastery")}</span>
             <div className="h-2 w-24 rounded bg-gray-200">
@@ -712,12 +1005,50 @@ export function WordList({ wordbookId }: WordListProps) {
             </div>
             <span>{overallMastery.toFixed(1)}%</span>
           </div>
-          <Input
-            placeholder={t("wordList.searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-40"
-          />
+          <select
+            className="border rounded p-1 text-sm"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortField)}
+          >
+            <option value="createdAt">{t("wordList.createdAt")}</option>
+            <option value="reviewDate">{t("wordList.reviewDate")}</option>
+            <option value="usageFrequency">{t("wordList.usageFrequency")}</option>
+            <option value="mastery">{t("wordList.mastery")}</option>
+            <option value="studyCount">{t("wordList.studyCount")}</option>
+          </select>
+          <label className="flex items-center gap-1 text-sm">
+            <input
+              type="checkbox"
+              checked={sortDir === "asc"}
+              onChange={(e) => setSortDir(e.target.checked ? "asc" : "desc")}
+            />
+            {t("wordList.reverseOrder")}
+          </label>
+          <div className="flex items-center gap-1">
+            <Input
+              placeholder={t("wordList.searchPlaceholder")}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setSearch(searchInput);
+                  setPage(1);
+                }
+              }}
+              className="w-40"
+            />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                setSearch(searchInput);
+                setPage(1);
+              }}
+              aria-label={t("wordList.searchButton")}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -805,6 +1136,28 @@ export function WordList({ wordbookId }: WordListProps) {
           <DialogHeader>
             <DialogTitle>{t("wordList.filterTags")}</DialogTitle>
           </DialogHeader>
+          <div className="flex gap-2 mb-4">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTempTagFilter(posTags.map((t) => t.id))}
+            >
+              {t("wordList.selectAllTags")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setTempTagFilter((prev) =>
+                  posTags
+                    .filter((t) => !prev.includes(t.id))
+                    .map((t) => t.id)
+                )
+              }
+            >
+              {t("wordList.clearAllTags")}
+            </Button>
+          </div>
           {posTags.map((tag) => (
             <label key={tag.id} className="flex items-center gap-2 mb-2">
               <input
@@ -831,8 +1184,8 @@ export function WordList({ wordbookId }: WordListProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full">
-        <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
+      <div className="w-full overflow-x-auto">
+        <div ref={listRef} className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
             {bulkMode && (
               <div className="w-10 px-2 py-1 border-r border-gray-200 flex items-center justify-center">
@@ -846,21 +1199,7 @@ export function WordList({ wordbookId }: WordListProps) {
             )}
             <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button
-                className={`flex items-center ${headerTextClass}`}
-                onClick={() => toggleSort("usageFrequency")}
-              >
-                {t("wordList.word")}
-                {sortBy === "usageFrequency" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
+              <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
@@ -871,44 +1210,17 @@ export function WordList({ wordbookId }: WordListProps) {
               </button>
             </div>
             <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button
-                className={`flex items-center ${headerTextClass}`}
-                onClick={() => toggleSort("mastery")}
-              >
-                {t("wordList.mastery")}
-                {sortBy === "mastery" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
-            </div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("createdAt")}>
-                {t("wordList.createdAt")}
-                {sortBy === "createdAt" ? (
-                  sortDir === "desc" ? (
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                  )
-                ) : (
-                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-                )}
-              </button>
-            </div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
-          {displayWords.length ? (
-            displayWords.map((w) => (
+          {visibleWords.length ? (
+            visibleWords.map((w) => (
               <div key={w.id} className="flex border-b">
                 {bulkMode && (
                   <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center">
@@ -932,16 +1244,26 @@ export function WordList({ wordbookId }: WordListProps) {
                   </button>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
-                  <div>{w.word}</div>
-                  <div className="text-xs text-muted-foreground">{(w.usageFrequency || 0)}⭐</div>
+                  <div className="flex items-center gap-1">
+                    <span>{w.word}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <button onClick={() => openUsageQuick(w)} className="text-yellow-500">
+                      <Star className="h-4 w-4" />
+                    </button>
+                    <span>{w.usageFrequency || 0}</span>
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.pinyin || "-"}
+                  {highlight(w.pinyin || "-")}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.translation || "-"}
+                <div className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                  {highlight(w.translation || "-")}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  onClick={() => openPosQuick(w)}
+                >
                   {w.partOfSpeech.length ? (
                     <div className="flex flex-wrap gap-1">
                       {w.partOfSpeech.map((id) => {
@@ -963,13 +1285,35 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
-                  {w.exampleSentence || "-"}
+                  {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
-                <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
-                  {w.exampleTranslation || "-"}
+                <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                  {highlight(w.exampleTranslation || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.relatedWords || "-"}
+                  <div className="space-y-1">
+                    {w.relatedWords?.same && (
+                      <div className="flex items-start text-xs gap-1">
+                        <span className="px-1 rounded bg-blue-100 text-blue-800">
+                          {t("wordList.synonym")}
+                        </span>
+                        <span className="flex-1 min-w-0 break-words whitespace-pre-wrap">
+                          {highlight(w.relatedWords.same)}
+                        </span>
+                      </div>
+                    )}
+                    {w.relatedWords?.opposite && (
+                      <div className="flex items-start text-xs gap-1">
+                        <span className="px-1 rounded bg-gray-200 text-gray-800">
+                          {t("wordList.antonym")}
+                        </span>
+                        <span className="flex-1 min-w-0 break-words whitespace-pre-wrap">
+                          {highlight(w.relatedWords.opposite)}
+                        </span>
+                      </div>
+                    )}
+                    {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
+                  </div>
                 </div>
                 <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
@@ -988,12 +1332,29 @@ export function WordList({ wordbookId }: WordListProps) {
                       cls = "bg-orange-500 text-white";
                     }
                     return (
-                      <span className={`mt-1 px-2 py-0.5 rounded text-xs ${cls}`}>{label}</span>
+                      <button
+                        className={`mt-1 px-2 py-0.5 rounded text-xs ${cls}`}
+                        onClick={() => openMasteryQuick(w)}
+                      >
+                        {label}
+                      </button>
                     );
                   })()}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
-                  {w.note || "-"}
+                <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                  {highlight(w.note || "-")}
+                </div>
+                <div className="w-24 px-2 py-2 border-r border-gray-200">
+                  {w.reviewDate?.toDate().toLocaleDateString() || "-"}
+                </div>
+                <div className="w-20 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                  <span>{w.studyCount ?? 0}</span>
+                  <button
+                    className="px-1 text-xs border rounded"
+                    onClick={() => handleIncrementStudy(w)}
+                  >
+                    +
+                  </button>
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
@@ -1036,11 +1397,12 @@ export function WordList({ wordbookId }: WordListProps) {
                           className="mb-2"
                         />
                         <Label htmlFor="editTranslation" className="mb-1">{t("wordList.translation")}</Label>
-                        <Input
+                        <textarea
                           id="editTranslation"
                           value={editTranslation}
                           onChange={(e) => setEditTranslation(e.target.value)}
-                          className="mb-2"
+                          rows={3}
+                          className="mb-2 w-full rounded border px-2 py-1"
                         />
                         <Label className="mb-1">{t("wordList.partOfSpeech")}</Label>
                         <div className="flex flex-wrap gap-2 mb-2">
@@ -1086,24 +1448,49 @@ export function WordList({ wordbookId }: WordListProps) {
                           rows={3}
                           className="mb-2 w-full rounded border px-2 py-1"
                         />
-                        <Label htmlFor="editRelatedWords" className="mb-1">{t("wordList.relatedWords")}</Label>
-                        <Input
-                          id="editRelatedWords"
-                          value={editRelatedWords}
-                          onChange={(e) => setEditRelatedWords(e.target.value)}
-                          className="mb-2"
-                        />
+                        <Label className="mb-1">{t("wordList.relatedWords")}</Label>
+                        <div className="mb-2 flex gap-2">
+                          <div className="flex-1">
+                            <div className="mb-1 text-xs">
+                              <span className="px-1 rounded bg-blue-100 text-blue-800">
+                                {t("wordList.synonym")}
+                              </span>
+                            </div>
+                            <textarea
+                              id="editSynonym"
+                              value={editSynonym}
+                              onChange={(e) => setEditSynonym(e.target.value)}
+                              rows={3}
+                              className="w-full rounded border px-2 py-1"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="mb-1 text-xs">
+                              <span className="px-1 rounded bg-gray-200 text-gray-800">
+                                {t("wordList.antonym")}
+                              </span>
+                            </div>
+                            <textarea
+                              id="editAntonym"
+                              value={editAntonym}
+                              onChange={(e) => setEditAntonym(e.target.value)}
+                              rows={3}
+                              className="w-full rounded border px-2 py-1"
+                            />
+                          </div>
+                        </div>
                         <Label className="mb-1">{t("wordList.usageFrequency")}</Label>
                         <div className="mb-2 flex items-center gap-2">
                           <StarRating value={editUsageFrequency} onChange={setEditUsageFrequency} />
                           <span>{editUsageFrequency}⭐</span>
                         </div>
                         <Label htmlFor="editNote" className="mb-1">{t("wordList.note")}</Label>
-                        <Input
+                        <textarea
                           id="editNote"
                           value={editNote}
                           onChange={(e) => setEditNote(e.target.value)}
-                          className="mb-2"
+                          rows={3}
+                          className="mb-2 w-full rounded border px-2 py-1"
                         />
           <Label className="mb-1">{t("wordList.mastery")}</Label>
           <div className="mb-2 flex flex-wrap gap-2">
@@ -1193,6 +1580,127 @@ export function WordList({ wordbookId }: WordListProps) {
           )}
         </div>
       </div>
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-1 mt-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(1)}
+            disabled={page === 1}
+          >
+            {t("wordList.firstPage")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(page - 1)}
+            disabled={page === 1}
+          >
+            {t("wordList.prevPage")}
+          </Button>
+          {(() => {
+            const start = Math.max(1, page - 3);
+            const end = Math.min(totalPages, page + 3);
+            const items: React.ReactNode[] = [];
+            if (start > 1) items.push(<span key="start-ellipsis">…</span>);
+            for (let p = start; p <= end; p++) {
+              items.push(
+                <Button
+                  key={p}
+                  size="sm"
+                  variant={p === page ? "default" : "outline"}
+                  onClick={() => setPage(p)}
+                  disabled={p === page}
+                >
+                  {p}
+                </Button>
+              );
+            }
+            if (end < totalPages) items.push(<span key="end-ellipsis">…</span>);
+            return items;
+          })()}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(page + 1)}
+            disabled={page === totalPages}
+          >
+            {t("wordList.nextPage")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(totalPages)}
+            disabled={page === totalPages}
+          >
+            {t("wordList.lastPage")}
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={masteryQuickOpen} onOpenChange={setMasteryQuickOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("wordList.updateMastery")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2 mb-4">
+            {masteryOptions.map((opt) => (
+              <Button
+                key={opt.value}
+                className={`${opt.cls} ${
+                  masteryQuickValue === opt.value ? "ring-2 ring-offset-2" : ""
+                }`}
+                onClick={() => setMasteryQuickValue(opt.value)}
+              >
+                {t(`wordList.masteryLevels.${opt.key}`)}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={saveMasteryQuick}>{t("wordList.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={posQuickOpen} onOpenChange={setPosQuickOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("wordList.updatePartOfSpeech")}</DialogTitle>
+          </DialogHeader>
+          {posTags.map((tag) => (
+            <label key={tag.id} className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={posQuickValue.includes(tag.id)}
+                onChange={() => togglePosQuick(tag.id)}
+              />
+              <span
+                className={`px-1 rounded text-xs ${
+                  colorClasses[tag.color] || colorClasses.gray
+                }`}
+              >
+                {tag.name}
+              </span>
+            </label>
+          ))}
+          <DialogFooter>
+            <Button onClick={savePosQuick}>{t("wordList.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={usageQuickOpen} onOpenChange={setUsageQuickOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("wordList.updateUsageFrequency")}</DialogTitle>
+          </DialogHeader>
+          <StarRating value={usageQuickValue} onChange={setUsageQuickValue} />
+          <DialogFooter>
+            <Button onClick={saveUsageQuick}>{t("wordList.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

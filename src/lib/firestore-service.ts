@@ -7,6 +7,7 @@ import {
   deleteDoc,
   updateDoc,
   Timestamp,
+  writeBatch,
   query,
   where,
 } from "firebase/firestore";
@@ -32,12 +33,17 @@ export interface Word {
   partOfSpeech: string[];
   exampleSentence: string;
   exampleTranslation: string;
-  relatedWords: string;
+  relatedWords?: {
+    same?: string;
+    opposite?: string;
+  };
   usageFrequency: number;
   mastery: number;
   note: string;
   wordbookId: string;
   createdAt: Timestamp;
+  reviewDate?: Timestamp | null;
+  studyCount?: number;
 }
 
 // Custom part-of-speech tags
@@ -47,6 +53,11 @@ export interface PartOfSpeechTag {
   color: string;
   userId: string;
 }
+
+// simple in-memory cache to avoid repeated reads for the same wordbook
+const wordCache: Record<string, Word[]> = {};
+const makeCacheKey = (userId: string, wordbookId: string) => `${userId}_${wordbookId}`;
+const posTagCache: Record<string, PartOfSpeechTag[]> = {};
 
 // Get all wordbooks for a user
 export const getWordbooksByUserId = async (
@@ -157,6 +168,8 @@ export const getWordsByWordbookId = async (
   userId: string,
   wordbookId: string
 ): Promise<Word[]> => {
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) return wordCache[key];
   const colRef = collection(
     db,
     "users",
@@ -170,6 +183,7 @@ export const getWordsByWordbookId = async (
   snapshot.forEach((docSnap) => {
     words.push({ id: docSnap.id, ...docSnap.data() } as Word);
   });
+  wordCache[key] = words;
   return words;
 };
 
@@ -177,7 +191,7 @@ export const getWordsByWordbookId = async (
 export const createWord = async (
   userId: string,
   wordbookId: string,
-  wordData: Omit<Word, "id" | "createdAt" | "wordbookId">
+  wordData: Omit<Word, "id" | "createdAt" | "wordbookId" | "reviewDate" | "studyCount">
 ): Promise<Word> => {
   const colRef = collection(
     db,
@@ -191,13 +205,20 @@ export const createWord = async (
     ...wordData,
     wordbookId,
     createdAt: Timestamp.now(),
+    reviewDate: null,
+    studyCount: 0,
   });
-  return {
+  const newWord = {
     id: docRef.id,
     ...wordData,
     wordbookId,
     createdAt: Timestamp.now(),
-  };
+    reviewDate: null,
+    studyCount: 0,
+  } as Word;
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) wordCache[key].push(newWord);
+  return newWord;
 };
 
 // Update word
@@ -217,6 +238,12 @@ export const updateWord = async (
     wordId
   );
   await updateDoc(ref, updateData);
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].map((w) =>
+      w.id === wordId ? { ...w, ...updateData } : w
+    );
+  }
 };
 
 // Delete word
@@ -235,6 +262,104 @@ export const deleteWord = async (
     wordId
   );
   await deleteDoc(ref);
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].filter((w) => w.id !== wordId);
+  }
+};
+
+// Bulk import words
+export const bulkImportWords = async (
+  userId: string,
+  wordbookId: string,
+  data: Omit<
+    Word,
+    "id" | "createdAt" | "wordbookId" | "reviewDate" | "studyCount"
+  >[]
+): Promise<Word[]> => {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words"
+  );
+  const batch = writeBatch(db);
+  const createdAt = Timestamp.now();
+  const newWords: Word[] = [];
+  data.forEach((d) => {
+    const docRef = doc(colRef);
+    const word: Word = {
+      id: docRef.id,
+      ...d,
+      wordbookId,
+      createdAt,
+      reviewDate: null,
+      studyCount: 0,
+    };
+    batch.set(docRef, word);
+    newWords.push(word);
+  });
+  await batch.commit();
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) wordCache[key].push(...newWords);
+  else wordCache[key] = [...newWords];
+  return newWords;
+};
+
+// Reset progress for multiple words
+export const resetWordsProgress = async (
+  userId: string,
+  wordbookId: string,
+  ids: string[]
+): Promise<void> => {
+  const batch = writeBatch(db);
+  ids.forEach((id) => {
+    const ref = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "words",
+      id
+    );
+    batch.update(ref, { mastery: 0, studyCount: 0, reviewDate: null });
+  });
+  await batch.commit();
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].map((w) =>
+      ids.includes(w.id) ? { ...w, mastery: 0, studyCount: 0, reviewDate: null } : w
+    );
+  }
+};
+
+// Bulk delete words
+export const bulkDeleteWords = async (
+  userId: string,
+  wordbookId: string,
+  ids: string[]
+): Promise<void> => {
+  const batch = writeBatch(db);
+  ids.forEach((id) => {
+    const ref = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "words",
+      id
+    );
+    batch.delete(ref);
+  });
+  await batch.commit();
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].filter((w) => !ids.includes(w.id));
+  }
 };
 
 // ------------------- Part-of-speech tag CRUD -------------------
@@ -243,12 +368,14 @@ export const deleteWord = async (
 export const getPartOfSpeechTags = async (
   userId: string
 ): Promise<PartOfSpeechTag[]> => {
+  if (posTagCache[userId]) return posTagCache[userId];
   const colRef = collection(db, "users", userId, "posTags");
   const snapshot = await getDocs(colRef);
   const tags: PartOfSpeechTag[] = [];
   snapshot.forEach((docSnap) => {
     tags.push({ id: docSnap.id, ...docSnap.data() } as PartOfSpeechTag);
   });
+  posTagCache[userId] = tags;
   return tags;
 };
 
@@ -259,7 +386,9 @@ export const createPartOfSpeechTag = async (
 ): Promise<PartOfSpeechTag> => {
   const colRef = collection(db, "users", userId, "posTags");
   const docRef = await addDoc(colRef, { ...data, userId });
-  return { id: docRef.id, ...data, userId };
+  const tag = { id: docRef.id, ...data, userId } as PartOfSpeechTag;
+  if (posTagCache[userId]) posTagCache[userId].push(tag);
+  return tag;
 };
 
 // Update part-of-speech tag
@@ -270,6 +399,11 @@ export const updatePartOfSpeechTag = async (
 ): Promise<void> => {
   const ref = doc(db, "users", userId, "posTags", tagId);
   await updateDoc(ref, data);
+  if (posTagCache[userId]) {
+    posTagCache[userId] = posTagCache[userId].map((t) =>
+      t.id === tagId ? { ...t, ...data } : t
+    );
+  }
 };
 
 // Delete part-of-speech tag
@@ -308,4 +442,7 @@ export const deletePartOfSpeechTag = async (
   );
 
   await deleteDoc(tagRef);
+  if (posTagCache[userId]) {
+    posTagCache[userId] = posTagCache[userId].filter((t) => t.id !== tagId);
+  }
 };

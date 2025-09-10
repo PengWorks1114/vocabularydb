@@ -36,6 +36,8 @@ type Mode =
   | "freqHigh"
   | "recent"
   | "old"
+  | "reviewRecent"
+  | "reviewOld"
   | "onlyUnknown"
   | "onlyImpression"
   | "onlyFamiliar"
@@ -130,6 +132,8 @@ export default function ReciteSettingsPage({ params }: PageProps) {
                     "freqHigh",
                     "recent",
                     "old",
+                    "reviewRecent",
+                    "reviewOld",
                     "onlyUnknown",
                     "onlyImpression",
                     "onlyFamiliar",

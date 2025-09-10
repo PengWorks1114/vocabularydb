@@ -1,6 +1,6 @@
 // src/lib/firebase.ts
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -13,8 +13,10 @@ const firebaseConfig = {
 
 // Avoid re-initializing during HMR
 export const firebaseApp = getApps().length
-  ? getApp()
+  ? getApps()[0]
   : initializeApp(firebaseConfig);
 
-// Firestore instance
-export const db = getFirestore(firebaseApp);
+// Enable persistent local cache (IndexedDB)
+export const db = initializeFirestore(firebaseApp, {
+  localCache: persistentLocalCache(),
+});

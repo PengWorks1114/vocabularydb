@@ -4,7 +4,8 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { WordList } from "@/components/words/word-list";
 import { useAuth } from "@/components/auth-provider";
-import { getWordbook } from "@/lib/firestore-service";
+import { getWordbook, type Wordbook } from "@/lib/firestore-service";
+import { useQuery } from "@tanstack/react-query";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
@@ -20,11 +21,14 @@ export default function WordbookPage({ params }: PageProps) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [mounted, setMounted] = useState(false);
-
+  const { data: wb } = useQuery<Wordbook | null>({
+    queryKey: ["wordbook", user?.uid, wordbookId],
+    queryFn: () => getWordbook(user!.uid, wordbookId),
+    enabled: !!user?.uid,
+  });
   useEffect(() => {
-    if (!user) return;
-    getWordbook(user.uid, wordbookId).then((wb) => setName(wb?.name || ""));
-  }, [user, wordbookId]);
+    setName(wb?.name || "");
+  }, [wb]);
 
   useEffect(() => {
     setMounted(true);
