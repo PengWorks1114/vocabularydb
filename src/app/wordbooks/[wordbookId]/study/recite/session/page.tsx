@@ -93,20 +93,23 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
   ) {
     words = shuffle(words);
   }
+  if (words.length === 0) {
+    words = shuffle(all);
+  }
 
   return words.slice(0, count);
 }
 
-function computeMastery(choice: Answer): number {
+function computeMastery(current: number, choice: Answer): number {
   switch (choice) {
     case "unknown":
       return 0;
     case "impression":
-      return 60;
+      return Math.round(current + (40 - current) * 0.1);
     case "familiar":
-      return 80;
+      return Math.round(current + (70 - current) * 0.1);
     case "memorized":
-      return 100;
+      return current >= 90 ? Math.min(100, current + 1) : 90;
   }
 }
 
@@ -134,34 +137,46 @@ export default function ReciteSessionPage({ params }: PageProps) {
 
   useEffect(() => {
     const load = async () => {
-      if (auth.currentUser) {
-        const all = await getWordsByWordbookId(
-          auth.currentUser.uid,
-          wordbookId
-        );
-        setWords(all);
-        const drawn = drawWords(all, count, mode);
-        setSessionWords(drawn);
-        setUsedIds(new Set(drawn.map((w) => w.id)));
-        setIndex(0);
-        setShowDetails(false);
-        setStep("reciting");
+      if (!auth.currentUser) return;
+      const all = await getWordsByWordbookId(
+        auth.currentUser.uid,
+        wordbookId
+      );
+      setWords(all);
+      let drawn = drawWords(all, count, mode);
+      if (drawn.length === 0) {
+        drawn = drawWords(all, count, "random");
       }
+      setSessionWords(drawn);
+      setUsedIds(new Set(drawn.map((w) => w.id)));
+      setIndex(0);
+      setShowDetails(false);
+      setStep("reciting");
     };
     load();
-  }, [auth.currentUser, wordbookId, count, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.currentUser, wordbookId]);
 
   const handleLogout = async () => {
     await signOut(auth);
   };
 
   const startSession = () => {
-    const available = words.filter((w) => !usedIds.has(w.id));
-    const drawn = drawWords(available, count, mode);
+    let available = words.filter((w) => !usedIds.has(w.id));
+    let newUsed = new Set(usedIds);
+    if (available.length === 0) {
+      available = [...words];
+      newUsed = new Set();
+    }
+    let drawn = drawWords(available, count, mode);
+    if (drawn.length === 0) {
+      drawn = drawWords(words, count, "random");
+      newUsed = new Set(drawn.map((w) => w.id));
+    } else {
+      drawn.forEach((w) => newUsed.add(w.id));
+    }
     setSessionWords(drawn);
-    setUsedIds(
-      new Set([...Array.from(usedIds), ...drawn.map((w) => w.id)])
-    );
+    setUsedIds(newUsed);
     setIndex(0);
     setShowDetails(false);
     setStep("reciting");
@@ -170,13 +185,19 @@ export default function ReciteSessionPage({ params }: PageProps) {
   const handleAnswer = async (choice: Answer) => {
     const word = sessionWords[index];
     if (!auth.currentUser) return;
-    const newMastery = computeMastery(choice);
+    const newMastery = computeMastery(word.mastery, choice);
     await updateWord(auth.currentUser.uid, wordbookId, word.id, {
       mastery: newMastery,
     });
     setSessionWords((prev) => {
       const copy = [...prev];
       copy[index] = { ...word, mastery: newMastery };
+      return copy;
+    });
+    setWords((prev) => {
+      const copy = [...prev];
+      const i = copy.findIndex((w) => w.id === word.id);
+      if (i !== -1) copy[i] = { ...word, mastery: newMastery };
       return copy;
     });
     setShowDetails(true);
@@ -292,9 +313,25 @@ export default function ReciteSessionPage({ params }: PageProps) {
                     {t("wordList.masteryLevels.memorized")}
                   </Button>
                 </div>
-                <p className="text-center text-sm text-muted-foreground">
-                  {t("recite.hint")}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-center text-sm text-muted-foreground">
+                    {t("recite.masteryTitle")}
+                  </p>
+                  <div className="grid grid-cols-4 gap-1 text-xs text-muted-foreground">
+                    <p className="text-center">
+                      {t("recite.hints.unknown")}
+                    </p>
+                    <p className="text-center">
+                      {t("recite.hints.impression")}
+                    </p>
+                    <p className="text-center">
+                      {t("recite.hints.familiar")}
+                    </p>
+                    <p className="text-center">
+                      {t("recite.hints.memorized")}
+                    </p>
+                  </div>
+                </div>
               </>
             ) : (
               <Button className="w-full text-base" onClick={next}>
