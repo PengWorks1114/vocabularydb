@@ -41,6 +41,7 @@ import {
 import { Heart, Star, ChevronDown, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 
 function masteryLevelMin(score: number) {
   if (score >= 90) return 90;
@@ -136,8 +137,6 @@ export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [words, setWords] = useState<Word[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
   const [posDialogOpen, setPosDialogOpen] = useState(false);
@@ -166,7 +165,6 @@ export function WordList({ wordbookId }: WordListProps) {
   const [usageQuickValue, setUsageQuickValue] = useState(0);
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const loadKey = useRef<string | null>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -313,28 +311,20 @@ export function WordList({ wordbookId }: WordListProps) {
     });
   };
 
-  async function load() {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getWordsByWordbookId(user.uid, wordbookId);
-      setWords(sortWords(data));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("loadFailed"));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const {
+    data: fetchedWords = [],
+    isLoading: loading,
+    error,
+  } = useQuery<Word[]>({
+    queryKey: ["words", user?.uid, wordbookId],
+    queryFn: () => getWordsByWordbookId(user!.uid, wordbookId),
+    enabled: !!user?.uid,
+  });
 
   useEffect(() => {
-    if (!user?.uid) return;
-    const key = `${user.uid}-${wordbookId}`;
-    if (loadKey.current === key) return;
-    loadKey.current = key;
-    load();
+    setWords(sortWords(fetchedWords));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, wordbookId]);
+  }, [fetchedWords, sortBy, sortDir]);
 
   const tagKey = useRef<string | null>(null);
   useEffect(() => {
@@ -343,11 +333,6 @@ export function WordList({ wordbookId }: WordListProps) {
     tagKey.current = user.uid;
     getPartOfSpeechTags(user.uid).then(setPosTags);
   }, [user?.uid]);
-
-  useEffect(() => {
-    setWords((prev) => sortWords(prev));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy, sortDir]);
 
   useEffect(() => {
     setPage(1);
@@ -783,7 +768,7 @@ export function WordList({ wordbookId }: WordListProps) {
   }
 
   if (error) {
-    return <div className="text-sm text-red-500">{error}</div>;
+    return <div className="text-sm text-red-500">{String(error)}</div>;
   }
 
   return (

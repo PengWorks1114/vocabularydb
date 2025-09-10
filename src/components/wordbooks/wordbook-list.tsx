@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,6 +39,7 @@ import {
   updateWordbookName,
   type Wordbook,
 } from "@/lib/firestore-service";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth-provider";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -46,10 +47,6 @@ import { useTranslation } from "react-i18next";
 export default function WordbookList({ trashed = false }: { trashed?: boolean }) {
   const { user } = useAuth();
   const { t } = useTranslation();
-
-  const [loading, setLoading] = useState(true);
-  const [wordbooks, setWordbooks] = useState<Wordbook[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   // Create new wordbook
   const [newName, setNewName] = useState("");
@@ -65,23 +62,26 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
   const [deleteTarget, setDeleteTarget] = useState<Wordbook | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  async function load() {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = trashed
-        ? await getTrashedWordbooksByUserId(user.uid)
-        : await getWordbooksByUserId(user.uid);
-      data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-      setWordbooks(data);
-    } catch (e) {
-      if (e instanceof Error) setError(e.message);
-      else setError(t("loadFailed"));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const {
+    data: wordbooks = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery<Wordbook[]>({
+    queryKey: ["wordbooks", user?.uid, trashed],
+    queryFn: () =>
+      trashed
+        ? getTrashedWordbooksByUserId(user!.uid)
+        : getWordbooksByUserId(user!.uid),
+    enabled: !!user?.uid,
+  });
+  const sortedWordbooks = useMemo(
+    () =>
+      wordbooks
+        .slice()
+        .sort((a: Wordbook, b: Wordbook) => b.createdAt.toMillis() - a.createdAt.toMillis()),
+    [wordbooks]
+  );
 
   const loadKey = useRef<string | null>(null);
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     const key = `${user.uid}-${trashed}`;
     if (loadKey.current === key) return;
     loadKey.current = key;
-    load();
+    refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, trashed]);
 
@@ -99,7 +99,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     try {
       await createWordbook(user.uid, newName.trim());
       setNewName("");
-      await load();
+      await refetch();
     } catch (e) {
       console.error(e);
     } finally {
@@ -123,7 +123,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     try {
       await updateWordbookName(user.uid, renameTarget.id, renameValue.trim());
       setRenameOpen(false);
-      await load();
+      await refetch();
     } catch (e) {
       console.error(e);
     } finally {
@@ -141,7 +141,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
         await trashWordbook(user.uid, deleteTarget.id);
       }
       setDeleteTarget(null);
-      await load();
+      await refetch();
     } catch (e) {
       console.error(e);
     } finally {
@@ -189,14 +189,16 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
             {t("wordbookList.loading")}
           </div>
         )}
-        {error && <div className="text-sm text-red-500">{error}</div>}
-        {!loading && !wordbooks.length && (
+        {error ? (
+          <div className="text-sm text-red-500">{String(error)}</div>
+        ) : null}
+        {!loading && !sortedWordbooks.length && (
           <div className="text-sm text-muted-foreground">
             {trashed ? t("trash.empty") : t("wordbookList.empty")}
           </div>
         )}
 
-        {wordbooks.map((wb) => (
+        {sortedWordbooks.map((wb: Wordbook) => (
           <Card key={wb.id}>
             <CardHeader>
               <CardTitle>{wb.name}</CardTitle>

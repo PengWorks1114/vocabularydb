@@ -19,6 +19,15 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Identifier[name='onSnapshot']",
+          message: "Use getDocs with caching instead of onSnapshot.",
+        },
+      ],
+    },
   },
 ];
 
