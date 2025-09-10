@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -153,6 +153,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -598,7 +599,7 @@ export function WordList({ wordbookId }: WordListProps) {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [page]);
   const allSelected =
     visibleWords.length > 0 && visibleWords.every((w) => selectedIds.includes(w.id));
@@ -677,11 +678,12 @@ export function WordList({ wordbookId }: WordListProps) {
             className="mb-2"
           />
           <Label htmlFor="newTranslation" className="mb-1">{t("wordList.translation")}</Label>
-          <Input
+          <textarea
             id="newTranslation"
             value={newTranslation}
             onChange={(e) => setNewTranslation(e.target.value)}
-            className="mb-2"
+            rows={3}
+            className="mb-2 w-full rounded border px-2 py-1"
           />
           <Label className="mb-1">{t("wordList.partOfSpeech")}</Label>
           <div className="flex flex-wrap gap-2 mb-2">
@@ -764,11 +766,12 @@ export function WordList({ wordbookId }: WordListProps) {
             <span>{newUsageFrequency}⭐</span>
           </div>
           <Label htmlFor="newNote" className="mb-1">{t("wordList.note")}</Label>
-          <Input
+          <textarea
             id="newNote"
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
-            className="mb-2"
+            rows={3}
+            className="mb-2 w-full rounded border px-2 py-1"
           />
           <Label className="mb-1">{t("wordList.mastery")}</Label>
           <div className="mb-2 flex flex-wrap gap-2">
@@ -1068,7 +1071,7 @@ export function WordList({ wordbookId }: WordListProps) {
       </Dialog>
 
       <div className="w-full overflow-x-auto">
-        <div className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
+        <div ref={listRef} className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
             {bulkMode && (
               <div className="w-10 px-2 py-1 border-r border-gray-200 flex items-center justify-center">
@@ -1081,7 +1084,7 @@ export function WordList({ wordbookId }: WordListProps) {
               </div>
             )}
             <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
@@ -1098,7 +1101,7 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
@@ -1126,14 +1129,14 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </button>
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
+                <div className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
                   <div>{w.word}</div>
                   <div className="text-xs text-muted-foreground">{(w.usageFrequency || 0)}⭐</div>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {highlight(w.pinyin || "-")}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlight(w.translation || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
@@ -1209,13 +1212,13 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlight(w.note || "-")}
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.reviewDate?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
                   <span>{w.studyCount ?? 0}</span>
                   <button
                     className="px-1 text-xs border rounded"
@@ -1265,11 +1268,12 @@ export function WordList({ wordbookId }: WordListProps) {
                           className="mb-2"
                         />
                         <Label htmlFor="editTranslation" className="mb-1">{t("wordList.translation")}</Label>
-                        <Input
+                        <textarea
                           id="editTranslation"
                           value={editTranslation}
                           onChange={(e) => setEditTranslation(e.target.value)}
-                          className="mb-2"
+                          rows={3}
+                          className="mb-2 w-full rounded border px-2 py-1"
                         />
                         <Label className="mb-1">{t("wordList.partOfSpeech")}</Label>
                         <div className="flex flex-wrap gap-2 mb-2">
@@ -1352,11 +1356,12 @@ export function WordList({ wordbookId }: WordListProps) {
                           <span>{editUsageFrequency}⭐</span>
                         </div>
                         <Label htmlFor="editNote" className="mb-1">{t("wordList.note")}</Label>
-                        <Input
+                        <textarea
                           id="editNote"
                           value={editNote}
                           onChange={(e) => setEditNote(e.target.value)}
-                          className="mb-2"
+                          rows={3}
+                          className="mb-2 w-full rounded border px-2 py-1"
                         />
           <Label className="mb-1">{t("wordList.mastery")}</Label>
           <div className="mb-2 flex flex-wrap gap-2">
