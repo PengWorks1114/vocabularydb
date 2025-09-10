@@ -152,7 +152,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [correct, setCorrect] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isComposing, setIsComposing] = useState(false);
-  const loadKey = useRef<string>();
+  const loadKey = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);

@@ -83,7 +83,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     }
   }
 
-  const loadKey = useRef<string>();
+  const loadKey = useRef<string | null>(null);
   useEffect(() => {
     if (!user?.uid) return;
     const key = `${user.uid}-${trashed}`;

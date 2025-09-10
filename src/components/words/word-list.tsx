@@ -164,7 +164,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [usageQuickValue, setUsageQuickValue] = useState(0);
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const loadKey = useRef<string>();
+  const loadKey = useRef<string | null>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -334,7 +334,7 @@ export function WordList({ wordbookId }: WordListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, wordbookId]);
 
-  const tagKey = useRef<string>();
+  const tagKey = useRef<string | null>(null);
   useEffect(() => {
     if (!user?.uid) return;
     if (tagKey.current === user.uid) return;

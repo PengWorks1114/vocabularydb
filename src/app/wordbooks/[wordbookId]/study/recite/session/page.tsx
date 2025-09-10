@@ -153,7 +153,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
   const [step, setStep] = useState<Step>("reciting");
   const [index, setIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
-  const loadKey = useRef<string>();
+  const loadKey = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);

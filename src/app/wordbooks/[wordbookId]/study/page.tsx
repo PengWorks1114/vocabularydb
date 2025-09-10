@@ -22,7 +22,7 @@ export default function StudyPage({ params }: PageProps) {
   const [wordCount, setWordCount] = useState(0);
   const [mounted, setMounted] = useState(false);
 
-  const loadKey = useRef<string>();
+  const loadKey = useRef<string | null>(null);
   useEffect(() => {
     if (!user?.uid) return;
     const key = `${user.uid}-${wordbookId}`;
