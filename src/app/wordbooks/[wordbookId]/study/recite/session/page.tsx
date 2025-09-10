@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
@@ -118,7 +118,9 @@ function computeMastery(current: number, choice: Answer): number {
     case "familiar":
       return currentRegion === "familiar" ? Math.min(100, current + 10) : 50;
     case "memorized":
-      return currentRegion === "memorized" ? current : 90;
+      return currentRegion === "memorized"
+        ? Math.min(100, current + 1)
+        : 90;
   }
 }
 
@@ -212,14 +214,25 @@ export default function ReciteSessionPage({ params }: PageProps) {
     setShowDetails(true);
   };
 
-  const next = () => {
+  const next = useCallback(() => {
     if (index + 1 >= sessionWords.length) {
       setStep("finished");
     } else {
       setIndex(index + 1);
       setShowDetails(false);
     }
-  };
+  }, [index, sessionWords.length]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && showDetails) {
+        e.preventDefault();
+        next();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showDetails, next]);
 
   const repeatSet = () => {
     setIndex(0);
@@ -276,7 +289,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
             </div>
             {showDetails && (
               <div className="space-y-2 text-left text-lg">
-                <div>
+                <div className="text-xl font-bold text-red-600">
                   {t("wordList.translation")}: {sessionWords[index].translation}
                 </div>
                 <div>
@@ -369,7 +382,12 @@ export default function ReciteSessionPage({ params }: PageProps) {
             })}
           </p>
           <div className="flex flex-col gap-2">
-            <Button onClick={repeatSet}>{t("recite.again")}</Button>
+            <Button
+              onClick={repeatSet}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {t("recite.again")}
+            </Button>
             <Button onClick={nextSet}>{t("recite.nextSet", { count })}</Button>
             <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
               <Button className="w-full" variant="outline">
