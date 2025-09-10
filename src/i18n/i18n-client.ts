@@ -51,6 +51,8 @@ i18n
             mode: "Selection mode",
             start: "Start",
             progress: "Progress: {{current}}/{{total}}",
+            hint:
+              "Mastery: Don't know at all, Vague impression, Kind of remember, Fully know!",
             again: "Repeat same words",
             next: "Next",
             nextSet: "Next {{count}} words",
@@ -72,6 +74,7 @@ i18n
           },
           backToList: "Back to wordbooks",
           backToStudy: "Back to study",
+          backToWordbook: "Back to wordbook",
           wordbookList: {
             title: "My Wordbooks",
             namePlaceholder: "Enter wordbook name...",
@@ -197,6 +200,7 @@ i18n
             mode: "抽選方式",
             start: "開始背誦",
             progress: "進度：{{current}}/{{total}}",
+            hint: "掌握度: 完全不會 印象模糊 大概記得 完全會!",
             again: "再背一次",
             next: "下一個",
             nextSet: "下一批{{count}}個",
@@ -218,6 +222,7 @@ i18n
           },
           backToList: "返回單字本列表",
           backToStudy: "返回背誦頁",
+          backToWordbook: "返回單字本",
           wordbookList: {
             title: "我的單字本",
             namePlaceholder: "輸入單字本名稱...",
@@ -342,6 +347,8 @@ i18n
             mode: "抽出方法",
             start: "開始",
             progress: "進捗：{{current}}/{{total}}",
+            hint:
+              "習得度: 全く覚えていない、ぼんやり覚えている、なんとなく覚えている、完全に覚えている！",
             again: "同じ単語でもう一度",
             next: "次へ",
             nextSet: "次の{{count}}語",
@@ -363,6 +370,7 @@ i18n
           },
           backToList: "単語帳一覧に戻る",
           backToStudy: "暗記ページに戻る",
+          backToWordbook: "単語帳に戻る",
           wordbookList: {
             title: "私の単語帳",
             namePlaceholder: "単語帳名を入力...",
