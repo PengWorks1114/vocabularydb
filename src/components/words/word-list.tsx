@@ -1230,7 +1230,7 @@ export function WordList({ wordbookId }: WordListProps) {
               </div>
             )}
             <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
@@ -1242,12 +1242,12 @@ export function WordList({ wordbookId }: WordListProps) {
               </button>
             </div>
             <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
@@ -1275,7 +1275,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </button>
                 </div>
-                <div className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
+                <div className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
                   <div className="flex items-center gap-1">
                     <span>{w.word}</span>
                   </div>
@@ -1319,7 +1319,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
-                <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlight(w.exampleTranslation || "-")}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
@@ -1373,13 +1373,13 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlight(w.note || "-")}
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.reviewDate?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                <div className="w-20 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
                   <span>{w.studyCount ?? 0}</span>
                   <button
                     className="px-1 text-xs border rounded"
