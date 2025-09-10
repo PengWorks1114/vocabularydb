@@ -656,10 +656,12 @@ export function WordList({ wordbookId }: WordListProps) {
                   {t("wordList.synonym")}
                 </span>
               </div>
-              <Input
+              <textarea
                 id="newSynonym"
                 value={newSynonym}
                 onChange={(e) => setNewSynonym(e.target.value)}
+                rows={3}
+                className="w-full rounded border px-2 py-1"
               />
             </div>
             <div className="flex-1">
@@ -668,10 +670,12 @@ export function WordList({ wordbookId }: WordListProps) {
                   {t("wordList.antonym")}
                 </span>
               </div>
-              <Input
+              <textarea
                 id="newAntonym"
                 value={newAntonym}
                 onChange={(e) => setNewAntonym(e.target.value)}
+                rows={3}
+                className="w-full rounded border px-2 py-1"
               />
             </div>
           </div>
@@ -749,6 +753,16 @@ export function WordList({ wordbookId }: WordListProps) {
         >
           <Link href={`/wordbooks/${wordbookId}/study`}>
             {t("wordList.studyWords")}
+          </Link>
+        </Button>
+        )}
+        {!bulkMode && (
+        <Button
+          className="bg-blue-500 text-white hover:bg-blue-600"
+          asChild
+        >
+          <Link href={`/wordbooks/${wordbookId}/import`}>
+            {t("wordList.bulkImport")}
           </Link>
         </Button>
         )}
@@ -1078,21 +1092,21 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   <div className="space-y-1">
                     {w.relatedWords?.same && (
-                      <div className="flex items-start text-xs">
-                        <span className="px-1 mr-1 rounded bg-blue-100 text-blue-800">
+                      <div className="flex items-start text-xs gap-1">
+                        <span className="px-1 rounded bg-blue-100 text-blue-800">
                           {t("wordList.synonym")}
                         </span>
-                        <span className="break-words">
+                        <span className="flex-1 min-w-0 break-words whitespace-pre-wrap">
                           {highlight(w.relatedWords.same)}
                         </span>
                       </div>
                     )}
                     {w.relatedWords?.opposite && (
-                      <div className="flex items-start text-xs">
-                        <span className="px-1 mr-1 rounded bg-gray-200 text-gray-800">
+                      <div className="flex items-start text-xs gap-1">
+                        <span className="px-1 rounded bg-gray-200 text-gray-800">
                           {t("wordList.antonym")}
                         </span>
-                        <span className="break-words">
+                        <span className="flex-1 min-w-0 break-words whitespace-pre-wrap">
                           {highlight(w.relatedWords.opposite)}
                         </span>
                       </div>
@@ -1229,10 +1243,12 @@ export function WordList({ wordbookId }: WordListProps) {
                                 {t("wordList.synonym")}
                               </span>
                             </div>
-                            <Input
+                            <textarea
                               id="editSynonym"
                               value={editSynonym}
                               onChange={(e) => setEditSynonym(e.target.value)}
+                              rows={3}
+                              className="w-full rounded border px-2 py-1"
                             />
                           </div>
                           <div className="flex-1">
@@ -1241,10 +1257,12 @@ export function WordList({ wordbookId }: WordListProps) {
                                 {t("wordList.antonym")}
                               </span>
                             </div>
-                            <Input
+                            <textarea
                               id="editAntonym"
                               value={editAntonym}
                               onChange={(e) => setEditAntonym(e.target.value)}
+                              rows={3}
+                              className="w-full rounded border px-2 py-1"
                             />
                           </div>
                         </div>
