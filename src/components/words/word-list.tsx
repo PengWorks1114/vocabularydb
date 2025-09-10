@@ -312,7 +312,7 @@ export function WordList({ wordbookId }: WordListProps) {
   };
 
   const {
-    data: fetchedWords = [],
+    data: fetchedWords,
     isLoading: loading,
     error,
   } = useQuery<Word[]>({
@@ -322,7 +322,7 @@ export function WordList({ wordbookId }: WordListProps) {
   });
 
   useEffect(() => {
-    setWords(fetchedWords);
+    if (fetchedWords) setWords(fetchedWords);
   }, [fetchedWords]);
 
   const tagKey = useRef<string | null>(null);
