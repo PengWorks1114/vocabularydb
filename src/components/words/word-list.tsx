@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -152,6 +153,15 @@ export function WordList({ wordbookId }: WordListProps) {
   const [tempTagFilter, setTempTagFilter] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [masteryQuickOpen, setMasteryQuickOpen] = useState(false);
+  const [masteryQuickWord, setMasteryQuickWord] = useState<Word | null>(null);
+  const [masteryQuickValue, setMasteryQuickValue] = useState(0);
+  const [posQuickOpen, setPosQuickOpen] = useState(false);
+  const [posQuickWord, setPosQuickWord] = useState<Word | null>(null);
+  const [posQuickValue, setPosQuickValue] = useState<string[]>([]);
+  const [usageQuickOpen, setUsageQuickOpen] = useState(false);
+  const [usageQuickWord, setUsageQuickWord] = useState<Word | null>(null);
+  const [usageQuickValue, setUsageQuickValue] = useState(0);
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -455,15 +465,116 @@ export function WordList({ wordbookId }: WordListProps) {
   const handleIncrementStudy = async (w: Word) => {
     if (!user) return;
     const newCount = (w.studyCount || 0) + 1;
+    const now = Timestamp.now();
     try {
-      await updateWord(user.uid, wordbookId, w.id, { studyCount: newCount });
+      await updateWord(user.uid, wordbookId, w.id, {
+        studyCount: newCount,
+        reviewDate: now,
+      });
       setWords((prev) =>
         sortWords(
-          prev.map((x) => (x.id === w.id ? { ...x, studyCount: newCount } : x))
+          prev.map((x) =>
+            x.id === w.id
+              ? { ...x, studyCount: newCount, reviewDate: now }
+              : x
+          )
         )
       );
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const openMasteryQuick = (w: Word) => {
+    setMasteryQuickWord(w);
+    setMasteryQuickValue(masteryLevelMin(w.mastery || 0));
+    setMasteryQuickOpen(true);
+  };
+
+  const saveMasteryQuick = async () => {
+    if (!user || !masteryQuickWord) return;
+    try {
+      await updateWord(user.uid, wordbookId, masteryQuickWord.id, {
+        mastery: masteryQuickValue,
+      });
+      setWords((prev) =>
+        sortWords(
+          prev.map((x) =>
+            x.id === masteryQuickWord.id
+              ? { ...x, mastery: masteryQuickValue }
+              : x
+          )
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMasteryQuickOpen(false);
+      setMasteryQuickWord(null);
+    }
+  };
+
+  const openPosQuick = (w: Word) => {
+    setPosQuickWord(w);
+    setPosQuickValue(w.partOfSpeech || []);
+    setPosQuickOpen(true);
+  };
+
+  const togglePosQuick = (id: string) => {
+    setPosQuickValue((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const savePosQuick = async () => {
+    if (!user || !posQuickWord) return;
+    try {
+      await updateWord(user.uid, wordbookId, posQuickWord.id, {
+        partOfSpeech: posQuickValue,
+      });
+      setWords((prev) =>
+        sortWords(
+          prev.map((x) =>
+            x.id === posQuickWord.id
+              ? { ...x, partOfSpeech: posQuickValue }
+              : x
+          )
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPosQuickOpen(false);
+      setPosQuickWord(null);
+    }
+  };
+
+  const openUsageQuick = (w: Word) => {
+    setUsageQuickWord(w);
+    setUsageQuickValue(w.usageFrequency || 0);
+    setUsageQuickOpen(true);
+  };
+
+  const saveUsageQuick = async () => {
+    if (!user || !usageQuickWord) return;
+    try {
+      await updateWord(user.uid, wordbookId, usageQuickWord.id, {
+        usageFrequency: usageQuickValue,
+      });
+      setWords((prev) =>
+        sortWords(
+          prev.map((x) =>
+            x.id === usageQuickWord.id
+              ? { ...x, usageFrequency: usageQuickValue }
+              : x
+          )
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUsageQuickOpen(false);
+      setUsageQuickWord(null);
     }
   };
 
@@ -1130,8 +1241,15 @@ export function WordList({ wordbookId }: WordListProps) {
                   </button>
                 </div>
                 <div className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
-                  <div>{w.word}</div>
-                  <div className="text-xs text-muted-foreground">{(w.usageFrequency || 0)}⭐</div>
+                  <div className="flex items-center gap-1">
+                    <span>{w.word}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <button onClick={() => openUsageQuick(w)} className="text-yellow-500">
+                      <Star className="h-4 w-4" />
+                    </button>
+                    <span>{w.usageFrequency || 0}</span>
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {highlight(w.pinyin || "-")}
@@ -1139,7 +1257,10 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlight(w.translation || "-")}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  onClick={() => openPosQuick(w)}
+                >
                   {w.partOfSpeech.length ? (
                     <div className="flex flex-wrap gap-1">
                       {w.partOfSpeech.map((id) => {
@@ -1208,7 +1329,12 @@ export function WordList({ wordbookId }: WordListProps) {
                       cls = "bg-orange-500 text-white";
                     }
                     return (
-                      <span className={`mt-1 px-2 py-0.5 rounded text-xs ${cls}`}>{label}</span>
+                      <button
+                        className={`mt-1 px-2 py-0.5 rounded text-xs ${cls}`}
+                        onClick={() => openMasteryQuick(w)}
+                      >
+                        {label}
+                      </button>
                     );
                   })()}
                 </div>
@@ -1508,6 +1634,70 @@ export function WordList({ wordbookId }: WordListProps) {
           </Button>
         </div>
       )}
+
+      <Dialog open={masteryQuickOpen} onOpenChange={setMasteryQuickOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("wordList.updateMastery")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2 mb-4">
+            {masteryOptions.map((opt) => (
+              <Button
+                key={opt.value}
+                className={`${opt.cls} ${
+                  masteryQuickValue === opt.value ? "ring-2 ring-offset-2" : ""
+                }`}
+                onClick={() => setMasteryQuickValue(opt.value)}
+              >
+                {t(`wordList.masteryLevels.${opt.key}`)}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={saveMasteryQuick}>{t("wordList.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={posQuickOpen} onOpenChange={setPosQuickOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("wordList.updatePartOfSpeech")}</DialogTitle>
+          </DialogHeader>
+          {posTags.map((tag) => (
+            <label key={tag.id} className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={posQuickValue.includes(tag.id)}
+                onChange={() => togglePosQuick(tag.id)}
+              />
+              <span
+                className={`px-1 rounded text-xs ${
+                  colorClasses[tag.color] || colorClasses.gray
+                }`}
+              >
+                {tag.name}
+              </span>
+            </label>
+          ))}
+          <DialogFooter>
+            <Button onClick={savePosQuick}>{t("wordList.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={usageQuickOpen} onOpenChange={setUsageQuickOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("wordList.updateUsageFrequency")}</DialogTitle>
+          </DialogHeader>
+          <StarRating value={usageQuickValue} onChange={setUsageQuickValue} />
+          <DialogFooter>
+            <Button onClick={saveUsageQuick}>{t("wordList.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
