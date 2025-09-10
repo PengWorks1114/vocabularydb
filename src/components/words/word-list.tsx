@@ -578,6 +578,35 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
+  const handleInitProgress = async () => {
+    if (!user || selectedIds.length === 0) return;
+    if (!window.confirm(t("wordList.resetConfirm1"))) return;
+    if (!window.confirm(t("wordList.resetConfirm2"))) return;
+    try {
+      await Promise.all(
+        selectedIds.map((id) =>
+          updateWord(user.uid, wordbookId, id, {
+            mastery: 0,
+            studyCount: 0,
+            reviewDate: null,
+          })
+        )
+      );
+      setWords((prev) =>
+        sortWords(
+          prev.map((w) =>
+            selectedIds.includes(w.id)
+              ? { ...w, mastery: 0, studyCount: 0, reviewDate: null }
+              : w
+          )
+        )
+      );
+      setSelectedIds([]);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (!user || selectedIds.length === 0) return;
     if (!window.confirm(t("wordList.deleteConfirm1"))) return;
@@ -973,6 +1002,13 @@ export function WordList({ wordbookId }: WordListProps) {
               onClick={handleExportCsv}
             >
               {t("wordList.exportCsv")}
+            </Button>
+            <Button
+              className="bg-yellow-500 text-black hover:bg-yellow-600"
+              onClick={handleInitProgress}
+              disabled={!selectedIds.length}
+            >
+              {t("wordList.resetProgress")}
             </Button>
             <Button
               className="bg-red-500 text-white hover:bg-red-600"

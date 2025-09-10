@@ -162,6 +162,7 @@ i18n
             bulkDelete: "Bulk Delete",
             exportCsv: "Export CSV",
             bulkImport: "Bulk Import",
+            resetProgress: "Reset Progress",
             import: "Import",
             bulkImportExample: `Example:
 word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note
@@ -197,6 +198,9 @@ run,,跑,v.,We run.,我們跑,,,0,0,`,
             prevPage: "Prev",
             nextPage: "Next",
             lastPage: "Last",
+            resetConfirm1:
+              "Reset mastery, study count, and review date for selected words?",
+            resetConfirm2: "This cannot be undone! Are you sure?",
             deleteConfirm1: "Delete selected?",
             deleteConfirm2: "Really delete? This cannot be undone!",
             confirmDeleteWord: 'Delete "{{word}}"?',
@@ -366,6 +370,7 @@ run,,跑,v.,We run.,我們跑,,,0,0,`,
             bulkDelete: "批量刪除",
             exportCsv: "匯出CSV",
             bulkImport: "批量匯入",
+            resetProgress: "初始化進度",
             import: "匯入",
             bulkImportExample: `範例:
 單字,拼音,翻譯,詞性,例句,例句翻譯,同義詞,反義詞,使用頻率,掌握度,備註
@@ -401,6 +406,9 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
             prevPage: "前頁",
             nextPage: "次頁",
             lastPage: "最後頁",
+            resetConfirm1:
+              "注意!會將『掌握度』『學習次數』『複習日期』都恢復初始值 確定嗎?",
+            resetConfirm2: "確定後就不可以復原!! 確定嗎?",
             deleteConfirm1: "是否刪除?",
             deleteConfirm2: "真的要刪除嗎? 刪除後就不能再復原內容喔!",
             confirmDeleteWord: "確定要刪除『{{word}}』嗎？",
@@ -569,6 +577,7 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
             bulkDelete: "一括削除",
             exportCsv: "CSV出力",
             bulkImport: "一括インポート",
+            resetProgress: "進捗初期化",
             import: "インポート",
             bulkImportExample: `例:
 単語,ピンイン,翻訳,品詞,例文,例文訳,同義語,反意語,使用頻度,習得度,メモ
@@ -604,6 +613,9 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
             prevPage: "前へ",
             nextPage: "次へ",
             lastPage: "最後",
+            resetConfirm1:
+              "注意！選択した単語の習得度・学習回数・復習日が初期化されます。よろしいですか？",
+            resetConfirm2: "一度実行すると元に戻せません。よろしいですか？",
             deleteConfirm1: "削除しますか？",
             deleteConfirm2: "本当に削除しますか？削除すると元に戻せません！",
             confirmDeleteWord: '「{{word}}」を削除しますか？',
