@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Heart, Star, ChevronDown } from "lucide-react";
+import { Heart, Star, ChevronDown, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 
@@ -126,6 +126,8 @@ type SortField =
   | "usageFrequency"
   | "studyCount";
 
+const PER_PAGE = 20;
+
 // Word management component: display, create, edit, delete
 export function WordList({ wordbookId }: WordListProps) {
   const { user } = useAuth();
@@ -142,7 +144,9 @@ export function WordList({ wordbookId }: WordListProps) {
   const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [tempTagFilter, setTempTagFilter] = useState<string[]>([]);
@@ -305,6 +309,10 @@ export function WordList({ wordbookId }: WordListProps) {
     setWords((prev) => sortWords(prev));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, sortDir]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [sortBy, sortDir, search, showFavorites, tagFilter]);
 
   useEffect(() => {
     if (!bulkMode) setSelectedIds([]);
@@ -561,8 +569,17 @@ export function WordList({ wordbookId }: WordListProps) {
       }),
     [words, showFavorites, tagFilter, search]
   );
+  const totalPages = Math.max(1, Math.ceil(displayWords.length / PER_PAGE));
+  const visibleWords = useMemo(
+    () =>
+      displayWords.slice((page - 1) * PER_PAGE, page * PER_PAGE),
+    [displayWords, page]
+  );
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
   const allSelected =
-    displayWords.length > 0 && selectedIds.length === displayWords.length;
+    visibleWords.length > 0 && visibleWords.every((w) => selectedIds.includes(w.id));
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -570,9 +587,13 @@ export function WordList({ wordbookId }: WordListProps) {
   };
   const toggleSelectAll = () => {
     if (allSelected) {
-      setSelectedIds([]);
+      setSelectedIds((prev) =>
+        prev.filter((id) => !visibleWords.some((w) => w.id === id))
+      );
     } else {
-      setSelectedIds(displayWords.map((w) => w.id));
+      setSelectedIds((prev) =>
+        Array.from(new Set([...prev, ...visibleWords.map((w) => w.id)]))
+      );
     }
   };
   const emptyMessage =
@@ -864,12 +885,31 @@ export function WordList({ wordbookId }: WordListProps) {
             />
             {t("wordList.reverseOrder")}
           </label>
-          <Input
-            placeholder={t("wordList.searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-40"
-          />
+          <div className="flex items-center gap-1">
+            <Input
+              placeholder={t("wordList.searchPlaceholder")}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setSearch(searchInput);
+                  setPage(1);
+                }
+              }}
+              className="w-40"
+            />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => {
+                setSearch(searchInput);
+                setPage(1);
+              }}
+              aria-label={t("wordList.searchButton")}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1018,8 +1058,8 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
-          {displayWords.length ? (
-            displayWords.map((w) => (
+          {visibleWords.length ? (
+            visibleWords.map((w) => (
               <div key={w.id} className="flex border-b">
                 {bulkMode && (
                   <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center">
@@ -1362,6 +1402,63 @@ export function WordList({ wordbookId }: WordListProps) {
           )}
         </div>
       </div>
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-1 mt-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(1)}
+            disabled={page === 1}
+          >
+            {t("wordList.firstPage")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(page - 1)}
+            disabled={page === 1}
+          >
+            {t("wordList.prevPage")}
+          </Button>
+          {(() => {
+            const start = Math.max(1, page - 3);
+            const end = Math.min(totalPages, page + 3);
+            const items: React.ReactNode[] = [];
+            if (start > 1) items.push(<span key="start-ellipsis">…</span>);
+            for (let p = start; p <= end; p++) {
+              items.push(
+                <Button
+                  key={p}
+                  size="sm"
+                  variant={p === page ? "default" : "outline"}
+                  onClick={() => setPage(p)}
+                  disabled={p === page}
+                >
+                  {p}
+                </Button>
+              );
+            }
+            if (end < totalPages) items.push(<span key="end-ellipsis">…</span>);
+            return items;
+          })()}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(page + 1)}
+            disabled={page === totalPages}
+          >
+            {t("wordList.nextPage")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage(totalPages)}
+            disabled={page === totalPages}
+          >
+            {t("wordList.lastPage")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
