@@ -101,15 +101,24 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
 }
 
 function computeMastery(current: number, choice: Answer): number {
+  const getRegion = (value: number): Answer => {
+    if (value >= 75) return "memorized";
+    if (value >= 50) return "familiar";
+    if (value >= 25) return "impression";
+    return "unknown";
+  };
+
+  const currentRegion = getRegion(current);
+
   switch (choice) {
     case "unknown":
-      return 0;
+      return currentRegion === "unknown" ? current : 0;
     case "impression":
-      return Math.round(current + (40 - current) * 0.1);
+      return currentRegion === "impression" ? Math.min(100, current + 5) : 25;
     case "familiar":
-      return Math.round(current + (70 - current) * 0.1);
+      return currentRegion === "familiar" ? Math.min(100, current + 10) : 50;
     case "memorized":
-      return current >= 90 ? Math.min(100, current + 1) : 90;
+      return currentRegion === "memorized" ? current : 75;
   }
 }
 
