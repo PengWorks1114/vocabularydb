@@ -132,7 +132,9 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("gray");
 
-  const [sortBy, setSortBy] = useState<"createdAt" | "mastery" | "usageFrequency">("createdAt");
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "reviewDate" | "mastery" | "usageFrequency"
+  >("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFavorites, setShowFavorites] = useState(false);
   const [search, setSearch] = useState("");
@@ -155,6 +157,9 @@ export function WordList({ wordbookId }: WordListProps) {
       if (sortBy === "createdAt") {
         aVal = a.createdAt?.toMillis() || 0;
         bVal = b.createdAt?.toMillis() || 0;
+      } else if (sortBy === "reviewDate") {
+        aVal = a.reviewDate?.toMillis() || 0;
+        bVal = b.reviewDate?.toMillis() || 0;
       } else if (sortBy === "mastery") {
         aVal = a.mastery || 0;
         bVal = b.mastery || 0;
@@ -212,7 +217,7 @@ export function WordList({ wordbookId }: WordListProps) {
   };
 
   const toggleSort = (
-    column: "createdAt" | "mastery" | "usageFrequency"
+    column: "createdAt" | "reviewDate" | "mastery" | "usageFrequency"
   ) => {
     if (sortBy === column) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -892,6 +897,20 @@ export function WordList({ wordbookId }: WordListProps) {
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+              <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("reviewDate")}>
+                {t("wordList.reviewDate")}
+                {sortBy === "reviewDate" ? (
+                  sortDir === "desc" ? (
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 ml-1" />
+                  )
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                )}
+              </button>
+            </div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={() => toggleSort("createdAt")}>
                 {t("wordList.createdAt")}
                 {sortBy === "createdAt" ? (
@@ -994,6 +1013,9 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   {w.note || "-"}
+                </div>
+                <div className="w-24 px-2 py-2 border-r border-gray-200">
+                  {w.reviewDate?.toDate().toLocaleDateString() || "-"}
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}

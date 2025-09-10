@@ -38,6 +38,7 @@ export interface Word {
   note: string;
   wordbookId: string;
   createdAt: Timestamp;
+  reviewDate?: Timestamp | null;
 }
 
 // Custom part-of-speech tags
@@ -177,7 +178,7 @@ export const getWordsByWordbookId = async (
 export const createWord = async (
   userId: string,
   wordbookId: string,
-  wordData: Omit<Word, "id" | "createdAt" | "wordbookId">
+  wordData: Omit<Word, "id" | "createdAt" | "wordbookId" | "reviewDate">
 ): Promise<Word> => {
   const colRef = collection(
     db,
@@ -191,12 +192,14 @@ export const createWord = async (
     ...wordData,
     wordbookId,
     createdAt: Timestamp.now(),
+    reviewDate: null,
   });
   return {
     id: docRef.id,
     ...wordData,
     wordbookId,
     createdAt: Timestamp.now(),
+    reviewDate: null,
   };
 };
 

@@ -13,6 +13,7 @@ import {
   updateWord,
   Word,
 } from "@/lib/firestore-service";
+import { Timestamp } from "firebase/firestore";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
@@ -26,6 +27,8 @@ type Mode =
   | "freqHigh"
   | "recent"
   | "old"
+  | "reviewRecent"
+  | "reviewOld"
   | "onlyUnknown"
   | "onlyImpression"
   | "onlyFamiliar"
@@ -83,6 +86,18 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
       break;
     case "old":
       words.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+      break;
+    case "reviewRecent":
+      words.sort(
+        (a, b) =>
+          (b.reviewDate?.toMillis() || 0) - (a.reviewDate?.toMillis() || 0)
+      );
+      break;
+    case "reviewOld":
+      words.sort(
+        (a, b) =>
+          (a.reviewDate?.toMillis() || 0) - (b.reviewDate?.toMillis() || 0)
+      );
       break;
     default:
       words = shuffle(words);
@@ -198,18 +213,20 @@ export default function DictationSessionPage({ params }: PageProps) {
     setCorrect(isCorrect);
     if (!auth.currentUser) return;
     const newMastery = computeMastery(word.mastery, isCorrect);
+    const now = Timestamp.now();
     await updateWord(auth.currentUser.uid, wordbookId, word.id, {
       mastery: newMastery,
+      reviewDate: now,
     });
     setSessionWords((prev) => {
       const copy = [...prev];
-      copy[index] = { ...word, mastery: newMastery };
+      copy[index] = { ...word, mastery: newMastery, reviewDate: now };
       return copy;
     });
     setWords((prev) => {
       const copy = [...prev];
       const i = copy.findIndex((w) => w.id === word.id);
-      if (i !== -1) copy[i] = { ...word, mastery: newMastery };
+      if (i !== -1) copy[i] = { ...word, mastery: newMastery, reviewDate: now };
       return copy;
     });
     setShowDetails(true);
