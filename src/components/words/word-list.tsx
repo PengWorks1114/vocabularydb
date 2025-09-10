@@ -257,6 +257,9 @@ export function WordList({ wordbookId }: WordListProps) {
         String.fromCharCode(c.charCodeAt(0) - 0x60)
       );
 
+  const escapeRegExp = (str: string) =>
+    str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   const highlight = (text: string) => {
     if (!search.trim()) return text;
     const term = search.trim();
@@ -278,6 +281,21 @@ export function WordList({ wordbookId }: WordListProps) {
     }
     parts.push(text.slice(lastIndex));
     return parts;
+  };
+
+  const highlightExample = (sentence: string, word: string) => {
+    if (!word) return highlight(sentence);
+    const regex = new RegExp(`(${escapeRegExp(word)})`, "gi");
+    const parts = sentence.split(regex);
+    return parts.map((part, idx) =>
+      part.toLowerCase() === word.toLowerCase() ? (
+        <span key={idx} className="text-red-600 font-bold">
+          {part}
+        </span>
+      ) : (
+        <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
+      )
+    );
   };
 
   async function load() {
@@ -578,6 +596,9 @@ export function WordList({ wordbookId }: WordListProps) {
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
   const allSelected =
     visibleWords.length > 0 && visibleWords.every((w) => selectedIds.includes(w.id));
   const toggleSelect = (id: string) => {
@@ -997,6 +1018,22 @@ export function WordList({ wordbookId }: WordListProps) {
           <DialogHeader>
             <DialogTitle>{t("wordList.filterTags")}</DialogTitle>
           </DialogHeader>
+          <div className="flex gap-2 mb-4">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTempTagFilter(posTags.map((t) => t.id))}
+            >
+              {t("wordList.selectAllTags")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTempTagFilter([])}
+            >
+              {t("wordList.clearAllTags")}
+            </Button>
+          </div>
           {posTags.map((tag) => (
             <label key={tag.id} className="flex items-center gap-2 mb-2">
               <input
@@ -1114,7 +1151,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
-                  {highlight(w.exampleSentence || "-")}
+                  {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
                   {highlight(w.exampleTranslation || "-")}
