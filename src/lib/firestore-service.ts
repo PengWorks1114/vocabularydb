@@ -53,6 +53,10 @@ export interface PartOfSpeechTag {
   userId: string;
 }
 
+// simple in-memory cache to avoid repeated reads for the same wordbook
+const wordCache: Record<string, Word[]> = {};
+const makeCacheKey = (userId: string, wordbookId: string) => `${userId}_${wordbookId}`;
+
 // Get all wordbooks for a user
 export const getWordbooksByUserId = async (
   userId: string
@@ -162,6 +166,8 @@ export const getWordsByWordbookId = async (
   userId: string,
   wordbookId: string
 ): Promise<Word[]> => {
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) return wordCache[key];
   const colRef = collection(
     db,
     "users",
@@ -175,6 +181,7 @@ export const getWordsByWordbookId = async (
   snapshot.forEach((docSnap) => {
     words.push({ id: docSnap.id, ...docSnap.data() } as Word);
   });
+  wordCache[key] = words;
   return words;
 };
 
@@ -199,14 +206,17 @@ export const createWord = async (
     reviewDate: null,
     studyCount: 0,
   });
-  return {
+  const newWord = {
     id: docRef.id,
     ...wordData,
     wordbookId,
     createdAt: Timestamp.now(),
     reviewDate: null,
     studyCount: 0,
-  };
+  } as Word;
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) wordCache[key].push(newWord);
+  return newWord;
 };
 
 // Update word
@@ -226,6 +236,12 @@ export const updateWord = async (
     wordId
   );
   await updateDoc(ref, updateData);
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].map((w) =>
+      w.id === wordId ? { ...w, ...updateData } : w
+    );
+  }
 };
 
 // Delete word
@@ -244,6 +260,10 @@ export const deleteWord = async (
     wordId
   );
   await deleteDoc(ref);
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].filter((w) => w.id !== wordId);
+  }
 };
 
 // ------------------- Part-of-speech tag CRUD -------------------

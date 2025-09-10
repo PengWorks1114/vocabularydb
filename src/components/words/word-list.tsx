@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -439,6 +439,21 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
+  const handleIncrementStudy = async (w: Word) => {
+    if (!user) return;
+    const newCount = (w.studyCount || 0) + 1;
+    try {
+      await updateWord(user.uid, wordbookId, w.id, { studyCount: newCount });
+      setWords((prev) =>
+        sortWords(
+          prev.map((x) => (x.id === w.id ? { ...x, studyCount: newCount } : x))
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (!user || selectedIds.length === 0) return;
     if (!window.confirm(t("wordList.deleteConfirm1"))) return;
@@ -540,23 +555,27 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
-  const displayWords = words.filter((w) => {
-    if (showFavorites && !w.favorite) return false;
-    if (tagFilter.length && !tagFilter.every((t) => w.partOfSpeech?.includes(t))) {
-      return false;
-    }
-    if (!search.trim()) return true;
-    const term = normalize(search.trim());
-    return [
-      w.word,
-      w.translation,
-      w.pinyin || "",
-      w.exampleSentence || "",
-      w.exampleTranslation || "",
-      w.relatedWords?.same || "",
-      w.relatedWords?.opposite || "",
-    ].some((f) => normalize(f).includes(term));
-  });
+  const displayWords = useMemo(
+    () =>
+      words.filter((w) => {
+        if (showFavorites && !w.favorite) return false;
+        if (tagFilter.length && !tagFilter.every((t) => w.partOfSpeech?.includes(t))) {
+          return false;
+        }
+        if (!search.trim()) return true;
+        const term = normalize(search.trim());
+        return [
+          w.word,
+          w.translation,
+          w.pinyin || "",
+          w.exampleSentence || "",
+          w.exampleTranslation || "",
+          w.relatedWords?.same || "",
+          w.relatedWords?.opposite || "",
+        ].some((f) => normalize(f).includes(term));
+      }),
+    [words, showFavorites, tagFilter, search]
+  );
   const allSelected =
     displayWords.length > 0 && selectedIds.length === displayWords.length;
   const toggleSelect = (id: string) => {
@@ -830,6 +849,7 @@ export function WordList({ wordbookId }: WordListProps) {
           </Button>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <span>{t("wordList.wordCount", { count: words.length })}</span>
           <div className="flex items-center gap-2">
             <span>{t("wordList.overallMastery")}</span>
             <div className="h-2 w-24 rounded bg-gray-200">
@@ -1176,8 +1196,14 @@ export function WordList({ wordbookId }: WordListProps) {
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.reviewDate?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200">
-                  {w.studyCount ?? 0}
+                <div className="w-24 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                  <span>{w.studyCount ?? 0}</span>
+                  <button
+                    className="px-1 text-xs border rounded"
+                    onClick={() => handleIncrementStudy(w)}
+                  >
+                    +
+                  </button>
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
