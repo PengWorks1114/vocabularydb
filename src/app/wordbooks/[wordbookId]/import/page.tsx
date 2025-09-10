@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { createWord } from "@/lib/firestore-service";
+import { bulkImportWords } from "@/lib/firestore-service";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -35,6 +35,7 @@ export default function ImportPage({ params }: PageProps) {
         .split(/\n+/)
         .map((l) => l.trim())
         .filter((l) => l);
+      const items = [] as Parameters<typeof bulkImportWords>[2];
       for (const line of lines) {
         const parts = line.split(",");
         const [word, pinyin, translation, partOfSpeech, exampleSentence, exampleTranslation, synonym, antonym, usageFrequency, mastery, note] = parts.map((p) => p.trim());
@@ -46,7 +47,7 @@ export default function ImportPage({ params }: PageProps) {
                 ...(antonym && { opposite: antonym }),
               }
             : undefined;
-        await createWord(user.uid, wordbookId, {
+        items.push({
           word,
           pinyin: pinyin || "",
           translation: translation || "",
@@ -59,6 +60,9 @@ export default function ImportPage({ params }: PageProps) {
           note: note || "",
           favorite: false,
         });
+      }
+      if (items.length) {
+        await bulkImportWords(user.uid, wordbookId, items);
       }
       setCsv("");
       alert(t("wordList.importSuccess"));

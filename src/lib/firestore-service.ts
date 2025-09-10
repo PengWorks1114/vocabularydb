@@ -7,6 +7,7 @@ import {
   deleteDoc,
   updateDoc,
   Timestamp,
+  writeBatch,
   query,
   where,
 } from "firebase/firestore";
@@ -264,6 +265,100 @@ export const deleteWord = async (
   const key = makeCacheKey(userId, wordbookId);
   if (wordCache[key]) {
     wordCache[key] = wordCache[key].filter((w) => w.id !== wordId);
+  }
+};
+
+// Bulk import words
+export const bulkImportWords = async (
+  userId: string,
+  wordbookId: string,
+  data: Omit<
+    Word,
+    "id" | "createdAt" | "wordbookId" | "reviewDate" | "studyCount"
+  >[]
+): Promise<Word[]> => {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words"
+  );
+  const batch = writeBatch(db);
+  const createdAt = Timestamp.now();
+  const newWords: Word[] = [];
+  data.forEach((d) => {
+    const docRef = doc(colRef);
+    const word: Word = {
+      id: docRef.id,
+      ...d,
+      wordbookId,
+      createdAt,
+      reviewDate: null,
+      studyCount: 0,
+    };
+    batch.set(docRef, word);
+    newWords.push(word);
+  });
+  await batch.commit();
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) wordCache[key].push(...newWords);
+  else wordCache[key] = [...newWords];
+  return newWords;
+};
+
+// Reset progress for multiple words
+export const resetWordsProgress = async (
+  userId: string,
+  wordbookId: string,
+  ids: string[]
+): Promise<void> => {
+  const batch = writeBatch(db);
+  ids.forEach((id) => {
+    const ref = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "words",
+      id
+    );
+    batch.update(ref, { mastery: 0, studyCount: 0, reviewDate: null });
+  });
+  await batch.commit();
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].map((w) =>
+      ids.includes(w.id) ? { ...w, mastery: 0, studyCount: 0, reviewDate: null } : w
+    );
+  }
+};
+
+// Bulk delete words
+export const bulkDeleteWords = async (
+  userId: string,
+  wordbookId: string,
+  ids: string[]
+): Promise<void> => {
+  const batch = writeBatch(db);
+  ids.forEach((id) => {
+    const ref = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "words",
+      id
+    );
+    batch.delete(ref);
+  });
+  await batch.commit();
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    wordCache[key] = wordCache[key].filter((w) => !ids.includes(w.id));
   }
 };
 

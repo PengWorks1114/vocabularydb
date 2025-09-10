@@ -8,6 +8,8 @@ import {
   createWord,
   updateWord,
   deleteWord,
+  resetWordsProgress,
+  bulkDeleteWords,
   getPartOfSpeechTags,
   createPartOfSpeechTag,
   updatePartOfSpeechTag,
@@ -590,15 +592,7 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!window.confirm(t("wordList.resetConfirm1"))) return;
     if (!window.confirm(t("wordList.resetConfirm2"))) return;
     try {
-      await Promise.all(
-        selectedIds.map((id) =>
-          updateWord(user.uid, wordbookId, id, {
-            mastery: 0,
-            studyCount: 0,
-            reviewDate: null,
-          })
-        )
-      );
+      await resetWordsProgress(user.uid, wordbookId, selectedIds);
       setWords((prev) =>
         sortWords(
           prev.map((w) =>
@@ -619,9 +613,7 @@ export function WordList({ wordbookId }: WordListProps) {
     if (!window.confirm(t("wordList.deleteConfirm1"))) return;
     if (!window.confirm(t("wordList.deleteConfirm2"))) return;
     try {
-      await Promise.all(
-        selectedIds.map((id) => deleteWord(user.uid, wordbookId, id))
-      );
+      await bulkDeleteWords(user.uid, wordbookId, selectedIds);
       setWords((prev) =>
         sortWords(prev.filter((w) => !selectedIds.includes(w.id)))
       );
