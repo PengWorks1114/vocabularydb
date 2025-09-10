@@ -270,7 +270,11 @@ export default function DictationSessionPage({ params }: PageProps) {
 
   useEffect(() => {
     if (step === "dictating") {
-      inputRef.current?.focus();
+      const el = inputRef.current;
+      if (el) {
+        el.blur();
+        setTimeout(() => el.focus(), 0);
+      }
     }
   }, [index, step]);
 
@@ -329,11 +333,11 @@ export default function DictationSessionPage({ params }: PageProps) {
             {t("dictation.progress", { current: index + 1, total: sessionWords.length })}
           </p>
           <div className="border rounded p-6 space-y-4 text-center">
-            <div className="text-3xl font-bold">{prompt}</div>
+            <div className="text-3xl font-bold mb-12">{prompt}</div>
             {!showDetails ? (
               <form onSubmit={submit} className="space-y-4">
                 <div
-                  className="relative mt-4 flex justify-center gap-2 text-2xl"
+                  className="relative flex justify-center gap-2 text-2xl"
                   onClick={() => inputRef.current?.focus()}
                 >
                   <input
@@ -366,27 +370,30 @@ export default function DictationSessionPage({ params }: PageProps) {
               </form>
             ) : (
               <div className="space-y-2 text-left text-lg">
-                  <div
-                    className={`text-2xl font-bold text-center ${
-                      correct ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {correct ? t("dictation.correct") : t("dictation.wrong")}
-                  </div>
-                  <div className="text-xl font-bold text-red-600">
-                    {t("wordList.translation")}: {currentWord.translation}
-                  </div>
-                  <div>
-                    {t("wordList.pinyin")}: {currentWord.pinyin}
-                  </div>
-                  <div className="whitespace-pre-line">
-                    {t("wordList.example")}: {currentWord.exampleSentence}
-                  </div>
-                  <div className="whitespace-pre-line">
-                    {t("wordList.exampleTranslation")}: {currentWord.exampleTranslation}
-                  </div>
+                <div
+                  className={`text-2xl font-bold text-center ${
+                    correct ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {correct ? t("dictation.correct") : t("dictation.wrong")}
                 </div>
-              )}
+                <div className="text-xl font-bold">
+                  {t("wordList.word")}: {currentWord.word}
+                </div>
+                <div className="text-xl font-bold text-red-600">
+                  {t("wordList.translation")}: {currentWord.translation}
+                </div>
+                <div>
+                  {t("wordList.pinyin")}: {currentWord.pinyin}
+                </div>
+                <div className="whitespace-pre-line">
+                  {t("wordList.example")}: {currentWord.exampleSentence}
+                </div>
+                <div className="whitespace-pre-line">
+                  {t("wordList.exampleTranslation")}: {currentWord.exampleTranslation}
+                </div>
+              </div>
+            )}
             {showDetails && (
               <Button className="w-full text-base" onClick={next}>
                 {t("dictation.next")}
