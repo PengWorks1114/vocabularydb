@@ -218,7 +218,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
     setStep("reciting");
   };
 
-  const handleAnswer = async (choice: Answer) => {
+  const handleMastery = async (choice: Answer) => {
     const word = sessionWords[index];
     if (!auth.currentUser) return;
     const newMastery = computeMastery(word.mastery, choice);
@@ -251,7 +251,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
         };
       return copy;
     });
-    setShowDetails(true);
+    next();
   };
 
   const next = useCallback(() => {
@@ -263,16 +263,18 @@ export default function ReciteSessionPage({ params }: PageProps) {
     }
   }, [index, sessionWords.length]);
 
+  const showAnswer = () => setShowDetails(true);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && showDetails) {
+      if (e.key === "Enter" && !showDetails) {
         e.preventDefault();
-        next();
+        setShowDetails(true);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [showDetails, next]);
+  }, [showDetails]);
 
   const repeatSet = () => {
     setIndex(0);
@@ -285,9 +287,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
   };
 
   const progressPercent =
-    sessionWords.length > 0
-      ? ((index + (showDetails ? 1 : 0)) / sessionWords.length) * 100
-      : 0;
+    sessionWords.length > 0 ? (index / sessionWords.length) * 100 : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
   return (
@@ -336,50 +336,48 @@ export default function ReciteSessionPage({ params }: PageProps) {
             <div className="text-3xl font-bold">
               {sessionWords[index].word}
             </div>
-            {showDetails && (
-              <div className="space-y-2 text-left text-lg">
-                <div className="text-3xl font-bold text-red-600">
-                  {t("wordList.translation")}: {sessionWords[index].translation}
-                </div>
-                <div>
-                  {t("wordList.pinyin")}: {sessionWords[index].pinyin}
-                </div>
-                <div className="whitespace-pre-line">
-                  {t("wordList.example")}: {sessionWords[index].exampleSentence}
-                </div>
-                <div className="whitespace-pre-line">
-                  {t("wordList.exampleTranslation")}: {sessionWords[index].exampleTranslation}
-                </div>
-              </div>
-            )}
-            {!showDetails ? (
+            {showDetails ? (
               <>
+                <div className="space-y-2 text-left text-lg">
+                  <div className="text-3xl font-bold text-red-600">
+                    {t("wordList.translation")}: {sessionWords[index].translation}
+                  </div>
+                  <div>
+                    {t("wordList.pinyin")}: {sessionWords[index].pinyin}
+                  </div>
+                  <div className="whitespace-pre-line">
+                    {t("wordList.example")}: {sessionWords[index].exampleSentence}
+                  </div>
+                  <div className="whitespace-pre-line">
+                    {t("wordList.exampleTranslation")}: {sessionWords[index].exampleTranslation}
+                  </div>
+                </div>
                 <div className="grid grid-cols-4 gap-1">
                   <Button
                     size="sm"
                     className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-base"
-                    onClick={() => handleAnswer("unknown")}
+                    onClick={() => handleMastery("unknown")}
                   >
                     {t("wordList.masteryLevels.unknown")}
                   </Button>
                   <Button
                     size="sm"
                     className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 text-base"
-                    onClick={() => handleAnswer("impression")}
+                    onClick={() => handleMastery("impression")}
                   >
                     {t("wordList.masteryLevels.impression")}
                   </Button>
                   <Button
                     size="sm"
                     className="bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 text-base"
-                    onClick={() => handleAnswer("familiar")}
+                    onClick={() => handleMastery("familiar")}
                   >
                     {t("wordList.masteryLevels.familiar")}
                   </Button>
                   <Button
                     size="sm"
                     className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-base"
-                    onClick={() => handleAnswer("memorized")}
+                    onClick={() => handleMastery("memorized")}
                   >
                     {t("wordList.masteryLevels.memorized")}
                   </Button>
@@ -405,8 +403,8 @@ export default function ReciteSessionPage({ params }: PageProps) {
                 </div>
               </>
             ) : (
-              <Button className="w-full text-base" onClick={next}>
-                {t("recite.next")}
+              <Button className="w-full text-base" onClick={showAnswer}>
+                {t("recite.showAnswer")}
               </Button>
             )}
           </div>
