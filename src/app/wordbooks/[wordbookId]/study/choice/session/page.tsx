@@ -331,7 +331,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                 : sessionWords[index].word}
             </div>
             {!showResult ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 mt-12">
                 {options.map((o) => (
                   <Button
                     key={o.id}

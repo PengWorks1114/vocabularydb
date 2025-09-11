@@ -152,7 +152,7 @@ export default function ChoiceSettingsPage({ params }: PageProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="direction-select">{t("dictation.direction")}</Label>
+            <Label htmlFor="direction-select">{t("choice.optionMode")}</Label>
             <Select
               value={direction}
               onValueChange={(value) => setDirection(value as Direction)}
@@ -165,7 +165,7 @@ export default function ChoiceSettingsPage({ params }: PageProps) {
                   ["word", "translation"] as Direction[]
                 ).map((d) => (
                   <SelectItem key={d} value={d}>
-                    {t(`dictation.directions.${d}`)}
+                    {t(`choice.optionModes.${d}`)}
                   </SelectItem>
                 ))}
               </SelectContent>

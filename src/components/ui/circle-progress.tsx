@@ -5,6 +5,7 @@ interface CircleProgressProps {
   size?: number;
   strokeWidth?: number;
   color?: string;
+  label?: string;
 }
 
 export function CircleProgress({
@@ -12,6 +13,7 @@ export function CircleProgress({
   size = 200,
   strokeWidth = 12,
   color = "#facc15", // tailwind yellow-400
+  label,
 }: CircleProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -39,9 +41,20 @@ export function CircleProgress({
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
+      {label && (
+        <text
+          x="50%"
+          y="40%"
+          dominantBaseline="middle"
+          textAnchor="middle"
+          className="text-sm"
+        >
+          {label}
+        </text>
+      )}
       <text
         x="50%"
-        y="50%"
+        y={label ? "60%" : "50%"}
         dominantBaseline="middle"
         textAnchor="middle"
         className="text-3xl font-bold"

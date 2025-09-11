@@ -106,6 +106,11 @@ i18n
           choice: {
             settingsTitle: "Multiple Choice Settings",
             start: "Start",
+            optionMode: "Option Mode",
+            optionModes: {
+              word: "Show word, choose translation",
+              translation: "Show translation, choose word",
+            },
           },
           backToList: "Back to wordbooks",
           backToStudy: "Back to study",
@@ -319,6 +324,11 @@ run,,跑,v.,We run.,我們跑,,,0,0,`,
           choice: {
             settingsTitle: "四選一模式設定",
             start: "開始作答",
+            optionMode: "選項模式",
+            optionModes: {
+              word: "顯示單字，選擇翻譯",
+              translation: "顯示翻譯，選擇單字",
+            },
           },
           backToList: "返回單字本列表",
           backToStudy: "返回背誦頁",
@@ -531,6 +541,11 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
           choice: {
             settingsTitle: "四択モード設定",
             start: "開始",
+            optionMode: "選択モード",
+            optionModes: {
+              word: "単語を表示し、訳を選択",
+              translation: "訳を表示し、単語を選択",
+            },
           },
           backToList: "単語帳一覧に戻る",
           backToStudy: "暗記ページに戻る",
