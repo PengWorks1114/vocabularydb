@@ -74,7 +74,7 @@ export default function ChoiceSettingsPage({ params }: PageProps) {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <Link
-          href={`/wordbooks/${wordbookId}/study/recite`}
+          href={`/wordbooks/${wordbookId}/study`}
           className="text-sm text-muted-foreground"
           suppressHydrationWarning
         >

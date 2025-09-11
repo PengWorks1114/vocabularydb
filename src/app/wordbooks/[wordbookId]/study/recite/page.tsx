@@ -153,11 +153,6 @@ export default function ReciteSettingsPage({ params }: PageProps) {
           <Button className="w-full" onClick={start}>
             {t("recite.start")}
           </Button>
-          <Button asChild variant="outline" className="w-full">
-            <Link href={`/wordbooks/${wordbookId}/study/choice`}>
-              {t("recite.choice")}
-            </Link>
-          </Button>
         </CardFooter>
       </Card>
     </div>

@@ -43,6 +43,7 @@ i18n
           studyPage: {
             recite: "Recite Words",
             dictation: "Dictation",
+            choice: "Multiple Choice",
             totalWords: "Total words: {{count}}",
           },
           recite: {
@@ -50,7 +51,6 @@ i18n
             count: "Number of words",
             mode: "Selection mode",
             start: "Start",
-            choice: "Four-choice mode",
             progress: "Progress: {{current}}/{{total}}",
             masteryTitle: "Mastery:",
             hints: {
@@ -140,7 +140,7 @@ i18n
             synonym: "Syn",
             antonym: "Ant",
             usageFrequency: "Usage Frequency",
-            masteryWithRange: "Mastery (0-1000)",
+            masteryWithRange: "Mastery (0-100)",
             mastery: "Mastery",
             points: "%",
             masteryLevels: {
@@ -256,6 +256,7 @@ run,,跑,v.,We run.,我們跑,,,0,0,`,
           studyPage: {
             recite: "背單字",
             dictation: "默寫單字",
+            choice: "四選一",
             totalWords: "目前整體共{{count}}個單字",
           },
           recite: {
@@ -263,7 +264,6 @@ run,,跑,v.,We run.,我們跑,,,0,0,`,
             count: "一次抽考數量",
             mode: "抽選方式",
             start: "開始背誦",
-            choice: "四選一模式",
             progress: "進度：{{current}}/{{total}}",
             masteryTitle: "掌握度:",
             hints: {
@@ -353,7 +353,7 @@ run,,跑,v.,We run.,我們跑,,,0,0,`,
             synonym: "同",
             antonym: "反",
             usageFrequency: "使用頻率",
-            masteryWithRange: "掌握度 (0-1000)",
+            masteryWithRange: "掌握度 (0-100)",
             mastery: "掌握度",
             points: "%",
             masteryLevels: {
@@ -468,6 +468,7 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
           studyPage: {
             recite: "単語を暗記",
             dictation: "単語を書き取り",
+            choice: "四択",
             totalWords: "全体で{{count}}語",
           },
           recite: {
@@ -475,7 +476,6 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
             count: "出題数",
             mode: "抽出方法",
             start: "開始",
-            choice: "四択モード",
             progress: "進捗：{{current}}/{{total}}",
             masteryTitle: "習熟度:",
             hints: {
@@ -565,7 +565,7 @@ run,,跑,動詞,We run.,我們跑,,,0,0,`,
             synonym: "類義語",
             antonym: "反意語",
             usageFrequency: "使用頻度",
-            masteryWithRange: "習得度 (0-1000)",
+            masteryWithRange: "習得度 (0-100)",
             mastery: "習得度",
             points: "%",
             masteryLevels: {

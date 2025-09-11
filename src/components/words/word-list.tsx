@@ -44,9 +44,9 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 function masteryLevelMin(score: number) {
-  if (score >= 900) return 900;
-  if (score >= 500) return 500;
-  if (score >= 250) return 250;
+  if (score >= 90) return 90;
+  if (score >= 50) return 50;
+  if (score >= 25) return 25;
   return 0;
 }
 
@@ -118,9 +118,9 @@ const colorClasses: Record<string, string> = {
 
 const masteryOptions = [
   { key: "unknown", value: 0, cls: "bg-red-500 text-white" },
-  { key: "impression", value: 250, cls: "bg-orange-500 text-white" },
-  { key: "familiar", value: 500, cls: "bg-yellow-500 text-black" },
-  { key: "memorized", value: 900, cls: "bg-green-600 text-white" },
+  { key: "impression", value: 25, cls: "bg-orange-500 text-white" },
+  { key: "familiar", value: 50, cls: "bg-yellow-500 text-black" },
+  { key: "memorized", value: 90, cls: "bg-green-600 text-white" },
 ];
 
 type SortField =
@@ -377,7 +377,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleTranslation: newExampleTranslation.trim(),
         ...(relatedWords ? { relatedWords } : {}),
         usageFrequency: newUsageFrequency,
-        mastery: Math.min(1000, Math.max(0, Number(newMastery) || 0)),
+        mastery: Math.min(100, Math.max(0, Number(newMastery) || 0)),
         note: newNote.trim(),
         favorite: newFavorite,
       });
@@ -437,7 +437,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
         usageFrequency: editUsageFrequency,
-        mastery: Math.min(1000, Math.max(0, Number(editMastery) || 0)),
+        mastery: Math.min(100, Math.max(0, Number(editMastery) || 0)),
         note: editNote.trim(),
         favorite: editFavorite,
         relatedWords: relatedWords || {},
@@ -468,7 +468,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const handleIncrementStudy = async (w: Word) => {
     if (!user) return;
     const newCount = (w.studyCount || 0) + 1;
-    const newMastery = Math.min(1000, (w.mastery || 0) + 1);
+    const newMastery = Math.min(100, (w.mastery || 0) + 1);
     const now = Timestamp.now();
     try {
       await updateWord(user.uid, wordbookId, w.id, {
@@ -1353,18 +1353,18 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
-                  <span>{Math.round((w.mastery ?? 0) / 10)}{t("wordList.points")}</span>
+                  <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
                     let label = t("wordList.masteryLevels.unknown");
                     let cls = "bg-red-500 text-white";
-                    if (s >= 900) {
+                    if (s >= 90) {
                       label = t("wordList.masteryLevels.memorized");
                       cls = "bg-green-600 text-white";
-                    } else if (s >= 500) {
+                    } else if (s >= 50) {
                       label = t("wordList.masteryLevels.familiar");
                       cls = "bg-yellow-500 text-black";
-                    } else if (s >= 250) {
+                    } else if (s >= 25) {
                       label = t("wordList.masteryLevels.impression");
                       cls = "bg-orange-500 text-white";
                     }

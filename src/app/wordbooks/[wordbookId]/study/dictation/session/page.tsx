@@ -62,16 +62,16 @@ function drawWords(
   }
   switch (mode) {
     case "onlyUnknown":
-      words = words.filter((w) => w.mastery < 250);
+      words = words.filter((w) => w.mastery < 25);
       break;
     case "onlyImpression":
-      words = words.filter((w) => w.mastery >= 250 && w.mastery < 500);
+      words = words.filter((w) => w.mastery >= 25 && w.mastery < 50);
       break;
     case "onlyFamiliar":
-      words = words.filter((w) => w.mastery >= 500 && w.mastery < 900);
+      words = words.filter((w) => w.mastery >= 50 && w.mastery < 90);
       break;
     case "onlyMemorized":
-      words = words.filter((w) => w.mastery >= 900);
+      words = words.filter((w) => w.mastery >= 90);
       break;
     case "onlyFavorite":
       words = words.filter((w) => w.favorite);
@@ -128,11 +128,11 @@ function drawWords(
 
 function computeMastery(current: number, correct: boolean): number {
   if (correct) {
-    return current >= 900
-      ? Math.min(1000, current + 10)
-      : Math.min(1000, current + 100);
+    return current >= 90
+      ? Math.min(100, current + 1)
+      : Math.min(100, current + 10);
   }
-  return Math.max(0, current - 250);
+  return Math.max(0, current - 25);
 }
 
 export default function DictationSessionPage({ params }: PageProps) {

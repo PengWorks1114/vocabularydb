@@ -48,16 +48,16 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
   let words = [...all];
   switch (mode) {
     case "onlyUnknown":
-      words = words.filter((w) => w.mastery < 250);
+      words = words.filter((w) => w.mastery < 25);
       break;
     case "onlyImpression":
-      words = words.filter((w) => w.mastery >= 250 && w.mastery < 500);
+      words = words.filter((w) => w.mastery >= 25 && w.mastery < 50);
       break;
     case "onlyFamiliar":
-      words = words.filter((w) => w.mastery >= 500 && w.mastery < 900);
+      words = words.filter((w) => w.mastery >= 50 && w.mastery < 90);
       break;
     case "onlyMemorized":
-      words = words.filter((w) => w.mastery >= 900);
+      words = words.filter((w) => w.mastery >= 90);
       break;
     case "onlyFavorite":
       words = words.filter((w) => w.favorite);
@@ -114,9 +114,9 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
 
 function computeMastery(current: number, choice: Answer): number {
   const getRegion = (value: number): Answer => {
-    if (value >= 900) return "memorized";
-    if (value >= 500) return "familiar";
-    if (value >= 250) return "impression";
+    if (value >= 90) return "memorized";
+    if (value >= 50) return "familiar";
+    if (value >= 25) return "impression";
     return "unknown";
   };
 
@@ -126,13 +126,11 @@ function computeMastery(current: number, choice: Answer): number {
     case "unknown":
       return currentRegion === "unknown" ? current : 0;
     case "impression":
-      return currentRegion === "impression" ? Math.min(1000, current + 50) : 250;
+      return currentRegion === "impression" ? Math.min(100, current + 5) : 25;
     case "familiar":
-      return currentRegion === "familiar" ? Math.min(1000, current + 100) : 500;
+      return currentRegion === "familiar" ? Math.min(100, current + 10) : 50;
     case "memorized":
-      return currentRegion === "memorized"
-        ? Math.min(1000, current + 10)
-        : 900;
+      return currentRegion === "memorized" ? Math.min(100, current + 1) : 90;
   }
 }
 

@@ -103,6 +103,14 @@ export default function StudyPage({ params }: PageProps) {
               {t("studyPage.dictation")}
             </Link>
           </Button>
+          <Button
+            asChild
+            className="bg-blue-500 text-black hover:bg-blue-600"
+          >
+            <Link href={`/wordbooks/${wordbookId}/study/choice`}>
+              {t("studyPage.choice")}
+            </Link>
+          </Button>
         </div>
       </div>
     </div>
