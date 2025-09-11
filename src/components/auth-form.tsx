@@ -12,7 +12,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 // Previously: import { auth } from "@/lib/firebase";
-import { auth } from "@/lib/firebase-client";
+import { getFirebaseAuth } from "@/lib/firebase-client";
 
 import {
   Form,
@@ -43,6 +43,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const auth = getFirebaseAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

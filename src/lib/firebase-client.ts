@@ -5,10 +5,21 @@ import {
   getAuth,
   setPersistence,
   browserLocalPersistence,
+  Auth,
 } from "firebase/auth";
 import { firebaseApp } from "./firebase";
 
-export const auth = getAuth(firebaseApp);
+let auth: Auth | null = null;
 
-// Optional: set persistence and ignore failures
-setPersistence(auth, browserLocalPersistence).catch(() => {});
+/**
+ * Lazily obtain the Firebase Auth instance. This avoids initializing auth
+ * during server-side builds where Firebase config may be missing.
+ */
+export function getFirebaseAuth(): Auth {
+  if (!auth) {
+    auth = getAuth(firebaseApp);
+    // Optional: set persistence and ignore failures
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+  }
+  return auth;
+}
