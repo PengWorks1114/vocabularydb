@@ -225,6 +225,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [editMastery, setEditMastery] = useState(0);
   const [editNote, setEditNote] = useState("");
   const [editFavorite, setEditFavorite] = useState(false);
+  const [editFocusField, setEditFocusField] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
   // Delete
@@ -390,7 +391,7 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
-  const openEdit = (w: Word) => {
+  const openEdit = (w: Word, focusField?: string) => {
     setEditTarget(w);
     setEditWord(w.word);
     setEditPinyin(w.pinyin || "");
@@ -404,7 +405,18 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditMastery(masteryLevelMin(w.mastery || 0));
     setEditNote(w.note);
     setEditFavorite(w.favorite);
+    setEditFocusField(focusField || null);
   };
+
+  useEffect(() => {
+    if (editTarget && editFocusField) {
+      const id = editFocusField;
+      const t = setTimeout(() => {
+        document.getElementById(id)?.focus();
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [editTarget, editFocusField]);
 
   const handleUpdate = async () => {
     if (!user || !editTarget) return;
@@ -1245,7 +1257,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </button>
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200">
+                <div
+                  className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editWord")}
+                >
                   <div className="flex items-center gap-1">
                     <span>{w.word}</span>
                   </div>
@@ -1256,10 +1271,16 @@ export function WordList({ wordbookId }: WordListProps) {
                     <span>{w.usageFrequency || 0}</span>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editPinyin")}
+                >
                   {highlight(w.pinyin || "-")}
                 </div>
-                <div className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editTranslation")}
+                >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
@@ -1286,13 +1307,22 @@ export function WordList({ wordbookId }: WordListProps) {
                     "-"
                   )}
                 </div>
-                <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editExampleSentence")}
+                >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
-                <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editExampleTranslation")}
+                >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
-                <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editSynonym")}
+                >
                   <div className="space-y-1">
                     {w.relatedWords?.same && (
                       <div className="flex items-start text-xs gap-1">
@@ -1343,7 +1373,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
+                <div
+                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  onDoubleClick={() => openEdit(w, "editNote")}
+                >
                   {highlight(w.note || "-")}
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
@@ -1649,8 +1682,10 @@ export function WordList({ wordbookId }: WordListProps) {
             {masteryOptions.map((opt) => (
               <Button
                 key={opt.value}
-                className={`${opt.cls} ${
-                  masteryQuickValue === opt.value ? "ring-2 ring-offset-2" : ""
+                className={`${opt.cls} transition-transform ${
+                  masteryQuickValue === opt.value
+                    ? "ring-2 ring-offset-2 scale-105"
+                    : "opacity-60"
                 }`}
                 onClick={() => setMasteryQuickValue(opt.value)}
               >
