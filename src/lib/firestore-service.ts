@@ -4,6 +4,7 @@ import {
   addDoc,
   getDocs,
   getDoc,
+  setDoc,
   deleteDoc,
   updateDoc,
   Timestamp,
@@ -446,3 +447,180 @@ export const deletePartOfSpeechTag = async (
     posTagCache[userId] = posTagCache[userId].filter((t) => t.id !== tagId);
   }
 };
+
+// ------------------- SRS (Ebbinghaus) -------------------
+
+export interface SrsState {
+  stage: number;
+  intervalDays: number;
+  dueDate: Timestamp;
+  streak: number;
+  lapses: number;
+  ease: number;
+}
+
+function initSrsFromWord(word: Word): SrsState {
+  const score = word.mastery || 0;
+  let stage = 0;
+  let interval = 1;
+  if (score >= 90 && score <= 100) {
+    stage = 4;
+    interval = 30;
+  } else if (score >= 75) {
+    stage = 3;
+    interval = 14;
+  } else if (score >= 50) {
+    stage = 2;
+    interval = 7;
+  } else if (score >= 25) {
+    stage = 1;
+    interval = 3;
+  } else {
+    stage = 0;
+    interval = 1;
+  }
+  if (score > 100) {
+    stage = 5;
+    interval = Math.min(60, Math.floor(score / 2));
+  }
+  const lastReview = word.reviewDate?.toDate() || new Date();
+  const today = new Date();
+  const due = new Date(lastReview);
+  due.setDate(due.getDate() + interval);
+  if (due < today) due.setTime(today.getTime());
+  return {
+    stage,
+    intervalDays: interval,
+    dueDate: Timestamp.fromDate(due),
+    streak: Math.max(1, stage),
+    lapses: 0,
+    ease: 2.5,
+  };
+}
+
+async function getOrInitSrsState(
+  userId: string,
+  wordbookId: string,
+  word: Word
+): Promise<SrsState> {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "srs"
+  );
+  const docRef = doc(colRef, word.id);
+  const snap = await getDoc(docRef);
+  if (snap.exists()) return snap.data() as SrsState;
+  const init = initSrsFromWord(word);
+  await setDoc(docRef, init);
+  return init;
+}
+
+export const getAllSrsStates = async (
+  userId: string,
+  wordbookId: string,
+  words: Word[]
+): Promise<Record<string, SrsState>> => {
+  const entries = await Promise.all(
+    words.map(async (w) => [w.id, await getOrInitSrsState(userId, wordbookId, w)])
+  );
+  return Object.fromEntries(entries);
+};
+
+export const getDueSrsWords = async (
+  userId: string,
+  wordbookId: string
+): Promise<{ word: Word; state: SrsState }[]> => {
+  const words = await getWordsByWordbookId(userId, wordbookId);
+  const today = new Date();
+  const items = await Promise.all(
+    words.map(async (w) => ({
+      word: w,
+      state: await getOrInitSrsState(userId, wordbookId, w),
+    }))
+  );
+  return items
+    .filter((i) => i.state.dueDate.toDate() <= today)
+    .sort((a, b) => {
+      const diffA = today.getTime() - a.state.dueDate.toDate().getTime();
+      const diffB = today.getTime() - b.state.dueDate.toDate().getTime();
+      if (diffA !== diffB) return diffB - diffA;
+      return (b.state.lapses || 0) - (a.state.lapses || 0);
+    });
+};
+
+export const applySrsAnswer = async (
+  userId: string,
+  wordbookId: string,
+  word: Word,
+  state: SrsState,
+  quality: 0 | 1 | 2 | 3
+): Promise<SrsState> => {
+  let { stage, intervalDays: ivl, streak, lapses, ease } = state;
+  if (quality === 0) {
+    stage = Math.max(0, stage - 2);
+    ivl = 1;
+    streak = 0;
+    lapses += 1;
+    ease = Math.max(2.3, ease - 0.2);
+  } else if (quality === 1) {
+    stage = Math.max(0, stage - 1);
+    ivl = Math.ceil(ivl * 0.7);
+    streak = 0;
+    ease = Math.max(2.3, ease - 0.05);
+  } else if (quality === 2) {
+    stage += 1;
+    streak += 1;
+    ivl = Math.round(ivl * ease);
+  } else {
+    stage += 2;
+    streak += 1;
+    ease = Math.min(2.7, ease + 0.05);
+    ivl = Math.round(ivl * ease * 1.15);
+  }
+  ivl = Math.min(180, Math.max(1, ivl));
+  const today = new Date();
+  const due = new Date(today);
+  due.setDate(today.getDate() + ivl);
+  const newState: SrsState = {
+    stage,
+    intervalDays: ivl,
+    streak,
+    lapses,
+    ease,
+    dueDate: Timestamp.fromDate(due),
+  };
+  const srsRef = doc(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "srs",
+    word.id
+  );
+  await setDoc(srsRef, newState);
+
+  const delta = quality === 0 ? -20 : quality === 1 ? -5 : quality === 2 ? 6 : 10;
+  const newMastery = Math.max(0, (word.mastery || 0) + delta);
+  const wordRef = doc(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "words",
+    word.id
+  );
+  await updateDoc(wordRef, {
+    mastery: newMastery,
+    reviewDate: Timestamp.fromDate(today),
+  });
+  word.mastery = newMastery;
+  word.reviewDate = Timestamp.fromDate(today);
+  return newState;
+};
+

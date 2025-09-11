@@ -14,8 +14,10 @@ import {
   createPartOfSpeechTag,
   updatePartOfSpeechTag,
   deletePartOfSpeechTag,
+  getAllSrsStates,
   type Word,
   type PartOfSpeechTag,
+  type SrsState,
 } from "@/lib/firestore-service";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -128,7 +130,9 @@ type SortField =
   | "reviewDate"
   | "mastery"
   | "usageFrequency"
-  | "studyCount";
+  | "studyCount"
+  | "dueDate"
+  | "overdue";
 
 const PER_PAGE = 20;
 
@@ -163,11 +167,17 @@ export function WordList({ wordbookId }: WordListProps) {
   const [usageQuickOpen, setUsageQuickOpen] = useState(false);
   const [usageQuickWord, setUsageQuickWord] = useState<Word | null>(null);
   const [usageQuickValue, setUsageQuickValue] = useState(0);
+  const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getAllSrsStates(user.uid, wordbookId, words).then(setSrsStates);
+  }, [user, wordbookId, words]);
 
   const headerTextClass = `${i18n.language !== "zh-Hant" ? "text-xs" : ""} whitespace-nowrap`;
 
@@ -187,13 +197,20 @@ export function WordList({ wordbookId }: WordListProps) {
       } else if (sortBy === "studyCount") {
         aVal = a.studyCount || 0;
         bVal = b.studyCount || 0;
+      } else if (sortBy === "dueDate") {
+        aVal = srsStates[a.id]?.dueDate?.toMillis() || 0;
+        bVal = srsStates[b.id]?.dueDate?.toMillis() || 0;
+      } else if (sortBy === "overdue") {
+        const today = Date.now();
+        aVal = srsStates[a.id]?.dueDate ? today - srsStates[a.id].dueDate.toMillis() : 0;
+        bVal = srsStates[b.id]?.dueDate ? today - srsStates[b.id].dueDate.toMillis() : 0;
       } else {
         aVal = a.usageFrequency || 0;
         bVal = b.usageFrequency || 0;
       }
       return sortDir === "asc" ? aVal - bVal : bVal - aVal;
     });
-  }, [words, sortBy, sortDir]);
+  }, [words, sortBy, sortDir, srsStates]);
 
   // Create
   const [creating, setCreating] = useState(false);
@@ -1028,6 +1045,14 @@ export function WordList({ wordbookId }: WordListProps) {
                 {t("wordList.bulkImport")}
               </Link>
             </Button>
+            <Button
+              className="bg-purple-500 text-white hover:bg-purple-600"
+              asChild
+            >
+              <Link href={`/wordbooks/${wordbookId}/srs`}>
+                {t("wordList.srsStudy")}
+              </Link>
+            </Button>
           </>
         )}
         <div className="ml-auto flex items-center gap-2">
@@ -1052,6 +1077,8 @@ export function WordList({ wordbookId }: WordListProps) {
             <option value="usageFrequency">{t("wordList.usageFrequency")}</option>
             <option value="mastery">{t("wordList.mastery")}</option>
             <option value="studyCount">{t("wordList.studyCount")}</option>
+            <option value="dueDate">{t("wordList.dueDate")}</option>
+            <option value="overdue">{t("wordList.overdueDays")}</option>
           </select>
           <label className="flex items-center gap-1 text-sm">
             <input
@@ -1257,6 +1284,8 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.dueDate")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.overdueDays")}</div>
             <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
@@ -1409,6 +1438,17 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div className="w-24 px-2 py-2 border-r border-gray-200">
                   {w.reviewDate?.toDate().toLocaleDateString() || "-"}
+                </div>
+                <div className="w-24 px-2 py-2 border-r border-gray-200">
+                  {srsStates[w.id]?.dueDate?.toDate().toLocaleDateString() || "-"}
+                </div>
+                <div className="w-20 px-2 py-2 border-r border-gray-200">
+                  {(() => {
+                    const due = srsStates[w.id]?.dueDate?.toDate();
+                    if (!due) return "-";
+                    const diff = Math.floor((Date.now() - due.getTime()) / 86400000);
+                    return diff > 0 ? diff : 0;
+                  })()}
                 </div>
                 <div className="w-20 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
                   <span>{w.studyCount ?? 0}</span>
