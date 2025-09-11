@@ -456,16 +456,18 @@ export function WordList({ wordbookId }: WordListProps) {
   const handleIncrementStudy = async (w: Word) => {
     if (!user) return;
     const newCount = (w.studyCount || 0) + 1;
+    const newMastery = Math.min(100, (w.mastery || 0) + 1);
     const now = Timestamp.now();
     try {
       await updateWord(user.uid, wordbookId, w.id, {
         studyCount: newCount,
         reviewDate: now,
+        mastery: newMastery,
       });
       setWords((prev) =>
         prev.map((x) =>
           x.id === w.id
-            ? { ...x, studyCount: newCount, reviewDate: now }
+            ? { ...x, studyCount: newCount, reviewDate: now, mastery: newMastery }
             : x
         )
       );
@@ -1288,7 +1290,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200">
-                  {highlight(w.exampleTranslation || "-")}
+                  {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
                 <div className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200">
                   <div className="space-y-1">
@@ -1667,23 +1669,28 @@ export function WordList({ wordbookId }: WordListProps) {
           <DialogHeader>
             <DialogTitle>{t("wordList.updatePartOfSpeech")}</DialogTitle>
           </DialogHeader>
-          {posTags.map((tag) => (
-            <label key={tag.id} className="flex items-center gap-2 mb-2">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={posQuickValue.includes(tag.id)}
-                onChange={() => togglePosQuick(tag.id)}
-              />
-              <span
-                className={`px-1 rounded text-xs ${
-                  colorClasses[tag.color] || colorClasses.gray
-                }`}
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            {posTags.map((tag) => (
+              <label
+                key={tag.id}
+                className="flex items-center gap-2 p-2 border rounded cursor-pointer"
               >
-                {tag.name}
-              </span>
-            </label>
-          ))}
+                <input
+                  type="checkbox"
+                  className="h-5 w-5"
+                  checked={posQuickValue.includes(tag.id)}
+                  onChange={() => togglePosQuick(tag.id)}
+                />
+                <span
+                  className={`px-2 py-1 rounded text-sm ${
+                    colorClasses[tag.color] || colorClasses.gray
+                  }`}
+                >
+                  {tag.name}
+                </span>
+              </label>
+            ))}
+          </div>
           <DialogFooter>
             <Button onClick={savePosQuick}>{t("wordList.confirm")}</Button>
           </DialogFooter>

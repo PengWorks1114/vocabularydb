@@ -331,7 +331,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
             </div>
             {showDetails && (
               <div className="space-y-2 text-left text-lg">
-                <div className="text-xl font-bold text-red-600">
+                <div className="text-3xl font-bold text-red-600">
                   {t("wordList.translation")}: {sessionWords[index].translation}
                 </div>
                 <div>
