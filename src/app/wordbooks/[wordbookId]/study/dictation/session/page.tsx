@@ -128,9 +128,7 @@ function drawWords(
 
 function computeMastery(current: number, correct: boolean): number {
   if (correct) {
-    return current >= 90
-      ? Math.min(100, current + 1)
-      : Math.min(100, current + 10);
+    return current >= 90 ? current + 1 : current + 10;
   }
   return Math.max(0, current - 25);
 }

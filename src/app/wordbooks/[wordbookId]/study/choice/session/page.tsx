@@ -135,13 +135,9 @@ function drawWords(
 
 function computeMastery(current: number, correct: boolean): number {
   if (current >= 90) {
-    return correct
-      ? Math.min(100, current + 1)
-      : Math.max(0, current - 15);
+    return correct ? current + 1 : Math.max(0, current - 15);
   }
-  return correct
-    ? Math.min(100, current + 5)
-    : Math.max(0, current - 5);
+  return correct ? current + 5 : Math.max(0, current - 5);
 }
 
 export default function ChoiceSessionPage({ params }: PageProps) {

@@ -126,11 +126,11 @@ function computeMastery(current: number, choice: Answer): number {
     case "unknown":
       return currentRegion === "unknown" ? current : 0;
     case "impression":
-      return currentRegion === "impression" ? Math.min(100, current + 5) : 25;
+      return currentRegion === "impression" ? current + 5 : 25;
     case "familiar":
-      return currentRegion === "familiar" ? Math.min(100, current + 10) : 50;
+      return currentRegion === "familiar" ? current + 10 : 50;
     case "memorized":
-      return currentRegion === "memorized" ? Math.min(100, current + 1) : 90;
+      return currentRegion === "memorized" ? current + 1 : 90;
   }
 }
 

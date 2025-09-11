@@ -377,7 +377,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleTranslation: newExampleTranslation.trim(),
         ...(relatedWords ? { relatedWords } : {}),
         usageFrequency: newUsageFrequency,
-        mastery: Math.min(100, Math.max(0, Number(newMastery) || 0)),
+        mastery: Math.max(0, Number(newMastery) || 0),
         note: newNote.trim(),
         favorite: newFavorite,
       });
@@ -437,7 +437,7 @@ export function WordList({ wordbookId }: WordListProps) {
         exampleSentence: editExampleSentence.trim(),
         exampleTranslation: editExampleTranslation.trim(),
         usageFrequency: editUsageFrequency,
-        mastery: Math.min(100, Math.max(0, Number(editMastery) || 0)),
+        mastery: Math.max(0, Number(editMastery) || 0),
         note: editNote.trim(),
         favorite: editFavorite,
         relatedWords: relatedWords || {},
@@ -468,7 +468,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const handleIncrementStudy = async (w: Word) => {
     if (!user) return;
     const newCount = (w.studyCount || 0) + 1;
-    const newMastery = Math.min(100, (w.mastery || 0) + 1);
+    const newMastery = (w.mastery || 0) + 1;
     const now = Timestamp.now();
     try {
       await updateWord(user.uid, wordbookId, w.id, {
