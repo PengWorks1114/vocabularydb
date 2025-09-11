@@ -352,6 +352,12 @@ export default function DictationSessionPage({ params }: PageProps) {
           <p className="text-center text-base text-muted-foreground">
             {t("dictation.progress", { current: index + 1, total: sessionWords.length })}
           </p>
+          <div className="h-3 bg-muted rounded">
+            <div
+              className="h-3 rounded"
+              style={{ width: `${progressPercent}%`, backgroundColor: progressColor }}
+            />
+          </div>
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold mb-12">{prompt}</div>
             {!showDetails ? (
@@ -419,12 +425,6 @@ export default function DictationSessionPage({ params }: PageProps) {
                 {t("dictation.next")}
               </Button>
             )}
-          </div>
-          <div className="h-3 bg-muted rounded">
-            <div
-              className="h-3 rounded"
-              style={{ width: `${progressPercent}%`, backgroundColor: progressColor }}
-            />
           </div>
         </div>
       )}

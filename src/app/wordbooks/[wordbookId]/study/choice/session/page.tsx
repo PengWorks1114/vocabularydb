@@ -134,10 +134,14 @@ function drawWords(
 }
 
 function computeMastery(current: number, correct: boolean): number {
-  if (correct) {
-    return Math.min(100, current + 5);
+  if (current >= 90) {
+    return correct
+      ? Math.min(100, current + 1)
+      : Math.max(0, current - 15);
   }
-  return Math.max(0, current - 5);
+  return correct
+    ? Math.min(100, current + 5)
+    : Math.max(0, current - 5);
 }
 
 export default function ChoiceSessionPage({ params }: PageProps) {
@@ -314,6 +318,12 @@ export default function ChoiceSessionPage({ params }: PageProps) {
               total: sessionWords.length,
             })}
           </p>
+          <div className="h-3 bg-muted rounded">
+            <div
+              className="h-3 rounded"
+              style={{ width: `${progressPercent}%`, backgroundColor: progressColor }}
+            />
+          </div>
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold">
               {direction === "word"
@@ -373,12 +383,6 @@ export default function ChoiceSessionPage({ params }: PageProps) {
               </>
             )}
           </div>
-          <div className="h-3 bg-muted rounded">
-            <div
-              className="h-3 rounded"
-              style={{ width: `${progressPercent}%`, backgroundColor: progressColor }}
-            />
-          </div>
         </div>
       )}
 
@@ -402,15 +406,25 @@ export default function ChoiceSessionPage({ params }: PageProps) {
               total: sessionWords.length,
             })}
           </p>
-          <Button onClick={repeatSet} className="w-full">
-            {t("recite.again")}
-          </Button>
-          <Button onClick={nextSet} className="w-full">
-            {t("recite.nextSet", { count })}
-          </Button>
-          <Link href={`/wordbooks/${wordbookId}/study/recite`} className="w-full">
-            <Button className="w-full">{t("recite.finish")}</Button>
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={repeatSet}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {t("recite.again")}
+            </Button>
+            <Button onClick={nextSet}>{t("recite.nextSet", { count })}</Button>
+            <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
+              <Button className="w-full" variant="outline">
+                {t("recite.finish")}
+              </Button>
+            </Link>
+            <Link href={`/wordbooks/${wordbookId}`} className="w-full">
+              <Button className="w-full" variant="outline">
+                {t("backToWordbook")}
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </div>

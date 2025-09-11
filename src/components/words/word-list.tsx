@@ -1177,23 +1177,28 @@ export function WordList({ wordbookId }: WordListProps) {
               {t("wordList.clearAllTags")}
             </Button>
           </div>
-          {posTags.map((tag) => (
-            <label key={tag.id} className="flex items-center gap-2 mb-2">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={tempTagFilter.includes(tag.id)}
-                onChange={() => toggleTempTag(tag.id)}
-              />
-              <span
-                className={`px-1 rounded text-xs ${
-                  colorClasses[tag.color] || colorClasses.gray
-                }`}
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            {posTags.map((tag) => (
+              <label
+                key={tag.id}
+                className="flex items-center gap-2 p-2 border rounded cursor-pointer"
               >
-                {tag.name}
-              </span>
-            </label>
-          ))}
+                <input
+                  type="checkbox"
+                  className="h-5 w-5"
+                  checked={tempTagFilter.includes(tag.id)}
+                  onChange={() => toggleTempTag(tag.id)}
+                />
+                <span
+                  className={`px-2 py-1 rounded text-sm ${
+                    colorClasses[tag.color] || colorClasses.gray
+                  }`}
+                >
+                  {tag.name}
+                </span>
+              </label>
+            ))}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFilterOpen(false)}>
               {t("wordList.cancel")}

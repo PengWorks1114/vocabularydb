@@ -323,6 +323,15 @@ export default function ReciteSessionPage({ params }: PageProps) {
               total: sessionWords.length,
             })}
           </p>
+          <div className="h-3 bg-muted rounded">
+            <div
+              className="h-3 rounded"
+              style={{
+                width: `${progressPercent}%`,
+                backgroundColor: progressColor,
+              }}
+            />
+          </div>
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold">
               {sessionWords[index].word}
@@ -400,15 +409,6 @@ export default function ReciteSessionPage({ params }: PageProps) {
                 {t("recite.next")}
               </Button>
             )}
-          </div>
-          <div className="h-3 bg-muted rounded">
-            <div
-              className="h-3 rounded"
-              style={{
-                width: `${progressPercent}%`,
-                backgroundColor: progressColor,
-              }}
-            />
           </div>
         </div>
       )}
