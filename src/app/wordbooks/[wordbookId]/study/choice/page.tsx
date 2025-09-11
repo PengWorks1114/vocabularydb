@@ -44,7 +44,9 @@ type Mode =
   | "onlyMemorized"
   | "onlyFavorite";
 
-export default function ReciteSettingsPage({ params }: PageProps) {
+type Direction = "word" | "translation";
+
+export default function ChoiceSettingsPage({ params }: PageProps) {
   const { wordbookId } = use(params);
   const { auth } = useAuth();
   const { t } = useTranslation();
@@ -52,6 +54,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
   const [mounted, setMounted] = useState(false);
   const [count, setCount] = useState(5);
   const [mode, setMode] = useState<Mode>("random");
+  const [direction, setDirection] = useState<Direction>("word");
 
   useEffect(() => {
     setMounted(true);
@@ -63,7 +66,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
 
   const start = () => {
     router.push(
-      `/wordbooks/${wordbookId}/study/recite/session?count=${count}&mode=${mode}`
+      `/wordbooks/${wordbookId}/study/choice/session?count=${count}&mode=${mode}&direction=${direction}`
     );
   };
 
@@ -71,7 +74,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <Link
-          href={`/wordbooks/${wordbookId}/study`}
+          href={`/wordbooks/${wordbookId}/study/recite`}
           className="text-sm text-muted-foreground"
           suppressHydrationWarning
         >
@@ -90,7 +93,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
         <CardHeader>
           <CardTitle className="text-center">
             <span suppressHydrationWarning>
-              {mounted ? t("recite.settingsTitle") : ""}
+              {mounted ? t("choice.settingsTitle") : ""}
             </span>
           </CardTitle>
         </CardHeader>
@@ -148,15 +151,30 @@ export default function ReciteSettingsPage({ params }: PageProps) {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="direction-select">{t("dictation.direction")}</Label>
+            <Select
+              value={direction}
+              onValueChange={(value) => setDirection(value as Direction)}
+            >
+              <SelectTrigger id="direction-select" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(
+                  ["word", "translation"] as Direction[]
+                ).map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {t(`dictation.directions.${d}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
+        <CardFooter>
           <Button className="w-full" onClick={start}>
-            {t("recite.start")}
-          </Button>
-          <Button asChild variant="outline" className="w-full">
-            <Link href={`/wordbooks/${wordbookId}/study/choice`}>
-              {t("recite.choice")}
-            </Link>
+            {t("choice.start")}
           </Button>
         </CardFooter>
       </Card>
