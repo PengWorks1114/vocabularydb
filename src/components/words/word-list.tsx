@@ -607,11 +607,11 @@ export function WordList({ wordbookId }: WordListProps) {
     }
   };
 
-  const handleExportCsv = () => {
+  const exportCsv = (items: Word[], filename = wordbookId) => {
     const header =
       "word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note";
     const sanitize = (s: string) => s.replace(/,/g, " ").replace(/\n/g, " ");
-    const lines = sortedWords.map((w) => {
+    const lines = items.map((w) => {
       const parts = [
         w.word,
         w.pinyin || "",
@@ -632,11 +632,20 @@ export function WordList({ wordbookId }: WordListProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${wordbookId}.csv`;
+    a.download = `${filename}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportSelectedCsv = () => {
+    const items = sortedWords.filter((w) => selectedIds.includes(w.id));
+    exportCsv(items, `${wordbookId}-selected`);
+  };
+
+  const handleExportAllCsv = () => {
+    exportCsv(sortedWords);
   };
 
   const toggleFavorite = async (word: Word) => {
@@ -977,17 +986,16 @@ export function WordList({ wordbookId }: WordListProps) {
             </Button>
             <Button
               className="bg-blue-500 text-white hover:bg-blue-600"
-              asChild
+              onClick={handleExportSelectedCsv}
+              disabled={!selectedIds.length}
             >
-              <Link href={`/wordbooks/${wordbookId}/import`}>
-                {t("wordList.bulkImport")}
-              </Link>
+              {t("wordList.exportCsv")}
             </Button>
             <Button
               className="bg-blue-500 text-white hover:bg-blue-600"
-              onClick={handleExportCsv}
+              onClick={handleExportAllCsv}
             >
-              {t("wordList.exportCsv")}
+              {t("wordList.exportAllCsv")}
             </Button>
             <Button
               className="bg-yellow-500 text-black hover:bg-yellow-600"
@@ -1005,12 +1013,22 @@ export function WordList({ wordbookId }: WordListProps) {
             </Button>
           </>
         ) : (
-          <Button
-            className="bg-green-500 text-black hover:bg-green-600"
-            onClick={() => setBulkMode(true)}
-          >
-            {t("wordList.bulkManage")}
-          </Button>
+          <>
+            <Button
+              className="bg-green-500 text-black hover:bg-green-600"
+              onClick={() => setBulkMode(true)}
+            >
+              {t("wordList.bulkManage")}
+            </Button>
+            <Button
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              asChild
+            >
+              <Link href={`/wordbooks/${wordbookId}/import`}>
+                {t("wordList.bulkImport")}
+              </Link>
+            </Button>
+          </>
         )}
         <div className="ml-auto flex items-center gap-2">
           <span>{t("wordList.wordCount", { count: words.length })}</span>

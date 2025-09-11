@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { bulkImportWords } from "@/lib/firestore-service";
+import {
+  bulkImportWords,
+  getPartOfSpeechTags,
+  type PartOfSpeechTag,
+} from "@/lib/firestore-service";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -19,10 +23,18 @@ export default function ImportPage({ params }: PageProps) {
   const { t } = useTranslation();
   const [csv, setCsv] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getPartOfSpeechTags(user.uid)
+      .then(setPosTags)
+      .catch((e) => console.error(e));
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -94,6 +106,13 @@ export default function ImportPage({ params }: PageProps) {
         <div className="mb-2 text-sm whitespace-pre-wrap">
           {t("wordList.bulkImportExample")}
         </div>
+        {!!posTags.length && (
+          <div className="mb-2 text-sm whitespace-pre-wrap">
+            {t("wordList.partOfSpeechCodes") +
+              "\n" +
+              posTags.map((tag) => `  ${tag.name}: ${tag.id}`).join("\n")}
+          </div>
+        )}
         <textarea
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
