@@ -33,12 +33,11 @@ export default function StudyPage({ params }: PageProps) {
       const mastery =
         words.length > 0
           ?
-              (words.reduce(
+              words.reduce(
                 (sum, w) => sum + Math.min(w.mastery || 0, 100),
                 0
               ) /
-                words.length) *
-              10
+              words.length
           : 0;
       setOverallMastery(mastery);
     });
@@ -52,7 +51,7 @@ export default function StudyPage({ params }: PageProps) {
     await signOut(auth);
   };
 
-  const masteryColor = `hsl(${(overallMastery / 1000) * 120}, 80%, 45%)`;
+  const masteryColor = `hsl(${(overallMastery / 100) * 120}, 80%, 45%)`;
 
   return (
     <div className="p-8 space-y-6">
@@ -75,17 +74,17 @@ export default function StudyPage({ params }: PageProps) {
       </div>
 
       <div className="flex flex-col items-center gap-6">
-        <CircleProgress value={overallMastery / 10} />
+        <CircleProgress value={overallMastery} />
         <div>{t("studyPage.totalWords", { count: wordCount })}</div>
         <div className="flex items-center gap-2">
           <span>{t("wordList.overallMastery")}</span>
           <div className="h-2 w-40 rounded bg-gray-200">
             <div
               className="h-2 rounded"
-              style={{ width: `${overallMastery / 10}%`, backgroundColor: masteryColor }}
+              style={{ width: `${overallMastery}%`, backgroundColor: masteryColor }}
             />
           </div>
-          <span>{(overallMastery / 10).toFixed(1)}%</span>
+          <span>{overallMastery.toFixed(1)}%</span>
         </div>
         <div className="flex gap-4 mt-4">
           <Button

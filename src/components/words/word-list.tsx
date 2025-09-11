@@ -468,7 +468,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const handleIncrementStudy = async (w: Word) => {
     if (!user) return;
     const newCount = (w.studyCount || 0) + 1;
-    const newMastery = Math.min(1000, (w.mastery || 0) + 10);
+    const newMastery = Math.min(1000, (w.mastery || 0) + 1);
     const now = Timestamp.now();
     try {
       await updateWord(user.uid, wordbookId, w.id, {
@@ -750,14 +750,13 @@ export function WordList({ wordbookId }: WordListProps) {
   const overallMastery =
     words.length > 0
       ?
-          (words.reduce(
+          words.reduce(
             (sum, w) => sum + Math.min(w.mastery || 0, 100),
             0
           ) /
-            words.length) *
-          10
+          words.length
       : 0;
-  const masteryColor = `hsl(${(overallMastery / 1000) * 120}, 80%, 45%)`;
+  const masteryColor = `hsl(${(overallMastery / 100) * 120}, 80%, 45%)`;
 
   if (loading || !mounted) {
     return (
@@ -1020,10 +1019,10 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className="h-2 w-24 rounded bg-gray-200">
               <div
                 className="h-2 rounded"
-                style={{ width: `${overallMastery / 10}%`, backgroundColor: masteryColor }}
+                style={{ width: `${overallMastery}%`, backgroundColor: masteryColor }}
               />
             </div>
-            <span>{(overallMastery / 10).toFixed(1)}%</span>
+            <span>{overallMastery.toFixed(1)}%</span>
           </div>
           <select
             className="border rounded p-1 text-sm"
@@ -1354,7 +1353,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
-                  <span>{w.mastery ?? 0}{t("wordList.points")}</span>
+                  <span>{Math.round((w.mastery ?? 0) / 10)}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
                     let label = t("wordList.masteryLevels.unknown");
