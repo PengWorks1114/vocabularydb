@@ -32,7 +32,13 @@ export default function StudyPage({ params }: PageProps) {
       setWordCount(words.length);
       const mastery =
         words.length > 0
-          ? words.reduce((sum, w) => sum + (w.mastery || 0), 0) / words.length
+          ?
+              (words.reduce(
+                (sum, w) => sum + Math.min(w.mastery || 0, 100),
+                0
+              ) /
+                words.length) *
+              10
           : 0;
       setOverallMastery(mastery);
     });

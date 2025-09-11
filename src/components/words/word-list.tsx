@@ -749,7 +749,13 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const overallMastery =
     words.length > 0
-      ? words.reduce((sum, w) => sum + (w.mastery || 0), 0) / words.length
+      ?
+          (words.reduce(
+            (sum, w) => sum + Math.min(w.mastery || 0, 100),
+            0
+          ) /
+            words.length) *
+          10
       : 0;
   const masteryColor = `hsl(${(overallMastery / 1000) * 120}, 80%, 45%)`;
 
