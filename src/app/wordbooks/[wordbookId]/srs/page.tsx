@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import "@/i18n/i18n-client";
 import {
   getDueSrsWords,
   applySrsAnswer,
@@ -12,11 +13,12 @@ import {
   type SrsState,
 } from "@/lib/firestore-service";
 
-interface Params {
-  params: { wordbookId: string };
+interface PageProps {
+  params: Promise<{ wordbookId: string }>;
 }
 
-export default function SrsPage({ params }: Params) {
+export default function SrsPage({ params }: PageProps) {
+  const { wordbookId } = use(params);
   const { user } = useAuth();
   const { t } = useTranslation();
   const [queue, setQueue] = useState<{ word: Word; state: SrsState }[]>([]);
@@ -24,17 +26,17 @@ export default function SrsPage({ params }: Params) {
 
   useEffect(() => {
     if (!user) return;
-    getDueSrsWords(user.uid, params.wordbookId).then((items) => {
+    getDueSrsWords(user.uid, wordbookId).then((items) => {
       setQueue(items);
       setTotal(items.length);
     });
-  }, [user, params.wordbookId]);
+  }, [user, wordbookId]);
 
   if (!queue.length) {
     return (
       <div className="p-4 text-center space-y-4">
         <h1 className="text-xl font-semibold">{t("srs.done")}</h1>
-        <Link href={`/wordbooks/${params.wordbookId}`} className="text-blue-500">
+        <Link href={`/wordbooks/${wordbookId}`} className="text-blue-500">
           {t("backToWordbook")}
         </Link>
       </div>
@@ -54,7 +56,7 @@ export default function SrsPage({ params }: Params) {
     if (!user) return;
     const newState = await applySrsAnswer(
       user.uid,
-      params.wordbookId,
+      wordbookId,
       current.word,
       current.state,
       q
