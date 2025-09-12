@@ -329,17 +329,27 @@ export function WordList({ wordbookId }: WordListProps) {
   };
 
   const highlightExample = (sentence: string, word: string) => {
-    if (!word) return highlight(sentence);
-    const regex = new RegExp(`(${escapeRegExp(word)})`, "gi");
-    const parts = sentence.split(regex);
-    return parts.map((part, idx) => {
-      const isWord = part.toLowerCase() === word.toLowerCase();
-      return isWord ? (
-        <span key={idx} className="text-red-400">
-          {highlight(part)}
-        </span>
-      ) : (
-        <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
+    const segments = sentence.split("/");
+    return segments.map((seg, i) => {
+      const regex = word
+        ? new RegExp(`(${escapeRegExp(word)})`, "gi")
+        : null;
+      const parts = regex ? seg.split(regex) : [seg];
+      const rendered = parts.map((part, idx) => {
+        const isWord = regex && part.toLowerCase() === word.toLowerCase();
+        return isWord ? (
+          <span key={idx} className="text-red-400">
+            {highlight(part)}
+          </span>
+        ) : (
+          <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
+        );
+      });
+      return (
+        <React.Fragment key={i}>
+          {i > 0 && <br />}
+          {rendered}
+        </React.Fragment>
       );
     });
   };
@@ -436,7 +446,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditSynonym(w.relatedWords?.same || "");
     setEditAntonym(w.relatedWords?.opposite || "");
     setEditUsageFrequency(w.usageFrequency || 0);
-    setEditMastery(masteryLevelMin(w.mastery || 0));
+    setEditMastery(w.mastery || 0);
     setEditNote(w.note);
     setEditFavorite(w.favorite);
     setEditFocusField(focusField || null);
@@ -524,7 +534,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const openMasteryQuick = (w: Word) => {
     setMasteryQuickWord(w);
-    setMasteryQuickValue(masteryLevelMin(w.mastery || 0));
+    setMasteryQuickValue(w.mastery || 0);
     setMasteryQuickOpen(true);
   };
 
@@ -1282,7 +1292,7 @@ export function WordList({ wordbookId }: WordListProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto resize-x">
         <div ref={listRef} className="min-w-[1400px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
             {bulkMode && (
@@ -1295,33 +1305,33 @@ export function WordList({ wordbookId }: WordListProps) {
                 />
               </div>
             )}
-            <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`w-12 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.favorite")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.pinyin")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.translation")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
-            <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
+            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.mastery")}</div>
+            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`w-24 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
+            <div className={`w-16 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.createdAt")}</div>
+            <div className={`w-28 px-2 py-1 resize-x ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {visibleWords.length ? (
             visibleWords.map((w) => (
               <div key={w.id} className="flex border-b">
                 {bulkMode && (
-                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center">
+                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center resize-x overflow-hidden">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -1330,7 +1340,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </div>
                 )}
-                <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
+                <div className="w-12 px-2 py-2 text-center border-r border-gray-200 resize-x overflow-hidden">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Heart
                       className={`h-4 w-4 ${
@@ -1342,7 +1352,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   </button>
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editWord")}
                 >
                   <div className="flex items-center gap-1">
@@ -1356,19 +1366,19 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editPinyin")}
                 >
                   {highlight(w.pinyin || "-")}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editTranslation")}
                 >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
-                  className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer resize-x overflow-hidden"
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (
@@ -1392,19 +1402,19 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editSynonym")}
                 >
                   <div className="space-y-1">
@@ -1431,7 +1441,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
                   </div>
                 </div>
-                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200">
+                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200 resize-x overflow-hidden">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
@@ -1458,12 +1468,12 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line">
+                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line resize-x overflow-hidden">
                   {(() => {
                     const review =
                       w.reviewDate?.toDate().toLocaleDateString() || "-";
@@ -1491,7 +1501,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1 resize-x overflow-hidden">
                   <span>{w.studyCount ?? 0}</span>
                   <button
                     className="px-1 text-xs border rounded"
@@ -1500,10 +1510,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     +
                   </button>
                 </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200">
+                <div className="w-20 px-2 py-2 border-r border-gray-200 resize-x overflow-hidden">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-28 px-2 py-2">
+                <div className="w-28 px-2 py-2 resize-x overflow-hidden">
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
@@ -1642,15 +1652,21 @@ export function WordList({ wordbookId }: WordListProps) {
               <label
                 key={opt.key}
                 className={`${opt.cls} px-2 py-1 rounded cursor-pointer ${
-                  editMastery === opt.value ? "ring-2 ring-offset-2 ring-black" : ""
+                  masteryLevelMin(editMastery) === opt.value
+                    ? "ring-2 ring-offset-2 ring-black"
+                    : ""
                 }`}
               >
                 <input
                   type="radio"
                   name="editMastery"
                   className="sr-only"
-                  checked={editMastery === opt.value}
-                  onChange={() => setEditMastery(opt.value)}
+                  checked={masteryLevelMin(editMastery) === opt.value}
+                  onChange={() =>
+                    setEditMastery((prev) =>
+                      masteryLevelMin(prev) === opt.value ? prev : opt.value
+                    )
+                  }
                 />
                 {t(`wordList.masteryLevels.${opt.key}`)}
               </label>
@@ -1792,11 +1808,15 @@ export function WordList({ wordbookId }: WordListProps) {
               <Button
                 key={opt.value}
                 className={`${opt.cls} transition-transform ${
-                  masteryQuickValue === opt.value
+                  masteryLevelMin(masteryQuickValue) === opt.value
                     ? "ring-2 ring-offset-2 scale-105"
                     : "opacity-60"
                 }`}
-                onClick={() => setMasteryQuickValue(opt.value)}
+                onClick={() =>
+                  setMasteryQuickValue((prev) =>
+                    masteryLevelMin(prev) === opt.value ? prev : opt.value
+                  )
+                }
               >
                 {t(`wordList.masteryLevels.${opt.key}`)}
               </Button>
