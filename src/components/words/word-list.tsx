@@ -195,33 +195,32 @@ export function WordList({ wordbookId }: WordListProps) {
     return () => window.removeEventListener("resize", adjust);
   }, [i18n.language]);
 
-  useEffect(() => {
-    Object.entries(colWidths).forEach(([key, width]) => {
-      document
-        .querySelectorAll(`.col-header[data-col="${key}"]`)
-        .forEach((el) => {
-          const e = el as HTMLElement;
-          e.style.width = `${width}px`;
-          e.style.flex = "none";
-        });
-      document.querySelectorAll(`.col-${key}`).forEach((el) => {
-        const e = el as HTMLElement;
-        e.style.width = `${width}px`;
-        e.style.flex = "none";
-      });
-    });
-  }, [colWidths, words, bulkMode]);
-
-  const storeWidth = (key: string, el: HTMLElement) => {
-    const width = el.getBoundingClientRect().width;
-    setColWidths((prev) => ({ ...prev, [key]: width }));
-  };
-
-  const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
-  const headerStyle = (key: string): React.CSSProperties | undefined =>
+  const getColStyle = (key: string): React.CSSProperties | undefined =>
     colWidths[key] !== undefined
       ? { width: colWidths[key], flex: "none" }
       : undefined;
+
+  const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
+
+  const startResize = (
+    key: string,
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const parent = (e.target as HTMLElement).parentElement as HTMLElement;
+    const startWidth = parent.getBoundingClientRect().width;
+    const onMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(40, startWidth + ev.clientX - startX);
+      setColWidths((prev) => ({ ...prev, [key]: newWidth }));
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
 
   const sortedWords = useMemo(() => {
     return [...words].sort((a, b) => {
@@ -1334,108 +1333,143 @@ export function WordList({ wordbookId }: WordListProps) {
             )}
             <div
               data-col="favorite"
-              className={`w-12 px-2 py-1 border-r border-gray-200 resize-x col-resize col-favorite col-header ${headerTextClass}`}
-              style={headerStyle("favorite")}
-              onMouseUp={(e) => storeWidth("favorite", e.currentTarget as HTMLElement)}
+              className={`relative w-12 px-2 py-1 border-r border-gray-200 col-favorite col-header ${headerTextClass}`}
+              style={getColStyle("favorite")}
             >
               {t("wordList.favorite")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("favorite", e)}
+              />
             </div>
             <div
               data-col="word"
-              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-word col-header ${headerTextClass}`}
-              style={headerStyle("word")}
-              onMouseUp={(e) => storeWidth("word", e.currentTarget as HTMLElement)}
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-word col-header ${headerTextClass}`}
+              style={getColStyle("word")}
             >
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("word", e)}
+              />
             </div>
             <div
               data-col="pinyin"
-              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-pinyin col-header ${headerTextClass}`}
-              style={headerStyle("pinyin")}
-              onMouseUp={(e) => storeWidth("pinyin", e.currentTarget as HTMLElement)}
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-pinyin col-header ${headerTextClass}`}
+              style={getColStyle("pinyin")}
             >
               {t("wordList.pinyin")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("pinyin", e)}
+              />
             </div>
             <div
               data-col="translation"
-              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-translation col-header ${headerTextClass}`}
-              style={headerStyle("translation")}
-              onMouseUp={(e) => storeWidth("translation", e.currentTarget as HTMLElement)}
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-translation col-header ${headerTextClass}`}
+              style={getColStyle("translation")}
             >
               {t("wordList.translation")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("translation", e)}
+              />
             </div>
             <div
               data-col="part"
-              className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-part col-header ${headerTextClass}`}
-              style={headerStyle("part")}
-              onMouseUp={(e) => storeWidth("part", e.currentTarget as HTMLElement)}
+              className={`relative w-20 px-2 py-1 border-r border-gray-200 col-part col-header ${headerTextClass}`}
+              style={getColStyle("part")}
             >
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("part", e)}
+              />
             </div>
             <div
               data-col="example"
-              className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-example col-header ${headerTextClass}`}
-              style={headerStyle("example")}
-              onMouseUp={(e) => storeWidth("example", e.currentTarget as HTMLElement)}
+              className={`relative flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 col-example col-header ${headerTextClass}`}
+              style={getColStyle("example")}
             >
               {t("wordList.example")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("example", e)}
+              />
             </div>
             <div
               data-col="exampleTranslation"
-              className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-exampleTranslation col-header ${headerTextClass}`}
-              style={headerStyle("exampleTranslation")}
-              onMouseUp={(e) => storeWidth("exampleTranslation", e.currentTarget as HTMLElement)}
+              className={`relative flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 col-exampleTranslation col-header ${headerTextClass}`}
+              style={getColStyle("exampleTranslation")}
             >
               {t("wordList.exampleTranslation")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("exampleTranslation", e)}
+              />
             </div>
             <div
               data-col="related"
-              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-related col-header ${headerTextClass}`}
-              style={headerStyle("related")}
-              onMouseUp={(e) => storeWidth("related", e.currentTarget as HTMLElement)}
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-related col-header ${headerTextClass}`}
+              style={getColStyle("related")}
             >
               {t("wordList.relatedWords")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("related", e)}
+              />
             </div>
             <div
               data-col="mastery"
-              className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-mastery col-header ${headerTextClass}`}
-              style={headerStyle("mastery")}
-              onMouseUp={(e) => storeWidth("mastery", e.currentTarget as HTMLElement)}
+              className={`relative w-20 px-2 py-1 border-r border-gray-200 col-mastery col-header ${headerTextClass}`}
+              style={getColStyle("mastery")}
             >
               {t("wordList.mastery")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("mastery", e)}
+              />
             </div>
             <div
               data-col="note"
-              className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}
-              style={headerStyle("note")}
-              onMouseUp={(e) => storeWidth("note", e.currentTarget as HTMLElement)}
+              className={`relative flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 col-note col-header ${headerTextClass}`}
+              style={getColStyle("note")}
             >
               {t("wordList.note")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("note", e)}
+              />
             </div>
             <div
               data-col="reviewDate"
-              className={`w-[5.4rem] px-2 py-1 border-r border-gray-200 resize-x col-resize col-reviewDate col-header ${headerTextClass}`}
-              style={headerStyle("reviewDate")}
-              onMouseUp={(e) => storeWidth("reviewDate", e.currentTarget as HTMLElement)}
+              className={`relative w-[5.4rem] px-2 py-1 border-r border-gray-200 col-reviewDate col-header ${headerTextClass}`}
+              style={getColStyle("reviewDate")}
             >
               {t("wordList.reviewDate")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("reviewDate", e)}
+              />
             </div>
             <div
               data-col="createdAt"
-              className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-createdAt col-header ${headerTextClass}`}
-              style={headerStyle("createdAt")}
-              onMouseUp={(e) => storeWidth("createdAt", e.currentTarget as HTMLElement)}
+              className={`relative w-20 px-2 py-1 border-r border-gray-200 col-createdAt col-header ${headerTextClass}`}
+              style={getColStyle("createdAt")}
             >
               {t("wordList.createdAt")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("createdAt", e)}
+              />
             </div>
             <div
               data-col="actions"
-              className={`w-28 px-2 py-1 resize-x col-resize col-actions col-header ${headerTextClass}`}
-              style={headerStyle("actions")}
-              onMouseUp={(e) => storeWidth("actions", e.currentTarget as HTMLElement)}
+              className={`relative w-28 px-2 py-1 col-actions col-header ${headerTextClass}`}
+              style={getColStyle("actions")}
             >
               {t("wordList.actions")}
             </div>
@@ -1453,7 +1487,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </div>
                 )}
-                <div className="w-12 px-2 py-2 text-center border-r border-gray-200 overflow-hidden col-favorite">
+                <div
+                  className="w-12 px-2 py-2 text-center border-r border-gray-200 overflow-hidden col-favorite"
+                  style={getColStyle("favorite")}
+                >
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Heart
                       className={`h-4 w-4 ${
@@ -1466,6 +1503,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div
                   className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200 overflow-hidden col-word"
+                  style={getColStyle("word")}
                   onDoubleClick={() => openEdit(w, "editWord")}
                 >
                   <div className="flex items-center gap-1">
@@ -1480,18 +1518,21 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div
                   className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 overflow-hidden col-pinyin"
+                  style={getColStyle("pinyin")}
                   onDoubleClick={() => openEdit(w, "editPinyin")}
                 >
                   {highlight(w.pinyin || "-")}
                 </div>
                 <div
                   className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-translation"
+                  style={getColStyle("translation")}
                   onDoubleClick={() => openEdit(w, "editTranslation")}
                 >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
                   className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer overflow-hidden col-part"
+                  style={getColStyle("part")}
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (
@@ -1516,18 +1557,21 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div
                   className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-example"
+                  style={getColStyle("example")}
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
                   className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-exampleTranslation"
+                  style={getColStyle("exampleTranslation")}
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
                 <div
                   className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 overflow-hidden col-related"
+                  style={getColStyle("related")}
                   onDoubleClick={() => openEdit(w, "editSynonym")}
                 >
                   <div className="space-y-1">
@@ -1554,7 +1598,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
                   </div>
                 </div>
-                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200 overflow-hidden col-mastery">
+                <div
+                  className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200 overflow-hidden col-mastery"
+                  style={getColStyle("mastery")}
+                >
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
@@ -1582,11 +1629,15 @@ export function WordList({ wordbookId }: WordListProps) {
                 </div>
                 <div
                   className="flex-[6] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-note"
+                  style={getColStyle("note")}
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-[5.4rem] px-2 py-2 border-r border-gray-200 overflow-hidden col-reviewDate space-y-1">
+                <div
+                  className="w-[5.4rem] px-2 py-2 border-r border-gray-200 overflow-hidden col-reviewDate space-y-1"
+                  style={getColStyle("reviewDate")}
+                >
                   {(() => {
                     const review =
                       w.reviewDate?.toDate().toLocaleDateString() || "-";
@@ -1632,10 +1683,16 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200 overflow-hidden col-createdAt">
+                <div
+                  className="w-20 px-2 py-2 border-r border-gray-200 overflow-hidden col-createdAt"
+                  style={getColStyle("createdAt")}
+                >
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-28 px-2 py-2 overflow-hidden col-actions">
+                <div
+                  className="w-28 px-2 py-2 overflow-hidden col-actions"
+                  style={getColStyle("actions")}
+                >
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
