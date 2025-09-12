@@ -347,6 +347,9 @@ export const resetWordsProgress = async (
       ids.includes(w.id) ? { ...w, mastery: 0, studyCount: 0, reviewDate: null } : w
     );
   }
+  if (srsStateCache[key]) {
+    ids.forEach((id) => delete srsStateCache[key][id]);
+  }
 };
 
 // Bulk delete words
@@ -372,6 +375,9 @@ export const bulkDeleteWords = async (
   const key = makeCacheKey(userId, wordbookId);
   if (wordCache[key]) {
     wordCache[key] = wordCache[key].filter((w) => !ids.includes(w.id));
+  }
+  if (srsStateCache[key]) {
+    ids.forEach((id) => delete srsStateCache[key][id]);
   }
 };
 
@@ -517,25 +523,36 @@ function initSrsFromWord(word: Word): SrsState {
   };
 }
 
-async function getOrInitSrsState(
+// cache SRS state to avoid repeated reads
+const srsStateCache: Record<string, Record<string, SrsState>> = {};
+
+async function ensureSrsStates(
   userId: string,
   wordbookId: string,
-  word: Word
-): Promise<SrsState> {
-  const colRef = collection(
-    db,
-    "users",
-    userId,
-    "wordbooks",
-    wordbookId,
-    "srs"
-  );
-  const docRef = doc(colRef, word.id);
-  const snap = await getDoc(docRef);
-  if (snap.exists()) return snap.data() as SrsState;
-  const init = initSrsFromWord(word);
-  await setDoc(docRef, init);
-  return init;
+  words: Word[]
+): Promise<Record<string, SrsState>> {
+  const key = makeCacheKey(userId, wordbookId);
+  if (!srsStateCache[key]) {
+    const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
+    const snap = await getDocs(colRef);
+    const map: Record<string, SrsState> = {};
+    snap.forEach((d) => (map[d.id] = d.data() as SrsState));
+    srsStateCache[key] = map;
+  }
+  const cache = srsStateCache[key];
+  const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
+  const batch = writeBatch(db);
+  let needCommit = false;
+  words.forEach((w) => {
+    if (!cache[w.id]) {
+      const init = initSrsFromWord(w);
+      cache[w.id] = init;
+      batch.set(doc(colRef, w.id), init);
+      needCommit = true;
+    }
+  });
+  if (needCommit) await batch.commit();
+  return cache;
 }
 
 export const getAllSrsStates = async (
@@ -543,22 +560,11 @@ export const getAllSrsStates = async (
   wordbookId: string,
   words: Word[]
 ): Promise<Record<string, SrsState>> => {
-  const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
-  const snap = await getDocs(colRef);
-  const existing = new Map<string, SrsState>();
-  snap.forEach((d) => existing.set(d.id, d.data() as SrsState));
-
+  const states = await ensureSrsStates(userId, wordbookId, words);
   const result: Record<string, SrsState> = {};
-  await Promise.all(
-    words.map(async (w) => {
-      let state = existing.get(w.id);
-      if (!state) {
-        state = initSrsFromWord(w);
-        await setDoc(doc(colRef, w.id), state);
-      }
-      result[w.id] = state;
-    })
-  );
+  words.forEach((w) => {
+    result[w.id] = states[w.id];
+  });
   return result;
 };
 
@@ -567,24 +573,15 @@ export const getDueSrsWords = async (
   wordbookId: string
 ): Promise<{ word: Word; state: SrsState }[]> => {
   const words = await getWordsByWordbookId(userId, wordbookId);
-  const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
-  const snap = await getDocs(colRef);
-  const existing = new Map<string, SrsState>();
-  snap.forEach((d) => existing.set(d.id, d.data() as SrsState));
+  const states = await ensureSrsStates(userId, wordbookId, words);
   const today = new Date();
   const items: { word: Word; state: SrsState }[] = [];
-  await Promise.all(
-    words.map(async (w) => {
-      let state = existing.get(w.id);
-      if (!state) {
-        state = initSrsFromWord(w);
-        await setDoc(doc(colRef, w.id), state);
-      }
-      if (state.dueDate.toDate() <= today) {
-        items.push({ word: w, state });
-      }
-    })
-  );
+  words.forEach((w) => {
+    const state = states[w.id];
+    if (state.dueDate.toDate() <= today) {
+      items.push({ word: w, state });
+    }
+  });
   items.sort((a, b) => {
     const diffA = today.getTime() - a.state.dueDate.toDate().getTime();
     const diffB = today.getTime() - b.state.dueDate.toDate().getTime();
@@ -646,6 +643,10 @@ export const applySrsAnswer = async (
     word.id
   );
   await setDoc(srsRef, newState);
+  const cacheKey = makeCacheKey(userId, wordbookId);
+  if (srsStateCache[cacheKey]) {
+    srsStateCache[cacheKey][word.id] = newState;
+  }
   let newMastery = word.mastery || 0;
   if (updateWord) {
     const delta =
