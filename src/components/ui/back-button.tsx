@@ -18,8 +18,11 @@ export function BackButton() {
   const goBack = () => {
     const segments = pathname.split("/").filter(Boolean);
     segments.pop();
-    const dest = `/${segments.join("/")}`;
-    router.push(dest === "" ? "/" : dest);
+    if (segments.length === 0 || (segments.length === 1 && segments[0] === "wordbooks")) {
+      router.push("/");
+      return;
+    }
+    router.push(`/${segments.join("/")}`);
   };
 
   return (
