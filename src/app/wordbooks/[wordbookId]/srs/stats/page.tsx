@@ -8,8 +8,10 @@ import "@/i18n/i18n-client";
 import {
   getWordsByWordbookId,
   getAllSrsStates,
+  getReviewLogs,
   type Word,
   type SrsState,
+  type ReviewLog,
 } from "@/lib/firestore-service";
 import { Chart } from "chart.js/auto";
 
@@ -23,14 +25,18 @@ export default function SrsStatsPage({ params }: PageProps) {
   const { t } = useTranslation();
   const [words, setWords] = useState<Word[]>([]);
   const [states, setStates] = useState<Record<string, SrsState>>({});
+  const [logs, setLogs] = useState<ReviewLog[]>([]);
+  const [range, setRange] = useState(30);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       const w = await getWordsByWordbookId(user.uid, wordbookId);
       const s = await getAllSrsStates(user.uid, wordbookId, w);
+      const l = await getReviewLogs(user.uid, wordbookId, 365);
       setWords(w);
       setStates(s);
+      setLogs(l);
     };
     load();
   }, [user, wordbookId]);
@@ -38,24 +44,21 @@ export default function SrsStatsPage({ params }: PageProps) {
   const distChartRef = useRef<Chart | null>(null);
 
   useEffect(() => {
-    if (words.length === 0) return;
-    const labels = Array.from({ length: 30 }, (_, i) => {
+    if (logs.length === 0) return;
+    const labels = Array.from({ length: range }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (29 - i));
+      d.setDate(d.getDate() - (range - 1 - i));
       return `${d.getMonth() + 1}/${d.getDate()}`;
     });
-    const reviewCounts = Array(30).fill(0);
-    const masterySums = Array(30).fill(0);
-    const masteryCounts = Array(30).fill(0);
-    words.forEach((w) => {
-      if (!w.reviewDate) return;
-      const diff = Math.floor(
-        (Date.now() - w.reviewDate.toMillis()) / 86400000
-      );
-      if (diff >= 0 && diff < 30) {
-        const idx = 29 - diff;
+    const reviewCounts = Array(range).fill(0);
+    const masterySums = Array(range).fill(0);
+    const masteryCounts = Array(range).fill(0);
+    logs.forEach((l) => {
+      const diff = Math.floor((Date.now() - l.ts.toMillis()) / 86400000);
+      if (diff >= 0 && diff < range) {
+        const idx = range - 1 - diff;
         reviewCounts[idx]++;
-        const m = Math.min(100, w.mastery);
+        const m = Math.min(100, l.mastery);
         masterySums[idx] += m;
         masteryCounts[idx]++;
       }
@@ -128,15 +131,22 @@ export default function SrsStatsPage({ params }: PageProps) {
         options: { responsive: true, maintainAspectRatio: false },
       });
     }
-  }, [words, t]);
+  }, [logs, range, t]);
 
-  const topWeak = Object.entries(states)
-    .sort((a, b) => b[1].lapses - a[1].lapses)
-    .slice(0, 10)
-    .map(([id, state]) => ({
-      word: words.find((w) => w.id === id)?.word || "",
-      lapses: state.lapses,
-    }));
+  const topWeakMap: Record<string, { word: string; errors: number }> = {};
+  logs.forEach((l) => {
+    if (l.quality < 2) {
+      const w = words.find((w) => w.id === l.wordId);
+      if (!w) return;
+      topWeakMap[l.wordId] = {
+        word: w.word,
+        errors: (topWeakMap[l.wordId]?.errors || 0) + 1,
+      };
+    }
+  });
+  const topWeak = Object.values(topWeakMap)
+    .sort((a, b) => b.errors - a.errors)
+    .slice(0, 10);
 
   return (
     <div className="p-4 space-y-6 max-w-3xl mx-auto">
@@ -145,6 +155,23 @@ export default function SrsStatsPage({ params }: PageProps) {
         {t("backToStudy")}
       </Link>
       <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <label className="text-sm" htmlFor="range-select">
+            {t("srs.stats.range")}
+          </label>
+          <select
+            id="range-select"
+            className="border p-1 rounded"
+            value={range}
+            onChange={(e) => setRange(Number(e.target.value))}
+          >
+            {[7, 30, 90, 180, 365].map((r) => (
+              <option key={r} value={r}>
+                {t("srs.stats.days", { count: r })}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="w-full h-64">
           <canvas id="dailyChart" className="w-full h-full" />
         </div>
@@ -154,20 +181,31 @@ export default function SrsStatsPage({ params }: PageProps) {
       </div>
       <div>
         <h2 className="font-semibold mb-2">{t("srs.stats.topWeak")}</h2>
-        <ul className="list-disc pl-4 space-y-1">
-          {topWeak.map((w) => (
-            <li key={w.word} className="flex items-center justify-between">
-              <span>{w.word}</span>
-              <span>{w.lapses}</span>
-              <Link
-                href={`/wordbooks/${wordbookId}/srs`}
-                className="text-blue-500 text-sm ml-2"
-              >
-                {t("srs.stats.reviewNow")}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left">
+              <th className="pb-1">{t("wordList.word")}</th>
+              <th className="pb-1">{t("srs.stats.errors")}</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {topWeak.map((w) => (
+              <tr key={w.word} className="border-t last:border-b">
+                <td className="py-1">{w.word}</td>
+                <td className="py-1 text-center">{w.errors}</td>
+                <td className="py-1 text-right">
+                  <Link
+                    href={`/wordbooks/${wordbookId}/srs`}
+                    className="text-blue-500 text-sm"
+                  >
+                    {t("srs.stats.reviewNow")}
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

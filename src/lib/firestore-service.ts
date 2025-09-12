@@ -11,6 +11,8 @@ import {
   writeBatch,
   query,
   where,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -469,6 +471,13 @@ export interface SrsState {
   ease: number;
 }
 
+export interface ReviewLog {
+  wordId: string;
+  ts: Timestamp;
+  quality: 0 | 1 | 2 | 3;
+  mastery: number;
+}
+
 function initSrsFromWord(word: Word): SrsState {
   const score = word.mastery || 0;
   let stage = 0;
@@ -654,6 +663,46 @@ export const applySrsAnswer = async (
   });
   word.mastery = newMastery;
   word.reviewDate = Timestamp.fromDate(today);
+
+  const logRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "reviewLogs"
+  );
+  await addDoc(logRef, {
+    wordId: word.id,
+    ts: Timestamp.fromDate(today),
+    quality,
+    mastery: newMastery,
+  });
   return newState;
+};
+
+export const getReviewLogs = async (
+  userId: string,
+  wordbookId: string,
+  days: number
+): Promise<ReviewLog[]> => {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "reviewLogs"
+  );
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const qRef = query(
+    colRef,
+    where("ts", ">=", Timestamp.fromDate(since)),
+    orderBy("ts", "desc"),
+    limit(1000)
+  );
+  const snap = await getDocs(qRef);
+  return snap.docs.map((d) => d.data() as ReviewLog);
 };
 
