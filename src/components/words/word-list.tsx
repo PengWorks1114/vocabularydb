@@ -196,41 +196,26 @@ export function WordList({ wordbookId }: WordListProps) {
   }, [i18n.language]);
 
   useEffect(() => {
-    const apply = () => {
-      Object.entries(colWidths).forEach(([key, width]) => {
-        document
-          .querySelectorAll(`.col-header[data-col="${key}"]`)
-          .forEach((el) => {
-            const e = el as HTMLElement;
-            e.style.width = `${width}px`;
-            e.style.flex = "none";
-          });
-        document.querySelectorAll(`.col-${key}`).forEach((el) => {
+    Object.entries(colWidths).forEach(([key, width]) => {
+      document
+        .querySelectorAll(`.col-header[data-col="${key}"]`)
+        .forEach((el) => {
           const e = el as HTMLElement;
           e.style.width = `${width}px`;
           e.style.flex = "none";
         });
+      document.querySelectorAll(`.col-${key}`).forEach((el) => {
+        const e = el as HTMLElement;
+        e.style.width = `${width}px`;
+        e.style.flex = "none";
       });
-    };
-    apply();
-    const headers = document.querySelectorAll(
-      ".col-header"
-    ) as NodeListOf<HTMLElement>;
-    const observers: ResizeObserver[] = [];
-    headers.forEach((h) => {
-      const key = h.dataset.col;
-      if (!key) return;
-      const ro = new ResizeObserver((entries) => {
-        const width = entries[0].contentRect.width;
-        setColWidths((prev) =>
-          prev[key] === width ? prev : { ...prev, [key]: width }
-        );
-      });
-      ro.observe(h);
-      observers.push(ro);
     });
-    return () => observers.forEach((o) => o.disconnect());
-  }, [words, colWidths, bulkMode]);
+  }, [colWidths, words, bulkMode]);
+
+  const storeWidth = (key: string, el: HTMLElement) => {
+    const width = el.getBoundingClientRect().width;
+    setColWidths((prev) => ({ ...prev, [key]: width }));
+  };
 
   const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
   const headerStyle = (key: string): React.CSSProperties | undefined =>
@@ -1351,6 +1336,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="favorite"
               className={`w-12 px-2 py-1 border-r border-gray-200 resize-x col-resize col-favorite col-header ${headerTextClass}`}
               style={headerStyle("favorite")}
+              onMouseUp={(e) => storeWidth("favorite", e.currentTarget as HTMLElement)}
             >
               {t("wordList.favorite")}
             </div>
@@ -1358,6 +1344,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="word"
               className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-word col-header ${headerTextClass}`}
               style={headerStyle("word")}
+              onMouseUp={(e) => storeWidth("word", e.currentTarget as HTMLElement)}
             >
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
@@ -1365,6 +1352,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="pinyin"
               className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-pinyin col-header ${headerTextClass}`}
               style={headerStyle("pinyin")}
+              onMouseUp={(e) => storeWidth("pinyin", e.currentTarget as HTMLElement)}
             >
               {t("wordList.pinyin")}
             </div>
@@ -1372,6 +1360,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="translation"
               className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-translation col-header ${headerTextClass}`}
               style={headerStyle("translation")}
+              onMouseUp={(e) => storeWidth("translation", e.currentTarget as HTMLElement)}
             >
               {t("wordList.translation")}
             </div>
@@ -1379,6 +1368,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="part"
               className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-part col-header ${headerTextClass}`}
               style={headerStyle("part")}
+              onMouseUp={(e) => storeWidth("part", e.currentTarget as HTMLElement)}
             >
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
@@ -1389,6 +1379,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="example"
               className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-example col-header ${headerTextClass}`}
               style={headerStyle("example")}
+              onMouseUp={(e) => storeWidth("example", e.currentTarget as HTMLElement)}
             >
               {t("wordList.example")}
             </div>
@@ -1396,6 +1387,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="exampleTranslation"
               className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-exampleTranslation col-header ${headerTextClass}`}
               style={headerStyle("exampleTranslation")}
+              onMouseUp={(e) => storeWidth("exampleTranslation", e.currentTarget as HTMLElement)}
             >
               {t("wordList.exampleTranslation")}
             </div>
@@ -1403,6 +1395,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="related"
               className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-related col-header ${headerTextClass}`}
               style={headerStyle("related")}
+              onMouseUp={(e) => storeWidth("related", e.currentTarget as HTMLElement)}
             >
               {t("wordList.relatedWords")}
             </div>
@@ -1410,6 +1403,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="mastery"
               className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-mastery col-header ${headerTextClass}`}
               style={headerStyle("mastery")}
+              onMouseUp={(e) => storeWidth("mastery", e.currentTarget as HTMLElement)}
             >
               {t("wordList.mastery")}
             </div>
@@ -1417,6 +1411,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="note"
               className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}
               style={headerStyle("note")}
+              onMouseUp={(e) => storeWidth("note", e.currentTarget as HTMLElement)}
             >
               {t("wordList.note")}
             </div>
@@ -1424,6 +1419,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="reviewDate"
               className={`w-[5.4rem] px-2 py-1 border-r border-gray-200 resize-x col-resize col-reviewDate col-header ${headerTextClass}`}
               style={headerStyle("reviewDate")}
+              onMouseUp={(e) => storeWidth("reviewDate", e.currentTarget as HTMLElement)}
             >
               {t("wordList.reviewDate")}
             </div>
@@ -1431,6 +1427,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="createdAt"
               className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-createdAt col-header ${headerTextClass}`}
               style={headerStyle("createdAt")}
+              onMouseUp={(e) => storeWidth("createdAt", e.currentTarget as HTMLElement)}
             >
               {t("wordList.createdAt")}
             </div>
@@ -1438,6 +1435,7 @@ export function WordList({ wordbookId }: WordListProps) {
               data-col="actions"
               className={`w-28 px-2 py-1 resize-x col-resize col-actions col-header ${headerTextClass}`}
               style={headerStyle("actions")}
+              onMouseUp={(e) => storeWidth("actions", e.currentTarget as HTMLElement)}
             >
               {t("wordList.actions")}
             </div>
