@@ -295,6 +295,22 @@ export default function ChoiceSessionPage({ params }: PageProps) {
       : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
+  const highlight = (text: string) => {
+    const word = sessionWords[index]?.word || "";
+    if (!word) return text;
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === word.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Enter" && showResult) {
@@ -313,7 +329,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <BackButton labelKey="recite.settingsTitle" />
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -354,7 +370,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                     onClick={() => handleSelect(o)}
                   >
                     <span className="truncate w-full text-left">
-                      {direction === "word" ? o.translation : o.word}
+                      {highlight(direction === "word" ? o.translation : o.word)}
                     </span>
                   </Button>
                 ))}

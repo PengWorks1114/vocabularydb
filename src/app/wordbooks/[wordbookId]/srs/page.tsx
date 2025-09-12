@@ -211,7 +211,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto">
         <div className="flex items-center justify-between">
-          <BackButton labelKey="backToWordbook" />
+          <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -283,7 +283,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
         <div className="flex items-center justify-between">
-          <BackButton labelKey="backToWordbook" />
+          <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -301,7 +301,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
         <div className="flex items-center justify-between">
-          <BackButton labelKey="backToWordbook" />
+          <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>

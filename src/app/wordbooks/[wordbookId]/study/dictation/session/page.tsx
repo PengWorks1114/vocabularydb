@@ -347,7 +347,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
       <div className="flex items-center justify-between">
-        <BackButton labelKey="dictation.settingsTitle" />
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

@@ -87,7 +87,7 @@ export default function ImportPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-4">
       <div className="flex items-center justify-between">
-        <BackButton labelKey="backToList" />
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

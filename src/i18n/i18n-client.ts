@@ -32,13 +32,6 @@ i18n
           },
           nav: {
             wordbooks: "Wordbooks",
-            trash: "Trash",
-          },
-          trash: {
-            title: "Trash",
-            empty: "Trash is empty",
-            clear: "Empty Trash",
-            clearing: "Clearing...",
           },
           studyPage: {
             recite: "Recite Words",
@@ -147,8 +140,6 @@ i18n
             noWords: "No matching words",
             done: "All reviews done",
           },
-          backToList: "Back to wordbooks",
-          backToStudy: "Back to study",
           backToWordbook: "Back to wordbook",
           backToPrevious: "Back",
           wordbookList: {
@@ -293,13 +284,6 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
           },
           nav: {
             wordbooks: "單字本一覽",
-            trash: "垃圾桶",
-          },
-          trash: {
-            title: "垃圾桶",
-            empty: "垃圾桶是空的",
-            clear: "清空垃圾桶",
-            clearing: "清空中...",
           },
           studyPage: {
             recite: "背單字",
@@ -408,8 +392,6 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             noWords: "沒有符合條件的單字",
             done: "今日複習完成",
           },
-          backToList: "返回單字本列表",
-          backToStudy: "返回背誦頁",
           backToWordbook: "返回單字本",
           backToPrevious: "返回上一頁",
           wordbookList: {
@@ -553,13 +535,6 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
           },
           nav: {
             wordbooks: "単語帳一覧",
-            trash: "ゴミ箱",
-          },
-          trash: {
-            title: "ゴミ箱",
-            empty: "ゴミ箱は空です",
-            clear: "ゴミ箱を空にする",
-            clearing: "消去中...",
           },
           studyPage: {
             recite: "単語を暗記",
@@ -667,8 +642,6 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             noWords: "条件に合う単語がありません",
             done: "今日の復習完了",
           },
-          backToList: "単語帳一覧に戻る",
-          backToStudy: "暗記ページに戻る",
           backToWordbook: "単語帳に戻る",
           backToPrevious: "前のページへ戻る",
           wordbookList: {

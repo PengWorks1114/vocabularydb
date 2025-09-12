@@ -1,16 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/i18n/i18n-client";
 
-interface BackButtonProps {
-  labelKey?: string;
-}
-
-export function BackButton({ labelKey = "backToPrevious" }: BackButtonProps) {
+export function BackButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
@@ -18,14 +15,21 @@ export function BackButton({ labelKey = "backToPrevious" }: BackButtonProps) {
     setMounted(true);
   }, []);
 
+  const goBack = () => {
+    const segments = pathname.split("/").filter(Boolean);
+    segments.pop();
+    const dest = `/${segments.join("/")}`;
+    router.push(dest === "" ? "/" : dest);
+  };
+
   return (
     <button
       type="button"
-      onClick={() => router.back()}
+      onClick={goBack}
       className="text-sm text-muted-foreground"
       suppressHydrationWarning
     >
-      &larr; {mounted ? t(labelKey) : ""}
+      &larr; {mounted ? t("backToPrevious") : ""}
     </button>
   );
 }

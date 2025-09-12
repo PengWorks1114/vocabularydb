@@ -32,10 +32,8 @@ import {
 
 import {
   getWordbooksByUserId,
-  getTrashedWordbooksByUserId,
   createWordbook,
   deleteWordbook,
-  trashWordbook,
   updateWordbookName,
   type Wordbook,
 } from "@/lib/firestore-service";
@@ -44,7 +42,7 @@ import { useAuth } from "@/components/auth-provider";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
-export default function WordbookList({ trashed = false }: { trashed?: boolean }) {
+export default function WordbookList() {
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -58,7 +56,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
   const [renameValue, setRenameValue] = useState("");
   const [renaming, setRenaming] = useState(false);
 
-  // Delete or trash
+  // Delete
   const [deleteTarget, setDeleteTarget] = useState<Wordbook | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -68,11 +66,8 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     error,
     refetch,
   } = useQuery<Wordbook[]>({
-    queryKey: ["wordbooks", user?.uid, trashed],
-    queryFn: () =>
-      trashed
-        ? getTrashedWordbooksByUserId(user!.uid)
-        : getWordbooksByUserId(user!.uid),
+    queryKey: ["wordbooks", user?.uid],
+    queryFn: () => getWordbooksByUserId(user!.uid),
     enabled: !!user?.uid,
   });
   const sortedWordbooks = useMemo(
@@ -86,12 +81,12 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
   const loadKey = useRef<string | null>(null);
   useEffect(() => {
     if (!user?.uid) return;
-    const key = `${user.uid}-${trashed}`;
+    const key = `${user.uid}`;
     if (loadKey.current === key) return;
     loadKey.current = key;
     refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, trashed]);
+  }, [user?.uid]);
 
   const handleCreate = async () => {
     if (!user || !newName.trim()) return;
@@ -135,11 +130,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
     if (!user || !deleteTarget) return;
     setDeleting(true);
     try {
-      if (trashed) {
-        await deleteWordbook(user.uid, deleteTarget.id);
-      } else {
-        await trashWordbook(user.uid, deleteTarget.id);
-      }
+      await deleteWordbook(user.uid, deleteTarget.id);
       setDeleteTarget(null);
       await refetch();
     } catch (e) {
@@ -151,37 +142,28 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
 
   return (
     <div className="w-full max-w-3xl space-y-6">
-      {!trashed && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("wordbookList.title")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  placeholder={t("wordbookList.namePlaceholder")}
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreate();
-                  }}
-                />
-                <Button
-                  onClick={handleCreate}
-                  disabled={creating || !newName.trim()}
-                >
-                  {creating
-                    ? t("wordbookList.creating")
-                    : t("wordbookList.create")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("wordbookList.title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              placeholder={t("wordbookList.namePlaceholder")}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreate();
+              }}
+            />
+            <Button onClick={handleCreate} disabled={creating || !newName.trim()}>
+              {creating ? t("wordbookList.creating") : t("wordbookList.create")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Separator />
-        </>
-      )}
+      <Separator />
 
       <div className="space-y-3">
         {loading && (
@@ -194,7 +176,7 @@ export default function WordbookList({ trashed = false }: { trashed?: boolean })
         ) : null}
         {!loading && !sortedWordbooks.length && (
           <div className="text-sm text-muted-foreground">
-            {trashed ? t("trash.empty") : t("wordbookList.empty")}
+            {t("wordbookList.empty")}
           </div>
         )}
 
