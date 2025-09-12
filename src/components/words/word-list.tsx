@@ -170,6 +170,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -199,16 +200,26 @@ export function WordList({ wordbookId }: WordListProps) {
       const headers = document.querySelectorAll(
         ".col-header"
       ) as NodeListOf<HTMLElement>;
+      const newWidths: Record<string, number> = {};
       headers.forEach((h) => {
         const key = h.dataset.col;
         if (!key) return;
         const width = h.offsetWidth;
+        newWidths[key] = width;
         h.style.flex = "none";
         document.querySelectorAll(`.col-${key}`).forEach((el) => {
           const e = el as HTMLElement;
           e.style.width = `${width}px`;
           e.style.flex = "none";
         });
+      });
+      setColWidths((prev) => {
+        for (const k in newWidths) {
+          if (prev[k] !== newWidths[k]) {
+            return { ...prev, ...newWidths };
+          }
+        }
+        return prev;
       });
     };
     sync();
@@ -225,6 +236,10 @@ export function WordList({ wordbookId }: WordListProps) {
   }, [words, bulkMode]);
 
   const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
+  const headerStyle = (key: string): React.CSSProperties | undefined =>
+    colWidths[key] !== undefined
+      ? { width: colWidths[key], flex: "none" }
+      : undefined;
 
   const sortedWords = useMemo(() => {
     return [...words].sort((a, b) => {
@@ -1335,26 +1350,100 @@ export function WordList({ wordbookId }: WordListProps) {
                 />
               </div>
             )}
-            <div data-col="favorite" className={`w-12 px-2 py-1 border-r border-gray-200 resize-x col-resize col-favorite col-header ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div data-col="word" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-word col-header ${headerTextClass}`}>
+            <div
+              data-col="favorite"
+              className={`w-12 px-2 py-1 border-r border-gray-200 resize-x col-resize col-favorite col-header ${headerTextClass}`}
+              style={headerStyle("favorite")}
+            >
+              {t("wordList.favorite")}
+            </div>
+            <div
+              data-col="word"
+              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-word col-header ${headerTextClass}`}
+              style={headerStyle("word")}
+            >
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
-            <div data-col="pinyin" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-pinyin col-header ${headerTextClass}`}>{t("wordList.pinyin")}</div>
-            <div data-col="translation" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-translation col-header ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div data-col="part" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-part col-header ${headerTextClass}`}>
+            <div
+              data-col="pinyin"
+              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-pinyin col-header ${headerTextClass}`}
+              style={headerStyle("pinyin")}
+            >
+              {t("wordList.pinyin")}
+            </div>
+            <div
+              data-col="translation"
+              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-translation col-header ${headerTextClass}`}
+              style={headerStyle("translation")}
+            >
+              {t("wordList.translation")}
+            </div>
+            <div
+              data-col="part"
+              className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-part col-header ${headerTextClass}`}
+              style={headerStyle("part")}
+            >
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div data-col="example" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-example col-header ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div data-col="exampleTranslation" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-exampleTranslation col-header ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
-            <div data-col="related" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-related col-header ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div data-col="mastery" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-mastery col-header ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div data-col="note" className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div data-col="reviewDate" className={`w-24 px-2 py-1 border-r border-gray-200 resize-x col-resize col-reviewDate col-header ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div data-col="createdAt" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-createdAt col-header ${headerTextClass}`}>{t("wordList.createdAt")}</div>
-            <div data-col="actions" className={`w-28 px-2 py-1 resize-x col-resize col-actions col-header ${headerTextClass}`}>{t("wordList.actions")}</div>
+            <div
+              data-col="example"
+              className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-example col-header ${headerTextClass}`}
+              style={headerStyle("example")}
+            >
+              {t("wordList.example")}
+            </div>
+            <div
+              data-col="exampleTranslation"
+              className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-exampleTranslation col-header ${headerTextClass}`}
+              style={headerStyle("exampleTranslation")}
+            >
+              {t("wordList.exampleTranslation")}
+            </div>
+            <div
+              data-col="related"
+              className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-related col-header ${headerTextClass}`}
+              style={headerStyle("related")}
+            >
+              {t("wordList.relatedWords")}
+            </div>
+            <div
+              data-col="mastery"
+              className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-mastery col-header ${headerTextClass}`}
+              style={headerStyle("mastery")}
+            >
+              {t("wordList.mastery")}
+            </div>
+            <div
+              data-col="note"
+              className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}
+              style={headerStyle("note")}
+            >
+              {t("wordList.note")}
+            </div>
+            <div
+              data-col="reviewDate"
+              className={`w-[5.4rem] px-2 py-1 border-r border-gray-200 resize-x col-resize col-reviewDate col-header ${headerTextClass}`}
+              style={headerStyle("reviewDate")}
+            >
+              {t("wordList.reviewDate")}
+            </div>
+            <div
+              data-col="createdAt"
+              className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-createdAt col-header ${headerTextClass}`}
+              style={headerStyle("createdAt")}
+            >
+              {t("wordList.createdAt")}
+            </div>
+            <div
+              data-col="actions"
+              className={`w-28 px-2 py-1 resize-x col-resize col-actions col-header ${headerTextClass}`}
+              style={headerStyle("actions")}
+            >
+              {t("wordList.actions")}
+            </div>
           </div>
           {visibleWords.length ? (
             visibleWords.map((w) => (
@@ -1502,7 +1591,7 @@ export function WordList({ wordbookId }: WordListProps) {
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200 overflow-hidden col-reviewDate space-y-1">
+                <div className="w-[5.4rem] px-2 py-2 border-r border-gray-200 overflow-hidden col-reviewDate space-y-1">
                   {(() => {
                     const review =
                       w.reviewDate?.toDate().toLocaleDateString() || "-";
@@ -1528,10 +1617,12 @@ export function WordList({ wordbookId }: WordListProps) {
                         <div className="border-b border-gray-300 my-1" />
                         <div>{t("wordList.dueDate")}</div>
                         <div>{due}</div>
-                        <div>
-                          {t("wordList.overdue")}: {diff ?? "-"}
-                          {diff !== null ? t("wordList.days") : ""}
-                        </div>
+                        {diff !== null && diff > 0 && (
+                          <div>
+                            {t("wordList.overdue")}: {diff}
+                            {t("wordList.days")}
+                          </div>
+                        )}
                         <div className="border-b border-gray-300 my-1" />
                         <div className="flex items-center gap-1">
                           {t("wordList.studyCount")}:<span>{w.studyCount ?? 0}</span>
