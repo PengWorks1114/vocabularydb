@@ -194,6 +194,36 @@ export function WordList({ wordbookId }: WordListProps) {
     return () => window.removeEventListener("resize", adjust);
   }, [i18n.language]);
 
+  useEffect(() => {
+    const sync = () => {
+      const headers = document.querySelectorAll(
+        ".col-header"
+      ) as NodeListOf<HTMLElement>;
+      headers.forEach((h) => {
+        const key = h.dataset.col;
+        if (!key) return;
+        const width = h.offsetWidth;
+        h.style.flex = "none";
+        document.querySelectorAll(`.col-${key}`).forEach((el) => {
+          const e = el as HTMLElement;
+          e.style.width = `${width}px`;
+          e.style.flex = "none";
+        });
+      });
+    };
+    sync();
+    const headers = document.querySelectorAll(
+      ".col-header"
+    ) as NodeListOf<HTMLElement>;
+    const observers: ResizeObserver[] = [];
+    headers.forEach((h) => {
+      const ro = new ResizeObserver(sync);
+      ro.observe(h);
+      observers.push(ro);
+    });
+    return () => observers.forEach((o) => o.disconnect());
+  }, [words, bulkMode]);
+
   const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
 
   const sortedWords = useMemo(() => {
@@ -1292,7 +1322,7 @@ export function WordList({ wordbookId }: WordListProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full overflow-x-auto resize-x">
+      <div className="w-full overflow-x-auto">
         <div ref={listRef} className="min-w-[1400px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
             {bulkMode && (
@@ -1305,33 +1335,33 @@ export function WordList({ wordbookId }: WordListProps) {
                 />
               </div>
             )}
-            <div className={`w-12 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>
+            <div data-col="favorite" className={`w-12 px-2 py-1 border-r border-gray-200 resize-x col-resize col-favorite col-header ${headerTextClass}`}>{t("wordList.favorite")}</div>
+            <div data-col="word" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-word col-header ${headerTextClass}`}>
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.pinyin")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>
+            <div data-col="pinyin" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-pinyin col-header ${headerTextClass}`}>{t("wordList.pinyin")}</div>
+            <div data-col="translation" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-translation col-header ${headerTextClass}`}>{t("wordList.translation")}</div>
+            <div data-col="part" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-part col-header ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-16 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.studyCount")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 resize-x ${headerTextClass}`}>{t("wordList.createdAt")}</div>
-            <div className={`w-28 px-2 py-1 resize-x ${headerTextClass}`}>{t("wordList.actions")}</div>
+            <div data-col="example" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-example col-header ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div data-col="exampleTranslation" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-exampleTranslation col-header ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div data-col="related" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-related col-header ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
+            <div data-col="mastery" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-mastery col-header ${headerTextClass}`}>{t("wordList.mastery")}</div>
+            <div data-col="note" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div data-col="reviewDate" className={`w-24 px-2 py-1 border-r border-gray-200 resize-x col-resize col-reviewDate col-header ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
+            <div data-col="studyCount" className={`w-16 px-2 py-1 border-r border-gray-200 resize-x col-resize col-studyCount col-header ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div data-col="createdAt" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-createdAt col-header ${headerTextClass}`}>{t("wordList.createdAt")}</div>
+            <div data-col="actions" className={`w-28 px-2 py-1 resize-x col-resize col-actions col-header ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {visibleWords.length ? (
             visibleWords.map((w) => (
               <div key={w.id} className="flex border-b">
                 {bulkMode && (
-                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center resize-x overflow-hidden">
+                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center overflow-hidden">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -1340,7 +1370,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </div>
                 )}
-                <div className="w-12 px-2 py-2 text-center border-r border-gray-200 resize-x overflow-hidden">
+                <div className="w-12 px-2 py-2 text-center border-r border-gray-200 overflow-hidden col-favorite">
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Heart
                       className={`h-4 w-4 ${
@@ -1352,7 +1382,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   </button>
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200 overflow-hidden col-word"
                   onDoubleClick={() => openEdit(w, "editWord")}
                 >
                   <div className="flex items-center gap-1">
@@ -1366,19 +1396,19 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 overflow-hidden col-pinyin"
                   onDoubleClick={() => openEdit(w, "editPinyin")}
                 >
                   {highlight(w.pinyin || "-")}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-translation"
                   onDoubleClick={() => openEdit(w, "editTranslation")}
                 >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
-                  className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer resize-x overflow-hidden"
+                  className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer overflow-hidden col-part"
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (
@@ -1402,19 +1432,19 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-example"
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-exampleTranslation"
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 overflow-hidden col-related"
                   onDoubleClick={() => openEdit(w, "editSynonym")}
                 >
                   <div className="space-y-1">
@@ -1441,7 +1471,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
                   </div>
                 </div>
-                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200 resize-x overflow-hidden">
+                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200 overflow-hidden col-mastery">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
@@ -1468,12 +1498,12 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 resize-x overflow-hidden"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-note"
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line resize-x overflow-hidden">
+                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line overflow-hidden col-reviewDate">
                   {(() => {
                     const review =
                       w.reviewDate?.toDate().toLocaleDateString() || "-";
@@ -1501,7 +1531,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1 resize-x overflow-hidden">
+                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1 overflow-hidden col-studyCount">
                   <span>{w.studyCount ?? 0}</span>
                   <button
                     className="px-1 text-xs border rounded"
@@ -1510,10 +1540,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     +
                   </button>
                 </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200 resize-x overflow-hidden">
+                <div className="w-20 px-2 py-2 border-r border-gray-200 overflow-hidden col-createdAt">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-28 px-2 py-2 resize-x overflow-hidden">
+                <div className="w-28 px-2 py-2 overflow-hidden col-actions">
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
