@@ -823,19 +823,20 @@ export function WordList({ wordbookId }: WordListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {!bulkMode && (
-        <Dialog open={createOpen} onOpenChange={(o) => {
-          setCreateOpen(o);
-          if (!o) resetCreateForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>{t("wordList.addWord")}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("wordList.addWord")}</DialogTitle>
-          </DialogHeader>
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!bulkMode && (
+            <Dialog open={createOpen} onOpenChange={(o) => {
+              setCreateOpen(o);
+              if (!o) resetCreateForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button>{t("wordList.addWord")}</Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{t("wordList.addWord")}</DialogTitle>
+                </DialogHeader>
           <Label htmlFor="newWord" className="mb-1">{t("wordList.word")}</Label>
           <Input
             id="newWord"
@@ -1077,7 +1078,8 @@ export function WordList({ wordbookId }: WordListProps) {
             </Button>
           </>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-auto shrink-0">
           <span>{t("wordList.wordCount", { count: words.length })}</span>
           <div className="flex items-center gap-2">
             <span>{t("wordList.overallMastery")}</span>
@@ -1294,10 +1296,10 @@ export function WordList({ wordbookId }: WordListProps) {
               </div>
             )}
             <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
             <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
@@ -1305,8 +1307,8 @@ export function WordList({ wordbookId }: WordListProps) {
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
             <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
             <div className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
@@ -1340,7 +1342,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   </button>
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editWord")}
                 >
                   <div className="flex items-center gap-1">
@@ -1354,7 +1356,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editPinyin")}
                 >
                   {highlight(w.pinyin || "-")}
@@ -1390,13 +1392,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div
-                  className="flex-[6] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[6] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}

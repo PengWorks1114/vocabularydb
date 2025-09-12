@@ -350,10 +350,12 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                   <Button
                     key={o.id}
                     variant="outline"
-                    className="w-full bg-white border-gray-300 hover:bg-gray-100 text-base truncate justify-start text-left"
+                    className="w-full bg-white border-gray-300 hover:bg-gray-100 text-base justify-start"
                     onClick={() => handleSelect(o)}
                   >
-                    {direction === "word" ? o.translation : o.word}
+                    <span className="truncate w-full text-left">
+                      {direction === "word" ? o.translation : o.word}
+                    </span>
                   </Button>
                 ))}
               </div>
