@@ -341,8 +341,8 @@ export default function ChoiceSessionPage({ params }: PageProps) {
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold">
               {direction === "word"
-                ? sessionWords[index].translation
-                : sessionWords[index].word}
+                ? sessionWords[index].word
+                : sessionWords[index].translation}
             </div>
             {!showResult ? (
               <div className="grid grid-cols-2 gap-2 mt-12">
@@ -350,10 +350,10 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                   <Button
                     key={o.id}
                     variant="outline"
-                    className="w-full bg-white border-gray-300 hover:bg-gray-100 text-base truncate"
+                    className="w-full bg-white border-gray-300 hover:bg-gray-100 text-base truncate justify-start text-left"
                     onClick={() => handleSelect(o)}
                   >
-                    {direction === "word" ? o.word : o.translation}
+                    {direction === "word" ? o.translation : o.word}
                   </Button>
                 ))}
               </div>
@@ -372,11 +372,11 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                     : t("dictation.wrong")}
                 </div>
                 <div className="space-y-2 text-left text-lg mt-4">
-                  <div className="text-3xl font-bold text-red-600">
-                    {direction === "word"
-                      ? sessionWords[index].word
-                      : sessionWords[index].translation}
-                  </div>
+                <div className="text-3xl font-bold text-red-600">
+                  {direction === "word"
+                    ? sessionWords[index].translation
+                    : sessionWords[index].word}
+                </div>
                   <div>
                     {t("wordList.pinyin")}: {sessionWords[index].pinyin}
                   </div>

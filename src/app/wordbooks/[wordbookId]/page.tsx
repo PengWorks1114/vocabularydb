@@ -39,7 +39,7 @@ export default function WordbookPage({ params }: PageProps) {
   };
 
   return (
-    <div className="p-8 space-y-4">
+    <div className="p-2 sm:p-8 space-y-4">
       <div className="flex items-center justify-between">
         <BackButton labelKey="backToList" />
         <div className="flex items-center gap-2">
