@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, use, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -346,13 +347,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}/study/dictation`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("dictation.settingsTitle") : ""}
-        </Link>
+        <BackButton labelKey="dictation.settingsTitle" />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

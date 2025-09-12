@@ -1,11 +1,11 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { signOut } from "firebase/auth";
 import "@/i18n/i18n-client";
 import {
@@ -171,12 +171,7 @@ export default function SrsStatsPage({ params }: PageProps) {
   return (
     <div className="p-4 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}`}
-          className="text-sm text-muted-foreground"
-        >
-          &larr; {t("backToPrevious")}
-        </Link>
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

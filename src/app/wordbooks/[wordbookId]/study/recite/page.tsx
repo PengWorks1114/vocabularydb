@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useAuth } from "@/components/auth-provider";
 import {
   Select,
@@ -70,13 +70,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}/study`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("backToStudy") : ""}
-        </Link>
+        <BackButton labelKey="backToStudy" />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

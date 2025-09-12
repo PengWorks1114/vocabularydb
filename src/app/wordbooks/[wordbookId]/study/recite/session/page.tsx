@@ -7,6 +7,7 @@ import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -322,13 +323,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}/study/recite`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("recite.settingsTitle") : ""}
-        </Link>
+        <BackButton labelKey="recite.settingsTitle" />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

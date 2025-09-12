@@ -13,6 +13,7 @@ import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -312,13 +313,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}/study/recite`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("recite.settingsTitle") : ""}
-        </Link>
+        <BackButton labelKey="recite.settingsTitle" />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -355,7 +350,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                   <Button
                     key={o.id}
                     variant="outline"
-                    className="bg-white border-gray-300 hover:bg-gray-100 text-base"
+                    className="w-full bg-white border-gray-300 hover:bg-gray-100 text-base truncate"
                     onClick={() => handleSelect(o)}
                   >
                     {direction === "word" ? o.word : o.translation}

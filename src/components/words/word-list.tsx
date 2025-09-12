@@ -1299,7 +1299,7 @@ export function WordList({ wordbookId }: WordListProps) {
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div className={`w-28 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
@@ -1307,9 +1307,9 @@ export function WordList({ wordbookId }: WordListProps) {
             </div>
             <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
             <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
             <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
             <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
             <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
@@ -1366,17 +1366,17 @@ export function WordList({ wordbookId }: WordListProps) {
                   {highlight(w.translation || "-")}
                 </div>
                 <div
-                  className="w-28 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col gap-1">
                       {w.partOfSpeech.map((id) => {
                         const tag = posTags.find((t) => t.id === id);
                         return (
                           <span
                             key={id}
-                            className={`px-1 rounded text-xs ${
+                            className={`block px-1 rounded text-xs ${
                               colorClasses[tag?.color || "gray"]
                             }`}
                           >
@@ -1402,7 +1402,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editSynonym")}
                 >
                   <div className="space-y-1">
@@ -1456,7 +1456,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}

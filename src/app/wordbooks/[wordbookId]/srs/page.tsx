@@ -1,10 +1,10 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import "@/i18n/i18n-client";
@@ -211,12 +211,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/wordbooks/${wordbookId}`}
-            className="text-sm text-muted-foreground"
-          >
-            &larr; {t("backToWordbook")}
-          </Link>
+          <BackButton labelKey="backToWordbook" />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -288,12 +283,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/wordbooks/${wordbookId}`}
-            className="text-sm text-muted-foreground"
-          >
-            &larr; {t("backToWordbook")}
-          </Link>
+          <BackButton labelKey="backToWordbook" />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -311,12 +301,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/wordbooks/${wordbookId}`}
-            className="text-sm text-muted-foreground"
-          >
-            &larr; {t("backToWordbook")}
-          </Link>
+          <BackButton labelKey="backToWordbook" />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
