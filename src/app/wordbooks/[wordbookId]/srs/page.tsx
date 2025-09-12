@@ -165,6 +165,22 @@ export default function SrsPage({ params }: PageProps) {
       )
     : 0;
 
+  const highlight = (text: string) => {
+    const target = current?.word.word || "";
+    if (!target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === target.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   const handleAnswer = async (q: 0 | 1 | 2 | 3) => {
     if (!user || !current) return;
     const newState = await applySrsAnswer(
@@ -377,13 +393,13 @@ export default function SrsPage({ params }: PageProps) {
               </div>
             )}
             <div className="text-xl text-red-600">
-              {current.word.translation}
+              {highlight(current.word.translation)}
             </div>
             <div className="whitespace-pre-line">
-              {current.word.exampleSentence}
+              {highlight(current.word.exampleSentence || "")}
             </div>
             <div className="whitespace-pre-line text-sm text-muted-foreground">
-              {current.word.exampleTranslation}
+              {highlight(current.word.exampleTranslation || "")}
             </div>
             <div className="grid grid-cols-4 gap-1 pt-4">
               <Button
@@ -402,7 +418,7 @@ export default function SrsPage({ params }: PageProps) {
               </Button>
               <Button
                 size="sm"
-                className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white"
                 onClick={() => handleAnswer(2)}
               >
                 {t("srs.buttons.good")}

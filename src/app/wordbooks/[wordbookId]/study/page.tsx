@@ -75,7 +75,7 @@ export default function StudyPage({ params }: PageProps) {
         <div className="flex gap-4 mt-4">
           <Button
             asChild
-            className="bg-orange-500 text-black hover:bg-orange-600"
+            className="bg-orange-500 text-white hover:bg-orange-600"
           >
             <Link href={`/wordbooks/${wordbookId}/study/recite`}>
               {t("studyPage.recite")}
@@ -83,7 +83,7 @@ export default function StudyPage({ params }: PageProps) {
           </Button>
           <Button
             asChild
-            className="bg-green-500 text-black hover:bg-green-600"
+            className="bg-green-500 text-white hover:bg-green-600"
           >
             <Link href={`/wordbooks/${wordbookId}/study/dictation`}>
               {t("studyPage.dictation")}
@@ -91,7 +91,7 @@ export default function StudyPage({ params }: PageProps) {
           </Button>
           <Button
             asChild
-            className="bg-blue-500 text-black hover:bg-blue-600"
+            className="bg-blue-500 text-white hover:bg-blue-600"
           >
             <Link href={`/wordbooks/${wordbookId}/study/choice`}>
               {t("studyPage.choice")}

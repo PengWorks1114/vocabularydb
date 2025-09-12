@@ -419,7 +419,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 text-base"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 text-base"
                     onClick={() => handleMastery("familiar")}
                   >
                     {t("wordList.masteryLevels.familiar")}

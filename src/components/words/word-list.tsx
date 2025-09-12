@@ -121,7 +121,7 @@ const colorClasses: Record<string, string> = {
 const masteryOptions = [
   { key: "unknown", value: 0, cls: "bg-red-500 text-white" },
   { key: "impression", value: 25, cls: "bg-orange-500 text-white" },
-  { key: "familiar", value: 50, cls: "bg-yellow-500 text-black" },
+  { key: "familiar", value: 50, cls: "bg-yellow-500 text-white" },
   { key: "memorized", value: 90, cls: "bg-green-600 text-white" },
 ];
 
@@ -1034,7 +1034,7 @@ export function WordList({ wordbookId }: WordListProps) {
           className={
             showFavorites
               ? "bg-black text-white hover:bg-black/90"
-              : "bg-yellow-500 text-black hover:bg-yellow-600"
+              : "bg-yellow-500 text-white hover:bg-yellow-600"
           }
           onClick={() => setShowFavorites((prev) => !prev)}
         >
@@ -1045,7 +1045,7 @@ export function WordList({ wordbookId }: WordListProps) {
         )}
         {!bulkMode && (
           <Button
-            className="bg-orange-500 text-black hover:bg-orange-600"
+            className="bg-orange-500 text-white hover:bg-orange-600"
             asChild
           >
             <Link href={`/wordbooks/${wordbookId}/study`}>
@@ -1078,7 +1078,7 @@ export function WordList({ wordbookId }: WordListProps) {
               {t("wordList.exportAllCsv")}
             </Button>
             <Button
-              className="bg-yellow-500 text-black hover:bg-yellow-600"
+              className="bg-yellow-500 text-white hover:bg-yellow-600"
               onClick={handleInitProgress}
               disabled={!selectedIds.length}
             >
@@ -1095,7 +1095,7 @@ export function WordList({ wordbookId }: WordListProps) {
         ) : (
           <>
             <Button
-              className="bg-green-500 text-black hover:bg-green-600"
+              className="bg-green-500 text-white hover:bg-green-600"
               onClick={() => setBulkMode(true)}
             >
               {t("wordList.bulkManage")}
@@ -1481,7 +1481,7 @@ export function WordList({ wordbookId }: WordListProps) {
                       cls = "bg-green-600 text-white";
                     } else if (s >= 50) {
                       label = t("wordList.masteryLevels.familiar");
-                      cls = "bg-yellow-500 text-black";
+                      cls = "bg-yellow-500 text-white";
                     } else if (s >= 25) {
                       label = t("wordList.masteryLevels.impression");
                       cls = "bg-orange-500 text-white";
@@ -1525,12 +1525,14 @@ export function WordList({ wordbookId }: WordListProps) {
                       <>
                         <div>{t("wordList.lastReview")}</div>
                         <div>{review}</div>
+                        <div className="border-b border-gray-300 my-1" />
                         <div>{t("wordList.dueDate")}</div>
                         <div>{due}</div>
                         <div>
                           {t("wordList.overdue")}: {diff ?? "-"}
                           {diff !== null ? t("wordList.days") : ""}
                         </div>
+                        <div className="border-b border-gray-300 my-1" />
                         <div className="flex items-center gap-1">
                           {t("wordList.studyCount")}:<span>{w.studyCount ?? 0}</span>
                           <button
