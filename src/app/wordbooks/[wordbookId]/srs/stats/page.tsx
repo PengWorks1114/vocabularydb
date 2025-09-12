@@ -13,6 +13,12 @@ import {
   type SrsState,
   type ReviewLog,
 } from "@/lib/firestore-service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Chart } from "chart.js/auto";
 
 interface PageProps {
@@ -27,6 +33,7 @@ export default function SrsStatsPage({ params }: PageProps) {
   const [states, setStates] = useState<Record<string, SrsState>>({});
   const [logs, setLogs] = useState<ReviewLog[]>([]);
   const [range, setRange] = useState(30);
+  const [selected, setSelected] = useState<Word | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -133,12 +140,13 @@ export default function SrsStatsPage({ params }: PageProps) {
     }
   }, [logs, range, t]);
 
-  const topWeakMap: Record<string, { word: string; errors: number }> = {};
+  const topWeakMap: Record<string, { id: string; word: string; errors: number }> = {};
   logs.forEach((l) => {
     if (l.quality < 2) {
       const w = words.find((w) => w.id === l.wordId);
       if (!w) return;
       topWeakMap[l.wordId] = {
+        id: l.wordId,
         word: w.word,
         errors: (topWeakMap[l.wordId]?.errors || 0) + 1,
       };
@@ -191,22 +199,45 @@ export default function SrsStatsPage({ params }: PageProps) {
           </thead>
           <tbody>
             {topWeak.map((w) => (
-              <tr key={w.word} className="border-t last:border-b">
+              <tr key={w.id} className="border-t last:border-b">
                 <td className="py-1">{w.word}</td>
                 <td className="py-1 text-center">{w.errors}</td>
                 <td className="py-1 text-right">
-                  <Link
-                    href={`/wordbooks/${wordbookId}/srs`}
+                  <button
+                    onClick={() =>
+                      setSelected(words.find((wd) => wd.id === w.id) || null)
+                    }
                     className="text-blue-500 text-sm"
                   >
                     {t("srs.stats.reviewNow")}
-                  </Link>
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
+        <DialogContent>
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selected.word}</DialogTitle>
+              </DialogHeader>
+              {selected.pinyin && (
+                <div className="text-muted-foreground">{selected.pinyin}</div>
+              )}
+              <div className="text-red-600">{selected.translation}</div>
+              <div className="whitespace-pre-line">
+                {selected.exampleSentence}
+              </div>
+              <div className="whitespace-pre-line text-sm text-muted-foreground">
+                {selected.exampleTranslation}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

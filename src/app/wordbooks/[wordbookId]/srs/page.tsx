@@ -10,6 +10,7 @@ import {
   applySrsAnswer,
   getWordsByWordbookId,
   getAllSrsStates,
+  getDueSrsWords,
   type Word,
   type SrsState,
 } from "@/lib/firestore-service";
@@ -112,19 +113,22 @@ export default function SrsPage({ params }: PageProps) {
 
   const start = async () => {
     if (!user) return;
-    const words = await getWordsByWordbookId(user.uid, wordbookId);
-    const states = await getAllSrsStates(user.uid, wordbookId, words);
-    let pairs = words.map((w) => ({ word: w, state: states[w.id] }));
-    if (!includeAll) {
-      const today = new Date();
-      pairs = pairs.filter((p) => p.state.dueDate.toDate() <= today);
+    let pairs: { word: Word; state: SrsState }[];
+    if (includeAll) {
+      const words = await getWordsByWordbookId(user.uid, wordbookId);
+      const states = await getAllSrsStates(user.uid, wordbookId, words);
+      pairs = words.map((w) => ({ word: w, state: states[w.id] }));
+    } else {
+      pairs = await getDueSrsWords(user.uid, wordbookId);
     }
     const selected = drawWords(
       pairs.map((p) => p.word),
       count,
       mode
     );
-    const items = selected.map((w) => ({ word: w, state: states[w.id] }));
+    const items = selected.map((w) =>
+      pairs.find((p) => p.word.id === w.id) as { word: Word; state: SrsState }
+    );
     setQueue(items);
     setTotal(items.length);
     setStep(items.length ? "review" : "done");
@@ -253,12 +257,12 @@ export default function SrsPage({ params }: PageProps) {
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto">
       <div className="flex items-center">
-        <Link
-          href={`/wordbooks/${wordbookId}/srs`}
+        <button
+          onClick={() => setStep("setup")}
           className="text-sm text-muted-foreground"
         >
           &larr; {t("srs.back")}
-        </Link>
+        </button>
       </div>
       <p className="text-center text-base text-muted-foreground">
         {t("srs.progress", { current: progress, total })}
@@ -276,6 +280,11 @@ export default function SrsPage({ params }: PageProps) {
             {overdue > 0 && (
               <div className="text-red-600 text-sm">
                 {t("srs.overdue", { days: overdue })}
+              </div>
+            )}
+            {current.word.pinyin && (
+              <div className="text-lg text-muted-foreground">
+                {current.word.pinyin}
               </div>
             )}
             <div className="text-xl text-red-600">
