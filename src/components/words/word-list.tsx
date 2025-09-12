@@ -180,17 +180,21 @@ export function WordList({ wordbookId }: WordListProps) {
   }, [user, wordbookId, words]);
 
   useEffect(() => {
-    const cells = document.querySelectorAll(".header-cell") as NodeListOf<HTMLElement>;
-    cells.forEach((c) => {
-      if (c.scrollWidth > c.clientWidth) {
-        c.classList.add("text-xs");
-      } else {
+    const adjust = () => {
+      const cells = document.querySelectorAll(".header-cell") as NodeListOf<HTMLElement>;
+      cells.forEach((c) => {
         c.classList.remove("text-xs");
-      }
-    });
+        if (c.scrollWidth > c.clientWidth) {
+          c.classList.add("text-xs");
+        }
+      });
+    };
+    adjust();
+    window.addEventListener("resize", adjust);
+    return () => window.removeEventListener("resize", adjust);
   }, [i18n.language]);
 
-  const headerTextClass = "whitespace-nowrap header-cell";
+  const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
 
   const sortedWords = useMemo(() => {
     return [...words].sort((a, b) => {
@@ -348,6 +352,8 @@ export function WordList({ wordbookId }: WordListProps) {
     queryKey: ["words", user?.uid, wordbookId],
     queryFn: () => getWordsByWordbookId(user!.uid, wordbookId),
     enabled: !!user?.uid,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -1292,8 +1298,8 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
+            <div className={`w-28 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
@@ -1354,13 +1360,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   {highlight(w.pinyin || "-")}
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editTranslation")}
                 >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  className="w-28 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (

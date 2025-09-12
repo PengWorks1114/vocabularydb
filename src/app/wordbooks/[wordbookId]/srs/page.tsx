@@ -116,18 +116,24 @@ export default function SrsPage({ params }: PageProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [lastWords, setLastWords] = useState<Word[]>([]);
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
+  const [allPairs, setAllPairs] = useState<{ word: Word; state: SrsState }[] | null>(null);
 
   const start = async () => {
     if (!user) return;
     let pairs: { word: Word; state: SrsState }[];
     if (includeAll) {
-      const words = await getWordsByWordbookId(user.uid, wordbookId);
-      const states = await getAllSrsStates(user.uid, wordbookId, words);
-      const tags = await getPartOfSpeechTags(user.uid);
-      setPosTags(tags);
-      pairs = words.map((w) => ({ word: w, state: states[w.id] }));
+      let stored = allPairs;
+      if (!stored) {
+        const words = await getWordsByWordbookId(user.uid, wordbookId);
+        const states = await getAllSrsStates(user.uid, wordbookId, words);
+        stored = words.map((w) => ({ word: w, state: states[w.id] }));
+        setAllPairs(stored);
+      }
+      pairs = stored;
     } else {
       pairs = await getDueSrsWords(user.uid, wordbookId);
+    }
+    if (posTags.length === 0) {
       const tags = await getPartOfSpeechTags(user.uid);
       setPosTags(tags);
     }
@@ -274,9 +280,6 @@ export default function SrsPage({ params }: PageProps) {
             {t("srs.start")}
           </Button>
         </div>
-        <Link href={`/wordbooks/${wordbookId}`} className="text-blue-500">
-          {t("backToWordbook")}
-        </Link>
       </div>
     );
   }
@@ -329,16 +332,13 @@ export default function SrsPage({ params }: PageProps) {
             {t("recite.again")}
           </Button>
           <Button onClick={nextSet}>{t("recite.nextSet", { count })}</Button>
-          <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
-            <Button className="w-full" variant="outline">
-              {t("recite.finish")}
-            </Button>
-          </Link>
-          <Link href={`/wordbooks/${wordbookId}`} className="w-full">
-            <Button className="w-full" variant="outline">
-              {t("backToWordbook")}
-            </Button>
-          </Link>
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={() => setStep("setup")}
+          >
+            {t("recite.finish")}
+          </Button>
         </div>
       </div>
     );
