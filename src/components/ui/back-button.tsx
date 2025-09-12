@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/i18n/i18n-client";
 
-export function BackButton() {
+interface BackButtonProps {
+  href?: string;
+}
+
+export function BackButton({ href }: BackButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -16,6 +20,10 @@ export function BackButton() {
   }, []);
 
   const goBack = () => {
+    if (href) {
+      router.push(href);
+      return;
+    }
     const segments = pathname.split("/").filter(Boolean);
     segments.pop();
     if (segments.length === 0 || (segments.length === 1 && segments[0] === "wordbooks")) {

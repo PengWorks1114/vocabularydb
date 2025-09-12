@@ -196,44 +196,41 @@ export function WordList({ wordbookId }: WordListProps) {
   }, [i18n.language]);
 
   useEffect(() => {
-    const sync = () => {
-      const headers = document.querySelectorAll(
-        ".col-header"
-      ) as NodeListOf<HTMLElement>;
-      const newWidths: Record<string, number> = {};
-      headers.forEach((h) => {
-        const key = h.dataset.col;
-        if (!key) return;
-        const width = h.offsetWidth;
-        newWidths[key] = width;
-        h.style.flex = "none";
+    const apply = () => {
+      Object.entries(colWidths).forEach(([key, width]) => {
+        document
+          .querySelectorAll(`.col-header[data-col="${key}"]`)
+          .forEach((el) => {
+            const e = el as HTMLElement;
+            e.style.width = `${width}px`;
+            e.style.flex = "none";
+          });
         document.querySelectorAll(`.col-${key}`).forEach((el) => {
           const e = el as HTMLElement;
           e.style.width = `${width}px`;
           e.style.flex = "none";
         });
       });
-      setColWidths((prev) => {
-        for (const k in newWidths) {
-          if (prev[k] !== newWidths[k]) {
-            return { ...prev, ...newWidths };
-          }
-        }
-        return prev;
-      });
     };
-    sync();
+    apply();
     const headers = document.querySelectorAll(
       ".col-header"
     ) as NodeListOf<HTMLElement>;
     const observers: ResizeObserver[] = [];
     headers.forEach((h) => {
-      const ro = new ResizeObserver(sync);
+      const key = h.dataset.col;
+      if (!key) return;
+      const ro = new ResizeObserver((entries) => {
+        const width = entries[0].contentRect.width;
+        setColWidths((prev) =>
+          prev[key] === width ? prev : { ...prev, [key]: width }
+        );
+      });
       ro.observe(h);
       observers.push(ro);
     });
     return () => observers.forEach((o) => o.disconnect());
-  }, [words, bulkMode]);
+  }, [words, colWidths, bulkMode]);
 
   const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
   const headerStyle = (key: string): React.CSSProperties | undefined =>
