@@ -232,11 +232,6 @@ export default function SrsPage({ params }: PageProps) {
           <Button onClick={start} className="flex-1">
             {t("srs.start")}
           </Button>
-          <Button asChild variant="outline" className="flex-1">
-            <Link href={`/wordbooks/${wordbookId}/srs/stats`}>
-              {t("srs.stats.title")}
-            </Link>
-          </Button>
         </div>
         <Link href={`/wordbooks/${wordbookId}`} className="text-blue-500">
           {t("backToWordbook")}

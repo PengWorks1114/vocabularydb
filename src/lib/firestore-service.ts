@@ -599,7 +599,8 @@ export const applySrsAnswer = async (
   wordbookId: string,
   word: Word,
   state: SrsState,
-  quality: 0 | 1 | 2 | 3
+  quality: 0 | 1 | 2 | 3,
+  updateWord: boolean = true
 ): Promise<SrsState> => {
   let { stage, intervalDays: ivl, streak, lapses, ease } = state;
   if (quality === 0) {
@@ -645,24 +646,27 @@ export const applySrsAnswer = async (
     word.id
   );
   await setDoc(srsRef, newState);
-
-  const delta = quality === 0 ? -20 : quality === 1 ? -5 : quality === 2 ? 6 : 10;
-  const newMastery = Math.max(0, (word.mastery || 0) + delta);
-  const wordRef = doc(
-    db,
-    "users",
-    userId,
-    "wordbooks",
-    wordbookId,
-    "words",
-    word.id
-  );
-  await updateDoc(wordRef, {
-    mastery: newMastery,
-    reviewDate: Timestamp.fromDate(today),
-  });
-  word.mastery = newMastery;
-  word.reviewDate = Timestamp.fromDate(today);
+  let newMastery = word.mastery || 0;
+  if (updateWord) {
+    const delta =
+      quality === 0 ? -20 : quality === 1 ? -5 : quality === 2 ? 6 : 10;
+    newMastery = Math.max(0, (word.mastery || 0) + delta);
+    const wordRef = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "words",
+      word.id
+    );
+    await updateDoc(wordRef, {
+      mastery: newMastery,
+      reviewDate: Timestamp.fromDate(today),
+    });
+    word.mastery = newMastery;
+    word.reviewDate = Timestamp.fromDate(today);
+  }
 
   const logRef = collection(
     db,

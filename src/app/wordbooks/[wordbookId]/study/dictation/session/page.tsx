@@ -12,6 +12,9 @@ import {
   getWordsByWordbookId,
   updateWord,
   Word,
+  getAllSrsStates,
+  applySrsAnswer,
+  type SrsState,
 } from "@/lib/firestore-service";
 import { Timestamp } from "firebase/firestore";
 
@@ -145,6 +148,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
+  const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
   const [step, setStep] = useState<Step>("dictating");
   const [index, setIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -167,6 +171,8 @@ export default function DictationSessionPage({ params }: PageProps) {
     const load = async () => {
       const all = await getWordsByWordbookId(uid, wordbookId);
       setWords(all);
+      const states = await getAllSrsStates(uid, wordbookId, all);
+      setSrsStates(states);
       let drawn = drawWords(all, count, mode, direction);
       if (drawn.length === 0 && mode.startsWith("only")) {
         setStep("noWords");
@@ -239,6 +245,18 @@ export default function DictationSessionPage({ params }: PageProps) {
       reviewDate: now,
       studyCount: newCount,
     });
+    const state = srsStates[word.id];
+    if (state) {
+      const updated = await applySrsAnswer(
+        auth.currentUser.uid,
+        wordbookId,
+        { ...word, mastery: newMastery, reviewDate: now },
+        state,
+        isCorrect ? 3 : 0,
+        false
+      );
+      setSrsStates((prev) => ({ ...prev, [word.id]: updated }));
+    }
     setSessionWords((prev) => {
       const copy = [...prev];
       copy[index] = {

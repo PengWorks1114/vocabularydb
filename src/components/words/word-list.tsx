@@ -220,8 +220,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newPartOfSpeech, setNewPartOfSpeech] = useState<string[]>([]);
   const [newExampleSentence, setNewExampleSentence] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
-  const [newSynonym, setNewSynonym] = useState("");
-  const [newAntonym, setNewAntonym] = useState("");
+  const [newSynonym, setNewSynonym] = useState("無");
+  const [newAntonym, setNewAntonym] = useState("無");
   const [newUsageFrequency, setNewUsageFrequency] = useState(0);
   const [newMastery, setNewMastery] = useState(0);
   const [newNote, setNewNote] = useState("");
@@ -366,8 +366,8 @@ export function WordList({ wordbookId }: WordListProps) {
     setNewPartOfSpeech([]);
     setNewExampleSentence("");
     setNewExampleTranslation("");
-    setNewSynonym("");
-    setNewAntonym("");
+    setNewSynonym("無");
+    setNewAntonym("無");
     setNewUsageFrequency(0);
     setNewMastery(0);
     setNewNote("");
@@ -1071,6 +1071,11 @@ export function WordList({ wordbookId }: WordListProps) {
               />
             </div>
             <span>{overallMastery.toFixed(1)}%</span>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/wordbooks/${wordbookId}/srs/stats`}>
+                {t("srs.stats.title")}
+              </Link>
+            </Button>
           </div>
           <select
             className="border rounded p-1 text-sm"
@@ -1286,11 +1291,11 @@ export function WordList({ wordbookId }: WordListProps) {
             <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
             <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
+            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
+            <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {visibleWords.length ? (
@@ -1407,7 +1412,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
                   </div>
                 </div>
-                <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
+                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
@@ -1434,7 +1439,7 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
@@ -1467,7 +1472,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     );
                   })()}
                 </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
                   <span>{w.studyCount ?? 0}</span>
                   <button
                     className="px-1 text-xs border rounded"
@@ -1476,7 +1481,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     +
                   </button>
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200">
+                <div className="w-20 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
                 <div className="w-28 px-2 py-2">
