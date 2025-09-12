@@ -327,6 +327,16 @@ export const resetWordsProgress = async (
       id
     );
     batch.update(ref, { mastery: 0, studyCount: 0, reviewDate: null });
+    const srsRef = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "srs",
+      id
+    );
+    batch.delete(srsRef);
   });
   await batch.commit();
   const key = makeCacheKey(userId, wordbookId);

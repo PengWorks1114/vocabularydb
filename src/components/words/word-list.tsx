@@ -605,6 +605,11 @@ export function WordList({ wordbookId }: WordListProps) {
             : w
         )
       );
+      setSrsStates((prev) => {
+        const copy = { ...prev };
+        selectedIds.forEach((id) => delete copy[id]);
+        return copy;
+      });
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
@@ -1278,14 +1283,12 @@ export function WordList({ wordbookId }: WordListProps) {
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
             <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.dueDate")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.overdueDays")}</div>
             <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
@@ -1365,13 +1368,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div
-                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
@@ -1436,18 +1439,32 @@ export function WordList({ wordbookId }: WordListProps) {
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200">
-                  {w.reviewDate?.toDate().toLocaleDateString() || "-"}
-                </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200">
-                  {srsStates[w.id]?.dueDate?.toDate().toLocaleDateString() || "-"}
-                </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200">
+                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line">
                   {(() => {
-                    const due = srsStates[w.id]?.dueDate?.toDate();
-                    if (!due) return "-";
-                    const diff = Math.floor((Date.now() - due.getTime()) / 86400000);
-                    return diff > 0 ? diff : 0;
+                    const review =
+                      w.reviewDate?.toDate().toLocaleDateString() || "-";
+                    const due =
+                      srsStates[w.id]?.dueDate?.toDate().toLocaleDateString() ||
+                      "-";
+                    const diff = srsStates[w.id]?.dueDate
+                      ? Math.max(
+                          0,
+                          Math.floor(
+                            (Date.now() -
+                              srsStates[w.id].dueDate
+                                .toDate()
+                                .getTime()) /
+                              86400000
+                          )
+                        )
+                      : null;
+                    return (
+                      `${t("wordList.lastReview")}\n${review}\n` +
+                      `${t("wordList.dueDate")}\n${due}\n` +
+                      `${t("wordList.overdue")}:${diff ?? "-"}${
+                        diff !== null ? t("wordList.days") : ""
+                      }`
+                    );
                   })()}
                 </div>
                 <div className="w-20 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">

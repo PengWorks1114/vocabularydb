@@ -4,11 +4,14 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { CircleProgress } from "@/components/ui/circle-progress";
 import { useTranslation } from "react-i18next";
 import "@/i18n/i18n-client";
 import {
   getDueSrsWords,
   applySrsAnswer,
+  getWordsByWordbookId,
+  getAllSrsStates,
   type Word,
   type SrsState,
 } from "@/lib/firestore-service";
@@ -32,10 +35,20 @@ export default function SrsPage({ params }: PageProps) {
     });
   }, [user, wordbookId]);
 
+  const loadAll = async () => {
+    if (!user) return;
+    const words = await getWordsByWordbookId(user.uid, wordbookId);
+    const states = await getAllSrsStates(user.uid, wordbookId, words);
+    setQueue(words.map((w) => ({ word: w, state: states[w.id] })));
+    setTotal(words.length);
+  };
+
   if (!queue.length) {
     return (
       <div className="p-4 text-center space-y-4">
         <h1 className="text-xl font-semibold">{t("srs.done")}</h1>
+        <CircleProgress value={0} label={`0/0`} />
+        <Button onClick={loadAll}>{t("srs.reviewAll")}</Button>
         <Link href={`/wordbooks/${wordbookId}`} className="text-blue-500">
           {t("backToWordbook")}
         </Link>
@@ -51,6 +64,7 @@ export default function SrsPage({ params }: PageProps) {
       (Date.now() - current.state.dueDate.toDate().getTime()) / 86400000
     )
   );
+  const percent = (progress / total) * 100;
 
   const handle = async (q: 0 | 1 | 2 | 3) => {
     if (!user) return;
@@ -86,6 +100,9 @@ export default function SrsPage({ params }: PageProps) {
         <Button onClick={() => handle(1)}>{t("srs.buttons.hard")}</Button>
         <Button onClick={() => handle(2)}>{t("srs.buttons.good")}</Button>
         <Button onClick={() => handle(3)}>{t("srs.buttons.easy")}</Button>
+      </div>
+      <div className="mt-6">
+        <CircleProgress value={percent} label={`${progress}/${total}`} />
       </div>
     </div>
   );
