@@ -1,11 +1,11 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { signOut } from "firebase/auth";
 import "@/i18n/i18n-client";
 import {
@@ -95,20 +95,38 @@ export default function SrsStatsPage({ params }: PageProps) {
           labels,
           datasets: [
             {
-              label: t("srs.stats.avgMastery"),
+              label: `${t("srs.stats.avgMastery")} (${t("srs.stats.masteryUnit")})`,
               data: masteryAvg,
               borderColor: "#3b82f6",
               fill: false,
+              yAxisID: "y1",
             },
             {
-              label: t("srs.stats.dailyCount"),
+              label: `${t("srs.stats.dailyCount")} (${t("srs.stats.countUnit")})`,
               data: reviewCounts,
               borderColor: "#10b981",
               fill: false,
+              yAxisID: "y",
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              position: "left",
+              title: { display: true, text: t("srs.stats.countUnit") },
+            },
+            y1: {
+              position: "right",
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: t("srs.stats.masteryUnit") },
+              min: 0,
+              max: 100,
+            },
+          },
+        },
       });
     }
 
@@ -137,6 +155,7 @@ export default function SrsStatsPage({ params }: PageProps) {
           ],
           datasets: [
             {
+              label: t("srs.stats.wordUnit"),
               data: [u, i, f, m],
               backgroundColor: [
                 "#ef4444",
@@ -147,7 +166,17 @@ export default function SrsStatsPage({ params }: PageProps) {
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${ctx.parsed} ${t("srs.stats.wordUnit")}`,
+              },
+            },
+          },
+        },
       });
     }
   }, [logs, range, t]);
@@ -171,12 +200,7 @@ export default function SrsStatsPage({ params }: PageProps) {
   return (
     <div className="p-4 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}`}
-          className="text-sm text-muted-foreground"
-        >
-          &larr; {t("backToPrevious")}
-        </Link>
+        <BackButton href={`/wordbooks/${wordbookId}`} />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -206,6 +230,9 @@ export default function SrsStatsPage({ params }: PageProps) {
         <div className="w-full h-64">
           <canvas id="dailyChart" className="w-full h-full" />
         </div>
+        <p className="text-center text-sm">
+          {t("srs.stats.pieTitle", { count: words.length })}
+        </p>
         <div className="w-64 h-64 mx-auto">
           <canvas id="distChart" className="w-full h-full" />
         </div>

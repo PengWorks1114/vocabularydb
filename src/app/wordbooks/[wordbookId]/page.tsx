@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { WordList } from "@/components/words/word-list";
 import { useAuth } from "@/components/auth-provider";
@@ -8,6 +7,7 @@ import { getWordbook, type Wordbook } from "@/lib/firestore-service";
 import { useQuery } from "@tanstack/react-query";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 
@@ -39,15 +39,9 @@ export default function WordbookPage({ params }: PageProps) {
   };
 
   return (
-    <div className="p-8 space-y-4">
+    <div className="p-2 sm:p-8 space-y-4">
       <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("backToList") : ""}
-        </Link>
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>

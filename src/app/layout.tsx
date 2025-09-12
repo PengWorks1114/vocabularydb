@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@/i18n/i18n-client";
 import { AuthProvider } from "@/components/auth-provider";
-import { NavBar } from "@/components/nav-bar";
 import Providers from "./providers";
 
 const geistSans = Geist({
@@ -32,7 +31,6 @@ export default function RootLayout({
         <Providers>
           {/* Wrap with AuthProvider so the entire app can use useAuth */}
           <AuthProvider>
-            <NavBar />
             {children}
           </AuthProvider>
         </Providers>

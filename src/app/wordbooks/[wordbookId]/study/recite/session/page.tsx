@@ -7,6 +7,7 @@ import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -319,16 +320,26 @@ export default function ReciteSessionPage({ params }: PageProps) {
     sessionWords.length > 0 ? (index / sessionWords.length) * 100 : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
+  const highlight = (text: string) => {
+    const target = sessionWords[index]?.word || "";
+    if (!target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === target.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}/study/recite`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("recite.settingsTitle") : ""}
-        </Link>
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -369,10 +380,10 @@ export default function ReciteSessionPage({ params }: PageProps) {
               <>
                 <div className="space-y-2 text-left text-lg">
                   <div className="text-3xl font-bold text-red-600">
-                    {t("wordList.translation")}: {sessionWords[index].translation}
+                    {t("wordList.translation")}: {highlight(sessionWords[index].translation || "")}
                   </div>
                   <div>
-                    {t("wordList.pinyin")}: {sessionWords[index].pinyin}
+                    {t("wordList.pinyin")}: {highlight(sessionWords[index].pinyin || "")}
                   </div>
                   {sessionWords[index].partOfSpeech.length > 0 && (
                     <div>
@@ -383,10 +394,12 @@ export default function ReciteSessionPage({ params }: PageProps) {
                     </div>
                   )}
                   <div className="whitespace-pre-line">
-                    {t("wordList.example")}: {sessionWords[index].exampleSentence}
+                    {t("wordList.example")}:{" "}
+                    {highlight(sessionWords[index].exampleSentence || "")}
                   </div>
                   <div className="whitespace-pre-line">
-                    {t("wordList.exampleTranslation")}: {sessionWords[index].exampleTranslation}
+                    {t("wordList.exampleTranslation")}:{" "}
+                    {highlight(sessionWords[index].exampleTranslation || "")}
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
@@ -406,7 +419,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 text-base"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 text-base"
                     onClick={() => handleMastery("familiar")}
                   >
                     {t("wordList.masteryLevels.familiar")}

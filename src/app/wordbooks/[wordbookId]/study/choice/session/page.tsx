@@ -13,6 +13,7 @@ import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useAuth } from "@/components/auth-provider";
 import {
   getWordsByWordbookId,
@@ -294,6 +295,25 @@ export default function ChoiceSessionPage({ params }: PageProps) {
       : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
+  const highlight = (text: string) => {
+    const target =
+      direction === "word"
+        ? sessionWords[index]?.word || ""
+        : sessionWords[index]?.translation || "";
+    if (!target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === target.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Enter" && showResult) {
@@ -312,13 +332,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}/study/recite`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("recite.settingsTitle") : ""}
-        </Link>
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -346,8 +360,8 @@ export default function ChoiceSessionPage({ params }: PageProps) {
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold">
               {direction === "word"
-                ? sessionWords[index].translation
-                : sessionWords[index].word}
+                ? sessionWords[index].word
+                : sessionWords[index].translation}
             </div>
             {!showResult ? (
               <div className="grid grid-cols-2 gap-2 mt-12">
@@ -355,10 +369,12 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                   <Button
                     key={o.id}
                     variant="outline"
-                    className="bg-white border-gray-300 hover:bg-gray-100 text-base"
+                    className="w-full bg-white border-gray-300 hover:bg-gray-100 text-base justify-start"
                     onClick={() => handleSelect(o)}
                   >
-                    {direction === "word" ? o.word : o.translation}
+                    <span className="truncate w-full text-left">
+                      {highlight(direction === "word" ? o.translation : o.word)}
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -377,13 +393,13 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                     : t("dictation.wrong")}
                 </div>
                 <div className="space-y-2 text-left text-lg mt-4">
-                  <div className="text-3xl font-bold text-red-600">
-                    {direction === "word"
-                      ? sessionWords[index].word
-                      : sessionWords[index].translation}
-                  </div>
+                <div className="text-3xl font-bold text-red-600">
+                  {direction === "word"
+                    ? highlight(sessionWords[index].translation)
+                    : highlight(sessionWords[index].word)}
+                </div>
                   <div>
-                    {t("wordList.pinyin")}: {sessionWords[index].pinyin}
+                    {t("wordList.pinyin")}: {highlight(sessionWords[index].pinyin || "")}
                   </div>
                   {sessionWords[index].partOfSpeech.length > 0 && (
                     <div>
@@ -394,14 +410,12 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                     </div>
                   )}
                   <div className="whitespace-pre-line">
-                    {t("wordList.example")}:
-                    {" "}
-                    {sessionWords[index].exampleSentence}
+                    {t("wordList.example")}:{" "}
+                    {highlight(sessionWords[index].exampleSentence || "")}
                   </div>
                   <div className="whitespace-pre-line">
-                    {t("wordList.exampleTranslation")}:
-                    {" "}
-                    {sessionWords[index].exampleTranslation}
+                    {t("wordList.exampleTranslation")}:{" "}
+                    {highlight(sessionWords[index].exampleTranslation || "")}
                   </div>
                 </div>
                 <Button className="w-full text-base" onClick={next}>

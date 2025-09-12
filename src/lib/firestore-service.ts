@@ -22,8 +22,6 @@ export interface Wordbook {
   name: string;
   createdAt: Timestamp;
   userId: string;
-  trashed?: boolean;
-  trashedAt?: Timestamp | null;
 }
 
 // Define word type
@@ -71,7 +69,7 @@ export const getWordbooksByUserId = async (
   const wordbooks: Wordbook[] = [];
   querySnapshot.forEach((docSnap) => {
     const data = docSnap.data() as Omit<Wordbook, "id">;
-    if (!data.trashed) wordbooks.push({ id: docSnap.id, ...data });
+    wordbooks.push({ id: docSnap.id, ...data });
   });
   return wordbooks;
 };
@@ -86,16 +84,12 @@ export const createWordbook = async (
     name,
     userId,
     createdAt: Timestamp.now(),
-    trashed: false,
-    trashedAt: null,
   });
   return {
     id: docRef.id,
     name,
     userId,
     createdAt: Timestamp.now(),
-    trashed: false,
-    trashedAt: null,
   };
 };
 
@@ -111,36 +105,6 @@ export const deleteWordbook = async (
   await deleteDoc(docRef);
 };
 
-// Move a wordbook to trash
-export const trashWordbook = async (
-  userId: string,
-  wordbookId: string
-): Promise<void> => {
-  const docRef = doc(db, "users", userId, "wordbooks", wordbookId);
-  await updateDoc(docRef, { trashed: true, trashedAt: Timestamp.now() });
-};
-
-// Get a user's wordbooks in trash
-export const getTrashedWordbooksByUserId = async (
-  userId: string
-): Promise<Wordbook[]> => {
-  const colRef = collection(db, "users", userId, "wordbooks");
-  const snapshot = await getDocs(colRef);
-  const wordbooks: Wordbook[] = [];
-  snapshot.forEach((docSnap) => {
-    const data = docSnap.data() as Omit<Wordbook, "id">;
-    if (data.trashed) wordbooks.push({ id: docSnap.id, ...data });
-  });
-  return wordbooks;
-};
-
-// Empty trash
-export const clearTrashedWordbooks = async (userId: string): Promise<void> => {
-  const trashed = await getTrashedWordbooksByUserId(userId);
-  await Promise.all(
-    trashed.map((wb) => deleteWordbook(userId, wb.id))
-  );
-};
 
 // Update wordbook name
 export const updateWordbookName = async (

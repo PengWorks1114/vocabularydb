@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { getWordsByWordbookId } from "@/lib/firestore-service";
+import Link from "next/link";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 import { CircleProgress } from "@/components/ui/circle-progress";
@@ -54,13 +55,7 @@ export default function StudyPage({ params }: PageProps) {
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <Link
-          href={`/wordbooks/${wordbookId}`}
-          className="text-sm text-muted-foreground"
-          suppressHydrationWarning
-        >
-          &larr; {mounted ? t("backToList") : ""}
-        </Link>
+        <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <Button variant="outline" onClick={handleLogout}>
@@ -80,7 +75,7 @@ export default function StudyPage({ params }: PageProps) {
         <div className="flex gap-4 mt-4">
           <Button
             asChild
-            className="bg-orange-500 text-black hover:bg-orange-600"
+            className="bg-orange-500 text-white hover:bg-orange-600"
           >
             <Link href={`/wordbooks/${wordbookId}/study/recite`}>
               {t("studyPage.recite")}
@@ -88,7 +83,7 @@ export default function StudyPage({ params }: PageProps) {
           </Button>
           <Button
             asChild
-            className="bg-green-500 text-black hover:bg-green-600"
+            className="bg-green-500 text-white hover:bg-green-600"
           >
             <Link href={`/wordbooks/${wordbookId}/study/dictation`}>
               {t("studyPage.dictation")}
@@ -96,7 +91,7 @@ export default function StudyPage({ params }: PageProps) {
           </Button>
           <Button
             asChild
-            className="bg-blue-500 text-black hover:bg-blue-600"
+            className="bg-blue-500 text-white hover:bg-blue-600"
           >
             <Link href={`/wordbooks/${wordbookId}/study/choice`}>
               {t("studyPage.choice")}

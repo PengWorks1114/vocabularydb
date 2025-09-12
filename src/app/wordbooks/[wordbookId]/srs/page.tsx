@@ -1,10 +1,10 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import "@/i18n/i18n-client";
@@ -165,6 +165,22 @@ export default function SrsPage({ params }: PageProps) {
       )
     : 0;
 
+  const highlight = (text: string) => {
+    const target = current?.word.word || "";
+    if (!target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === target.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   const handleAnswer = async (q: 0 | 1 | 2 | 3) => {
     if (!user || !current) return;
     const newState = await applySrsAnswer(
@@ -211,12 +227,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/wordbooks/${wordbookId}`}
-            className="text-sm text-muted-foreground"
-          >
-            &larr; {t("backToWordbook")}
-          </Link>
+          <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -288,12 +299,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/wordbooks/${wordbookId}`}
-            className="text-sm text-muted-foreground"
-          >
-            &larr; {t("backToWordbook")}
-          </Link>
+          <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -311,12 +317,7 @@ export default function SrsPage({ params }: PageProps) {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/wordbooks/${wordbookId}`}
-            className="text-sm text-muted-foreground"
-          >
-            &larr; {t("backToWordbook")}
-          </Link>
+          <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Button variant="outline" onClick={handleLogout}>
@@ -392,13 +393,13 @@ export default function SrsPage({ params }: PageProps) {
               </div>
             )}
             <div className="text-xl text-red-600">
-              {current.word.translation}
+              {highlight(current.word.translation)}
             </div>
             <div className="whitespace-pre-line">
-              {current.word.exampleSentence}
+              {highlight(current.word.exampleSentence || "")}
             </div>
             <div className="whitespace-pre-line text-sm text-muted-foreground">
-              {current.word.exampleTranslation}
+              {highlight(current.word.exampleTranslation || "")}
             </div>
             <div className="grid grid-cols-4 gap-1 pt-4">
               <Button
@@ -417,7 +418,7 @@ export default function SrsPage({ params }: PageProps) {
               </Button>
               <Button
                 size="sm"
-                className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white"
                 onClick={() => handleAnswer(2)}
               >
                 {t("srs.buttons.good")}

@@ -121,7 +121,7 @@ const colorClasses: Record<string, string> = {
 const masteryOptions = [
   { key: "unknown", value: 0, cls: "bg-red-500 text-white" },
   { key: "impression", value: 25, cls: "bg-orange-500 text-white" },
-  { key: "familiar", value: 50, cls: "bg-yellow-500 text-black" },
+  { key: "familiar", value: 50, cls: "bg-yellow-500 text-white" },
   { key: "memorized", value: 90, cls: "bg-green-600 text-white" },
 ];
 
@@ -170,6 +170,7 @@ export function WordList({ wordbookId }: WordListProps) {
   const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -194,7 +195,32 @@ export function WordList({ wordbookId }: WordListProps) {
     return () => window.removeEventListener("resize", adjust);
   }, [i18n.language]);
 
+  const getColStyle = (key: string): React.CSSProperties | undefined =>
+    colWidths[key] !== undefined
+      ? { width: colWidths[key], flex: "none" }
+      : undefined;
+
   const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
+
+  const startResize = (
+    key: string,
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const parent = (e.target as HTMLElement).parentElement as HTMLElement;
+    const startWidth = parent.getBoundingClientRect().width;
+    const onMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(40, startWidth + ev.clientX - startX);
+      setColWidths((prev) => ({ ...prev, [key]: newWidth }));
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
 
   const sortedWords = useMemo(() => {
     return [...words].sort((a, b) => {
@@ -329,17 +355,27 @@ export function WordList({ wordbookId }: WordListProps) {
   };
 
   const highlightExample = (sentence: string, word: string) => {
-    if (!word) return highlight(sentence);
-    const regex = new RegExp(`(${escapeRegExp(word)})`, "gi");
-    const parts = sentence.split(regex);
-    return parts.map((part, idx) => {
-      const isWord = part.toLowerCase() === word.toLowerCase();
-      return isWord ? (
-        <span key={idx} className="text-red-400">
-          {highlight(part)}
-        </span>
-      ) : (
-        <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
+    const segments = sentence.split("/");
+    return segments.map((seg, i) => {
+      const regex = word
+        ? new RegExp(`(${escapeRegExp(word)})`, "gi")
+        : null;
+      const parts = regex ? seg.split(regex) : [seg];
+      const rendered = parts.map((part, idx) => {
+        const isWord = regex && part.toLowerCase() === word.toLowerCase();
+        return isWord ? (
+          <span key={idx} className="text-red-400">
+            {highlight(part)}
+          </span>
+        ) : (
+          <React.Fragment key={idx}>{highlight(part)}</React.Fragment>
+        );
+      });
+      return (
+        <React.Fragment key={i}>
+          {i > 0 && <br />}
+          {rendered}
+        </React.Fragment>
       );
     });
   };
@@ -436,7 +472,7 @@ export function WordList({ wordbookId }: WordListProps) {
     setEditSynonym(w.relatedWords?.same || "");
     setEditAntonym(w.relatedWords?.opposite || "");
     setEditUsageFrequency(w.usageFrequency || 0);
-    setEditMastery(masteryLevelMin(w.mastery || 0));
+    setEditMastery(w.mastery || 0);
     setEditNote(w.note);
     setEditFavorite(w.favorite);
     setEditFocusField(focusField || null);
@@ -524,7 +560,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   const openMasteryQuick = (w: Word) => {
     setMasteryQuickWord(w);
-    setMasteryQuickValue(masteryLevelMin(w.mastery || 0));
+    setMasteryQuickValue(w.mastery || 0);
     setMasteryQuickOpen(true);
   };
 
@@ -823,19 +859,20 @@ export function WordList({ wordbookId }: WordListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {!bulkMode && (
-        <Dialog open={createOpen} onOpenChange={(o) => {
-          setCreateOpen(o);
-          if (!o) resetCreateForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>{t("wordList.addWord")}</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("wordList.addWord")}</DialogTitle>
-          </DialogHeader>
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!bulkMode && (
+            <Dialog open={createOpen} onOpenChange={(o) => {
+              setCreateOpen(o);
+              if (!o) resetCreateForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button>{t("wordList.addWord")}</Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{t("wordList.addWord")}</DialogTitle>
+                </DialogHeader>
           <Label htmlFor="newWord" className="mb-1">{t("wordList.word")}</Label>
           <Input
             id="newWord"
@@ -993,7 +1030,7 @@ export function WordList({ wordbookId }: WordListProps) {
           className={
             showFavorites
               ? "bg-black text-white hover:bg-black/90"
-              : "bg-yellow-500 text-black hover:bg-yellow-600"
+              : "bg-yellow-500 text-white hover:bg-yellow-600"
           }
           onClick={() => setShowFavorites((prev) => !prev)}
         >
@@ -1004,7 +1041,7 @@ export function WordList({ wordbookId }: WordListProps) {
         )}
         {!bulkMode && (
           <Button
-            className="bg-orange-500 text-black hover:bg-orange-600"
+            className="bg-orange-500 text-white hover:bg-orange-600"
             asChild
           >
             <Link href={`/wordbooks/${wordbookId}/study`}>
@@ -1037,7 +1074,7 @@ export function WordList({ wordbookId }: WordListProps) {
               {t("wordList.exportAllCsv")}
             </Button>
             <Button
-              className="bg-yellow-500 text-black hover:bg-yellow-600"
+              className="bg-yellow-500 text-white hover:bg-yellow-600"
               onClick={handleInitProgress}
               disabled={!selectedIds.length}
             >
@@ -1054,7 +1091,7 @@ export function WordList({ wordbookId }: WordListProps) {
         ) : (
           <>
             <Button
-              className="bg-green-500 text-black hover:bg-green-600"
+              className="bg-green-500 text-white hover:bg-green-600"
               onClick={() => setBulkMode(true)}
             >
               {t("wordList.bulkManage")}
@@ -1077,7 +1114,8 @@ export function WordList({ wordbookId }: WordListProps) {
             </Button>
           </>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-auto shrink-0">
           <span>{t("wordList.wordCount", { count: words.length })}</span>
           <div className="flex items-center gap-2">
             <span>{t("wordList.overallMastery")}</span>
@@ -1281,7 +1319,7 @@ export function WordList({ wordbookId }: WordListProps) {
       </Dialog>
 
       <div className="w-full overflow-x-auto">
-        <div ref={listRef} className="min-w-[1000px] text-sm max-h-[70vh] overflow-y-auto">
+        <div ref={listRef} className="min-w-[1400px] text-sm max-h-[70vh] overflow-y-auto">
           <div className="flex bg-muted sticky top-0 z-10">
             {bulkMode && (
               <div className="w-10 px-2 py-1 border-r border-gray-200 flex items-center justify-center">
@@ -1293,33 +1331,154 @@ export function WordList({ wordbookId }: WordListProps) {
                 />
               </div>
             )}
-            <div className={`w-12 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.favorite")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
-              <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
+            <div
+              data-col="favorite"
+              className={`relative w-12 px-2 py-1 border-r border-gray-200 col-favorite col-header ${headerTextClass}`}
+              style={getColStyle("favorite")}
+            >
+              {t("wordList.favorite")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("favorite", e)}
+              />
             </div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div className={`w-28 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div
+              data-col="word"
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-word col-header ${headerTextClass}`}
+              style={getColStyle("word")}
+            >
+              <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("word", e)}
+              />
+            </div>
+            <div
+              data-col="pinyin"
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-pinyin col-header ${headerTextClass}`}
+              style={getColStyle("pinyin")}
+            >
+              {t("wordList.pinyin")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("pinyin", e)}
+              />
+            </div>
+            <div
+              data-col="translation"
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-translation col-header ${headerTextClass}`}
+              style={getColStyle("translation")}
+            >
+              {t("wordList.translation")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("translation", e)}
+              />
+            </div>
+            <div
+              data-col="part"
+              className={`relative w-20 px-2 py-1 border-r border-gray-200 col-part col-header ${headerTextClass}`}
+              style={getColStyle("part")}
+            >
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("part", e)}
+              />
             </div>
-            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
-            <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
+            <div
+              data-col="example"
+              className={`relative flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 col-example col-header ${headerTextClass}`}
+              style={getColStyle("example")}
+            >
+              {t("wordList.example")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("example", e)}
+              />
+            </div>
+            <div
+              data-col="exampleTranslation"
+              className={`relative flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 col-exampleTranslation col-header ${headerTextClass}`}
+              style={getColStyle("exampleTranslation")}
+            >
+              {t("wordList.exampleTranslation")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("exampleTranslation", e)}
+              />
+            </div>
+            <div
+              data-col="related"
+              className={`relative flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 col-related col-header ${headerTextClass}`}
+              style={getColStyle("related")}
+            >
+              {t("wordList.relatedWords")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("related", e)}
+              />
+            </div>
+            <div
+              data-col="mastery"
+              className={`relative w-20 px-2 py-1 border-r border-gray-200 col-mastery col-header ${headerTextClass}`}
+              style={getColStyle("mastery")}
+            >
+              {t("wordList.mastery")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("mastery", e)}
+              />
+            </div>
+            <div
+              data-col="note"
+              className={`relative flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 col-note col-header ${headerTextClass}`}
+              style={getColStyle("note")}
+            >
+              {t("wordList.note")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("note", e)}
+              />
+            </div>
+            <div
+              data-col="reviewDate"
+              className={`relative w-[5.4rem] px-2 py-1 border-r border-gray-200 col-reviewDate col-header ${headerTextClass}`}
+              style={getColStyle("reviewDate")}
+            >
+              {t("wordList.reviewDate")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("reviewDate", e)}
+              />
+            </div>
+            <div
+              data-col="createdAt"
+              className={`relative w-20 px-2 py-1 border-r border-gray-200 col-createdAt col-header ${headerTextClass}`}
+              style={getColStyle("createdAt")}
+            >
+              {t("wordList.createdAt")}
+              <div
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize"
+                onMouseDown={(e) => startResize("createdAt", e)}
+              />
+            </div>
+            <div
+              data-col="actions"
+              className={`relative w-28 px-2 py-1 col-actions col-header ${headerTextClass}`}
+              style={getColStyle("actions")}
+            >
+              {t("wordList.actions")}
+            </div>
           </div>
           {visibleWords.length ? (
             visibleWords.map((w) => (
               <div key={w.id} className="flex border-b">
                 {bulkMode && (
-                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center">
+                  <div className="w-10 px-2 py-2 border-r border-gray-200 flex items-center justify-center overflow-hidden">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -1328,7 +1487,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     />
                   </div>
                 )}
-                <div className="w-12 px-2 py-2 text-center border-r border-gray-200">
+                <div
+                  className="w-12 px-2 py-2 text-center border-r border-gray-200 overflow-hidden col-favorite"
+                  style={getColStyle("favorite")}
+                >
                   <button onClick={() => toggleFavorite(w)} className="mx-auto">
                     <Heart
                       className={`h-4 w-4 ${
@@ -1340,7 +1502,8 @@ export function WordList({ wordbookId }: WordListProps) {
                   </button>
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 font-medium border-r border-gray-200 overflow-hidden col-word"
+                  style={getColStyle("word")}
                   onDoubleClick={() => openEdit(w, "editWord")}
                 >
                   <div className="flex items-center gap-1">
@@ -1354,29 +1517,32 @@ export function WordList({ wordbookId }: WordListProps) {
                   </div>
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 overflow-hidden col-pinyin"
+                  style={getColStyle("pinyin")}
                   onDoubleClick={() => openEdit(w, "editPinyin")}
                 >
                   {highlight(w.pinyin || "-")}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-translation"
+                  style={getColStyle("translation")}
                   onDoubleClick={() => openEdit(w, "editTranslation")}
                 >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
-                  className="w-28 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  className="w-20 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer overflow-hidden col-part"
+                  style={getColStyle("part")}
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col gap-1">
                       {w.partOfSpeech.map((id) => {
                         const tag = posTags.find((t) => t.id === id);
                         return (
                           <span
                             key={id}
-                            className={`px-1 rounded text-xs ${
+                            className={`inline-block px-1 rounded text-xs ${
                               colorClasses[tag?.color || "gray"]
                             }`}
                           >
@@ -1390,19 +1556,22 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div
-                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-example"
+                  style={getColStyle("example")}
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-exampleTranslation"
+                  style={getColStyle("exampleTranslation")}
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words px-2 py-2 border-r border-gray-200 overflow-hidden col-related"
+                  style={getColStyle("related")}
                   onDoubleClick={() => openEdit(w, "editSynonym")}
                 >
                   <div className="space-y-1">
@@ -1429,7 +1598,10 @@ export function WordList({ wordbookId }: WordListProps) {
                     {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
                   </div>
                 </div>
-                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200">
+                <div
+                  className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200 overflow-hidden col-mastery"
+                  style={getColStyle("mastery")}
+                >
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
@@ -1440,7 +1612,7 @@ export function WordList({ wordbookId }: WordListProps) {
                       cls = "bg-green-600 text-white";
                     } else if (s >= 50) {
                       label = t("wordList.masteryLevels.familiar");
-                      cls = "bg-yellow-500 text-black";
+                      cls = "bg-yellow-500 text-white";
                     } else if (s >= 25) {
                       label = t("wordList.masteryLevels.impression");
                       cls = "bg-orange-500 text-white";
@@ -1456,12 +1628,16 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[6] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-note"
+                  style={getColStyle("note")}
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line">
+                <div
+                  className="w-[5.4rem] px-2 py-2 border-r border-gray-200 overflow-hidden col-reviewDate space-y-1"
+                  style={getColStyle("reviewDate")}
+                >
                   {(() => {
                     const review =
                       w.reviewDate?.toDate().toLocaleDateString() || "-";
@@ -1481,27 +1657,42 @@ export function WordList({ wordbookId }: WordListProps) {
                         )
                       : null;
                     return (
-                      `${t("wordList.lastReview")}\n${review}\n` +
-                      `${t("wordList.dueDate")}\n${due}\n` +
-                      `${t("wordList.overdue")}:${diff ?? "-"}${
-                        diff !== null ? t("wordList.days") : ""
-                      }`
+                      <>
+                        <div>{t("wordList.lastReview")}</div>
+                        <div>{review}</div>
+                        <div className="border-b border-gray-300 my-1" />
+                        <div>{t("wordList.dueDate")}</div>
+                        <div>{due}</div>
+                        {diff !== null && diff > 0 && (
+                          <div>
+                            {t("wordList.overdue")}: {diff}
+                            {t("wordList.days")}
+                          </div>
+                        )}
+                        <div className="border-b border-gray-300 my-1" />
+                        <div className="flex items-center gap-1">
+                          {t("wordList.studyCount")}:<span>{w.studyCount ?? 0}</span>
+                          <button
+                            className="px-1 text-xs border rounded"
+                            onClick={() => handleIncrementStudy(w)}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </>
                     );
                   })()}
                 </div>
-                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
-                  <span>{w.studyCount ?? 0}</span>
-                  <button
-                    className="px-1 text-xs border rounded"
-                    onClick={() => handleIncrementStudy(w)}
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200">
+                <div
+                  className="w-20 px-2 py-2 border-r border-gray-200 overflow-hidden col-createdAt"
+                  style={getColStyle("createdAt")}
+                >
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
-                <div className="w-28 px-2 py-2">
+                <div
+                  className="w-28 px-2 py-2 overflow-hidden col-actions"
+                  style={getColStyle("actions")}
+                >
                   <div className="flex gap-2">
                     <Dialog
                       open={editTarget?.id === w.id}
@@ -1640,15 +1831,21 @@ export function WordList({ wordbookId }: WordListProps) {
               <label
                 key={opt.key}
                 className={`${opt.cls} px-2 py-1 rounded cursor-pointer ${
-                  editMastery === opt.value ? "ring-2 ring-offset-2 ring-black" : ""
+                  masteryLevelMin(editMastery) === opt.value
+                    ? "ring-2 ring-offset-2 ring-black"
+                    : ""
                 }`}
               >
                 <input
                   type="radio"
                   name="editMastery"
                   className="sr-only"
-                  checked={editMastery === opt.value}
-                  onChange={() => setEditMastery(opt.value)}
+                  checked={masteryLevelMin(editMastery) === opt.value}
+                  onChange={() =>
+                    setEditMastery((prev) =>
+                      masteryLevelMin(prev) === opt.value ? prev : opt.value
+                    )
+                  }
                 />
                 {t(`wordList.masteryLevels.${opt.key}`)}
               </label>
@@ -1790,11 +1987,15 @@ export function WordList({ wordbookId }: WordListProps) {
               <Button
                 key={opt.value}
                 className={`${opt.cls} transition-transform ${
-                  masteryQuickValue === opt.value
+                  masteryLevelMin(masteryQuickValue) === opt.value
                     ? "ring-2 ring-offset-2 scale-105"
                     : "opacity-60"
                 }`}
-                onClick={() => setMasteryQuickValue(opt.value)}
+                onClick={() =>
+                  setMasteryQuickValue((prev) =>
+                    masteryLevelMin(prev) === opt.value ? prev : opt.value
+                  )
+                }
               >
                 {t(`wordList.masteryLevels.${opt.key}`)}
               </Button>
