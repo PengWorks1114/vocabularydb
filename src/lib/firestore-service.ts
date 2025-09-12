@@ -534,10 +534,23 @@ export const getAllSrsStates = async (
   wordbookId: string,
   words: Word[]
 ): Promise<Record<string, SrsState>> => {
-  const entries = await Promise.all(
-    words.map(async (w) => [w.id, await getOrInitSrsState(userId, wordbookId, w)])
+  const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
+  const snap = await getDocs(colRef);
+  const existing = new Map<string, SrsState>();
+  snap.forEach((d) => existing.set(d.id, d.data() as SrsState));
+
+  const result: Record<string, SrsState> = {};
+  await Promise.all(
+    words.map(async (w) => {
+      let state = existing.get(w.id);
+      if (!state) {
+        state = initSrsFromWord(w);
+        await setDoc(doc(colRef, w.id), state);
+      }
+      result[w.id] = state;
+    })
   );
-  return Object.fromEntries(entries);
+  return result;
 };
 
 export const getDueSrsWords = async (
@@ -545,21 +558,31 @@ export const getDueSrsWords = async (
   wordbookId: string
 ): Promise<{ word: Word; state: SrsState }[]> => {
   const words = await getWordsByWordbookId(userId, wordbookId);
+  const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
+  const snap = await getDocs(colRef);
+  const existing = new Map<string, SrsState>();
+  snap.forEach((d) => existing.set(d.id, d.data() as SrsState));
   const today = new Date();
-  const items = await Promise.all(
-    words.map(async (w) => ({
-      word: w,
-      state: await getOrInitSrsState(userId, wordbookId, w),
-    }))
+  const items: { word: Word; state: SrsState }[] = [];
+  await Promise.all(
+    words.map(async (w) => {
+      let state = existing.get(w.id);
+      if (!state) {
+        state = initSrsFromWord(w);
+        await setDoc(doc(colRef, w.id), state);
+      }
+      if (state.dueDate.toDate() <= today) {
+        items.push({ word: w, state });
+      }
+    })
   );
-  return items
-    .filter((i) => i.state.dueDate.toDate() <= today)
-    .sort((a, b) => {
-      const diffA = today.getTime() - a.state.dueDate.toDate().getTime();
-      const diffB = today.getTime() - b.state.dueDate.toDate().getTime();
-      if (diffA !== diffB) return diffB - diffA;
-      return (b.state.lapses || 0) - (a.state.lapses || 0);
-    });
+  items.sort((a, b) => {
+    const diffA = today.getTime() - a.state.dueDate.toDate().getTime();
+    const diffB = today.getTime() - b.state.dueDate.toDate().getTime();
+    if (diffA !== diffB) return diffB - diffA;
+    return (b.state.lapses || 0) - (a.state.lapses || 0);
+  });
+  return items;
 };
 
 export const applySrsAnswer = async (

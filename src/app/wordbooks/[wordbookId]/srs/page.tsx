@@ -105,12 +105,11 @@ export default function SrsPage({ params }: PageProps) {
           <Button onClick={start} className="flex-1">
             {t("srs.start")}
           </Button>
-          <Link
-            href={`/wordbooks/${wordbookId}/srs/stats`}
-            className="flex-1 text-center border rounded px-4 py-2"
-          >
-            {t("srs.stats.title")}
-          </Link>
+          <Button asChild variant="outline" className="flex-1">
+            <Link href={`/wordbooks/${wordbookId}/srs/stats`}>
+              {t("srs.stats.title")}
+            </Link>
+          </Button>
         </div>
         <Link href={`/wordbooks/${wordbookId}`} className="text-blue-500">
           {t("backToWordbook")}
@@ -151,19 +150,52 @@ export default function SrsPage({ params }: PageProps) {
             <div className="text-xl text-red-600">
               {current.word.translation}
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-4">
-              <Button variant="outline" onClick={() => handleAnswer(0)}>
+            <div className="whitespace-pre-line">
+              {current.word.exampleSentence}
+            </div>
+            <div className="whitespace-pre-line text-sm text-muted-foreground">
+              {current.word.exampleTranslation}
+            </div>
+            <div className="grid grid-cols-4 gap-1 pt-4">
+              <Button
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white"
+                onClick={() => handleAnswer(0)}
+              >
                 {t("srs.buttons.wrong")}
               </Button>
-              <Button variant="outline" onClick={() => handleAnswer(1)}>
+              <Button
+                size="sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => handleAnswer(1)}
+              >
                 {t("srs.buttons.hard")}
               </Button>
-              <Button variant="outline" onClick={() => handleAnswer(2)}>
+              <Button
+                size="sm"
+                className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                onClick={() => handleAnswer(2)}
+              >
                 {t("srs.buttons.good")}
               </Button>
-              <Button variant="outline" onClick={() => handleAnswer(3)}>
+              <Button
+                size="sm"
+                className="bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => handleAnswer(3)}
+              >
                 {t("srs.buttons.easy")}
               </Button>
+            </div>
+            <div className="space-y-1">
+              <p className="text-center text-sm text-muted-foreground">
+                {t("recite.masteryTitle")}
+              </p>
+              <div className="grid grid-cols-4 gap-1 text-xs text-muted-foreground">
+                <p className="text-center">{t("recite.hints.unknown")}</p>
+                <p className="text-center">{t("recite.hints.impression")}</p>
+                <p className="text-center">{t("recite.hints.familiar")}</p>
+                <p className="text-center">{t("recite.hints.memorized")}</p>
+              </div>
             </div>
           </>
         ) : (

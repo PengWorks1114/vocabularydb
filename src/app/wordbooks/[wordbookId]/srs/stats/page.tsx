@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
@@ -34,6 +34,8 @@ export default function SrsStatsPage({ params }: PageProps) {
     };
     load();
   }, [user, wordbookId]);
+  const dailyChartRef = useRef<Chart | null>(null);
+  const distChartRef = useRef<Chart | null>(null);
 
   useEffect(() => {
     if (words.length === 0) return;
@@ -61,9 +63,11 @@ export default function SrsStatsPage({ params }: PageProps) {
     const masteryAvg = masterySums.map((sum, i) =>
       masteryCounts[i] ? sum / masteryCounts[i] : 0
     );
-    const ctx = document.getElementById("dailyChart") as HTMLCanvasElement;
-    if (ctx) {
-      new Chart(ctx, {
+
+    const dailyCanvas = document.getElementById("dailyChart") as HTMLCanvasElement | null;
+    if (dailyCanvas) {
+      dailyChartRef.current?.destroy();
+      dailyChartRef.current = new Chart(dailyCanvas, {
         type: "line",
         data: {
           labels,
@@ -82,22 +86,25 @@ export default function SrsStatsPage({ params }: PageProps) {
             },
           ],
         },
+        options: { responsive: true, maintainAspectRatio: false },
       });
     }
-    const distCtx = document.getElementById("distChart") as HTMLCanvasElement;
-    if (distCtx) {
+
+    const distCanvas = document.getElementById("distChart") as HTMLCanvasElement | null;
+    if (distCanvas) {
       let u = 0,
         i = 0,
         f = 0,
         m = 0;
       words.forEach((w) => {
-        const score = w.mastery;
+        const score = Math.min(100, w.mastery);
         if (score >= 90) m++;
         else if (score >= 50) f++;
         else if (score >= 25) i++;
         else u++;
       });
-      new Chart(distCtx, {
+      distChartRef.current?.destroy();
+      distChartRef.current = new Chart(distCanvas, {
         type: "pie",
         data: {
           labels: [
@@ -118,6 +125,7 @@ export default function SrsStatsPage({ params }: PageProps) {
             },
           ],
         },
+        options: { responsive: true, maintainAspectRatio: false },
       });
     }
   }, [words, t]);
@@ -131,16 +139,19 @@ export default function SrsStatsPage({ params }: PageProps) {
     }));
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 max-w-3xl mx-auto">
       <h1 className="text-xl font-semibold">{t("srs.stats.title")}</h1>
-      <Link
-        href={`/wordbooks/${wordbookId}/srs`}
-        className="text-blue-500"
-      >
+      <Link href={`/wordbooks/${wordbookId}/srs`} className="text-blue-500">
         {t("backToStudy")}
       </Link>
-      <canvas id="dailyChart" className="max-w-3xl" />
-      <canvas id="distChart" className="max-w-xs" />
+      <div className="space-y-6">
+        <div className="w-full h-64">
+          <canvas id="dailyChart" className="w-full h-full" />
+        </div>
+        <div className="w-64 h-64 mx-auto">
+          <canvas id="distChart" className="w-full h-full" />
+        </div>
+      </div>
       <div>
         <h2 className="font-semibold mb-2">{t("srs.stats.topWeak")}</h2>
         <ul className="list-disc pl-4 space-y-1">
