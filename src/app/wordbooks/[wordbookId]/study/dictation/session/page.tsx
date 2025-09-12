@@ -15,6 +15,8 @@ import {
   getAllSrsStates,
   applySrsAnswer,
   type SrsState,
+  getPartOfSpeechTags,
+  type PartOfSpeechTag,
 } from "@/lib/firestore-service";
 import { Timestamp } from "firebase/firestore";
 
@@ -149,6 +151,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
   const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
+  const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
   const [step, setStep] = useState<Step>("dictating");
   const [index, setIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -173,6 +176,8 @@ export default function DictationSessionPage({ params }: PageProps) {
       setWords(all);
       const states = await getAllSrsStates(uid, wordbookId, all);
       setSrsStates(states);
+      const tags = await getPartOfSpeechTags(uid);
+      setPosTags(tags);
       let drawn = drawWords(all, count, mode, direction);
       if (drawn.length === 0 && mode.startsWith("only")) {
         setStep("noWords");
@@ -428,6 +433,14 @@ export default function DictationSessionPage({ params }: PageProps) {
                 <div>
                   {t("wordList.pinyin")}: {currentWord.pinyin}
                 </div>
+                {currentWord.partOfSpeech.length > 0 && (
+                  <div>
+                    {t("wordList.partOfSpeech")}: {currentWord.partOfSpeech
+                      .map((id) => posTags.find((p) => p.id === id)?.name)
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                )}
                 <div className="whitespace-pre-line">
                   {t("wordList.example")}: {currentWord.exampleSentence}
                 </div>

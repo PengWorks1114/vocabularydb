@@ -4,22 +4,26 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useTranslation } from "react-i18next";
+import { signOut } from "firebase/auth";
 import "@/i18n/i18n-client";
 import {
   applySrsAnswer,
   getWordsByWordbookId,
   getAllSrsStates,
   getDueSrsWords,
+  getPartOfSpeechTags,
   type Word,
   type SrsState,
+  type PartOfSpeechTag,
 } from "@/lib/firestore-service";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
 }
 
-type Step = "setup" | "review" | "done";
+type Step = "setup" | "review" | "done" | "noWords";
 
 type Mode =
   | "random"
@@ -101,7 +105,7 @@ function drawWords(all: Word[], count: number, mode: Mode): Word[] {
 
 export default function SrsPage({ params }: PageProps) {
   const { wordbookId } = use(params);
-  const { user } = useAuth();
+  const { user, auth } = useAuth();
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>("setup");
   const [count, setCount] = useState(10);
@@ -110,6 +114,8 @@ export default function SrsPage({ params }: PageProps) {
   const [queue, setQueue] = useState<{ word: Word; state: SrsState }[]>([]);
   const [total, setTotal] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [lastWords, setLastWords] = useState<Word[]>([]);
+  const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
 
   const start = async () => {
     if (!user) return;
@@ -117,9 +123,13 @@ export default function SrsPage({ params }: PageProps) {
     if (includeAll) {
       const words = await getWordsByWordbookId(user.uid, wordbookId);
       const states = await getAllSrsStates(user.uid, wordbookId, words);
+      const tags = await getPartOfSpeechTags(user.uid);
+      setPosTags(tags);
       pairs = words.map((w) => ({ word: w, state: states[w.id] }));
     } else {
       pairs = await getDueSrsWords(user.uid, wordbookId);
+      const tags = await getPartOfSpeechTags(user.uid);
+      setPosTags(tags);
     }
     const selected = drawWords(
       pairs.map((p) => p.word),
@@ -131,8 +141,9 @@ export default function SrsPage({ params }: PageProps) {
     );
     setQueue(items);
     setTotal(items.length);
-    setStep(items.length ? "review" : "done");
+    setStep(items.length ? "review" : "noWords");
     setShowAnswer(false);
+    setLastWords(selected);
   };
 
   const current = queue[0];
@@ -164,6 +175,18 @@ export default function SrsPage({ params }: PageProps) {
     if (rest.length === 0) setStep("done");
   };
 
+  const repeatSet = async () => {
+    if (!user) return;
+    const states = await getAllSrsStates(user.uid, wordbookId, lastWords);
+    const items = lastWords.map((w) => ({ word: w, state: states[w.id] }));
+    setQueue(items);
+    setTotal(items.length);
+    setStep(items.length ? "review" : "noWords");
+    setShowAnswer(false);
+  };
+
+  const nextSet = () => start();
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Enter" && step === "review" && !showAnswer) {
@@ -174,9 +197,27 @@ export default function SrsPage({ params }: PageProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [step, showAnswer]);
 
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
+
   if (step === "setup") {
     return (
       <div className="p-4 space-y-4 max-w-sm mx-auto">
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/wordbooks/${wordbookId}`}
+            className="text-sm text-muted-foreground"
+          >
+            &larr; {t("backToWordbook")}
+          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Button variant="outline" onClick={handleLogout}>
+              {t("logout")}
+            </Button>
+          </div>
+        </div>
         <h1 className="text-xl font-semibold">{t("srs.title")}</h1>
         <div className="space-y-2">
           <label className="block text-sm">
@@ -240,24 +281,84 @@ export default function SrsPage({ params }: PageProps) {
     );
   }
 
+  if (step === "noWords") {
+    return (
+      <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/wordbooks/${wordbookId}`}
+            className="text-sm text-muted-foreground"
+          >
+            &larr; {t("backToWordbook")}
+          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Button variant="outline" onClick={handleLogout}>
+              {t("logout")}
+            </Button>
+          </div>
+        </div>
+        <p>{t("srs.noWords")}</p>
+        <Button onClick={() => setStep("setup")}>{t("srs.back")}</Button>
+      </div>
+    );
+  }
+
   if (step === "done" || !current) {
     return (
-      <div className="p-4 text-center space-y-4">
-        <h1 className="text-xl font-semibold">{t("srs.done")}</h1>
-        <Button onClick={() => setStep("setup")}>{t("srs.back")}</Button>
+      <div className="p-4 space-y-4 max-w-sm mx-auto text-center">
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/wordbooks/${wordbookId}`}
+            className="text-sm text-muted-foreground"
+          >
+            &larr; {t("backToWordbook")}
+          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Button variant="outline" onClick={handleLogout}>
+              {t("logout")}
+            </Button>
+          </div>
+        </div>
+        <p>
+          {t("srs.progress", { current: total, total })}
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button onClick={repeatSet} className="bg-red-500 hover:bg-red-600 text-white">
+            {t("recite.again")}
+          </Button>
+          <Button onClick={nextSet}>{t("recite.nextSet", { count })}</Button>
+          <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
+            <Button className="w-full" variant="outline">
+              {t("recite.finish")}
+            </Button>
+          </Link>
+          <Link href={`/wordbooks/${wordbookId}`} className="w-full">
+            <Button className="w-full" variant="outline">
+              {t("backToWordbook")}
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <button
           onClick={() => setStep("setup")}
           className="text-sm text-muted-foreground"
         >
           &larr; {t("srs.back")}
         </button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <Button variant="outline" onClick={handleLogout}>
+            {t("logout")}
+          </Button>
+        </div>
       </div>
       <p className="text-center text-base text-muted-foreground">
         {t("srs.progress", { current: progress, total })}
@@ -280,6 +381,14 @@ export default function SrsPage({ params }: PageProps) {
             {current.word.pinyin && (
               <div className="text-lg text-muted-foreground">
                 {current.word.pinyin}
+              </div>
+            )}
+            {current.word.partOfSpeech.length > 0 && (
+              <div>
+                {t("wordList.partOfSpeech")}: {current.word.partOfSpeech
+                  .map((id) => posTags.find((p) => p.id === id)?.name)
+                  .filter(Boolean)
+                  .join(", ")}
               </div>
             )}
             <div className="text-xl text-red-600">

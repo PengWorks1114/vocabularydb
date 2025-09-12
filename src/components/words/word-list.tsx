@@ -179,7 +179,18 @@ export function WordList({ wordbookId }: WordListProps) {
     getAllSrsStates(user.uid, wordbookId, words).then(setSrsStates);
   }, [user, wordbookId, words]);
 
-  const headerTextClass = `${i18n.language !== "zh-Hant" ? "text-xs" : ""} whitespace-nowrap`;
+  useEffect(() => {
+    const cells = document.querySelectorAll(".header-cell") as NodeListOf<HTMLElement>;
+    cells.forEach((c) => {
+      if (c.scrollWidth > c.clientWidth) {
+        c.classList.add("text-xs");
+      } else {
+        c.classList.remove("text-xs");
+      }
+    });
+  }, [i18n.language]);
+
+  const headerTextClass = "whitespace-nowrap header-cell";
 
   const sortedWords = useMemo(() => {
     return [...words].sort((a, b) => {
