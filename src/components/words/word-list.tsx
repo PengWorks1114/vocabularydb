@@ -1351,9 +1351,8 @@ export function WordList({ wordbookId }: WordListProps) {
             <div data-col="exampleTranslation" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-exampleTranslation col-header ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div data-col="related" className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-related col-header ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
             <div data-col="mastery" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-mastery col-header ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div data-col="note" className={`flex-[5] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div data-col="note" className={`flex-[6] min-w-0 px-2 py-1 border-r border-gray-200 resize-x col-resize col-note col-header ${headerTextClass}`}>{t("wordList.note")}</div>
             <div data-col="reviewDate" className={`w-24 px-2 py-1 border-r border-gray-200 resize-x col-resize col-reviewDate col-header ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div data-col="studyCount" className={`w-16 px-2 py-1 border-r border-gray-200 resize-x col-resize col-studyCount col-header ${headerTextClass}`}>{t("wordList.studyCount")}</div>
             <div data-col="createdAt" className={`w-20 px-2 py-1 border-r border-gray-200 resize-x col-resize col-createdAt col-header ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div data-col="actions" className={`w-28 px-2 py-1 resize-x col-resize col-actions col-header ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
@@ -1498,12 +1497,12 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[5] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-note"
+                  className="flex-[6] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200 overflow-hidden col-note"
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line overflow-hidden col-reviewDate">
+                <div className="w-24 px-2 py-2 border-r border-gray-200 overflow-hidden col-reviewDate space-y-1">
                   {(() => {
                     const review =
                       w.reviewDate?.toDate().toLocaleDateString() || "-";
@@ -1523,22 +1522,27 @@ export function WordList({ wordbookId }: WordListProps) {
                         )
                       : null;
                     return (
-                      `${t("wordList.lastReview")}\n${review}\n` +
-                      `${t("wordList.dueDate")}\n${due}\n` +
-                      `${t("wordList.overdue")}:${diff ?? "-"}${
-                        diff !== null ? t("wordList.days") : ""
-                      }`
+                      <>
+                        <div>{t("wordList.lastReview")}</div>
+                        <div>{review}</div>
+                        <div>{t("wordList.dueDate")}</div>
+                        <div>{due}</div>
+                        <div>
+                          {t("wordList.overdue")}: {diff ?? "-"}
+                          {diff !== null ? t("wordList.days") : ""}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {t("wordList.studyCount")}:<span>{w.studyCount ?? 0}</span>
+                          <button
+                            className="px-1 text-xs border rounded"
+                            onClick={() => handleIncrementStudy(w)}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </>
                     );
                   })()}
-                </div>
-                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1 overflow-hidden col-studyCount">
-                  <span>{w.studyCount ?? 0}</span>
-                  <button
-                    className="px-1 text-xs border rounded"
-                    onClick={() => handleIncrementStudy(w)}
-                  >
-                    +
-                  </button>
                 </div>
                 <div className="w-20 px-2 py-2 border-r border-gray-200 overflow-hidden col-createdAt">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}

@@ -344,6 +344,22 @@ export default function DictationSessionPage({ params }: PageProps) {
     direction === "word" ? currentWord?.translation ?? "" : currentWord?.word ?? "";
   const answerChars = Array.from(answerText);
 
+  const highlight = (text: string) => {
+    const target = prompt || "";
+    if (!target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === target.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
     <div className="p-4 sm:p-8 space-y-6 text-base">
       <div className="flex items-center justify-between">
@@ -420,13 +436,13 @@ export default function DictationSessionPage({ params }: PageProps) {
                   {correct ? t("dictation.correct") : t("dictation.wrong")}
                 </div>
                 <div className="text-xl font-bold">
-                  {t("wordList.word")}: {currentWord.word}
+                  {t("wordList.word")}: {highlight(currentWord.word || "")}
                 </div>
                 <div className="text-xl font-bold text-red-600">
-                  {t("wordList.translation")}: {currentWord.translation}
+                  {t("wordList.translation")}: {highlight(currentWord.translation || "")}
                 </div>
                 <div>
-                  {t("wordList.pinyin")}: {currentWord.pinyin}
+                  {t("wordList.pinyin")}: {highlight(currentWord.pinyin || "")}
                 </div>
                 {currentWord.partOfSpeech.length > 0 && (
                   <div>
@@ -437,10 +453,12 @@ export default function DictationSessionPage({ params }: PageProps) {
                   </div>
                 )}
                 <div className="whitespace-pre-line">
-                  {t("wordList.example")}: {currentWord.exampleSentence}
+                  {t("wordList.example")}:{" "}
+                  {highlight(currentWord.exampleSentence || "")}
                 </div>
                 <div className="whitespace-pre-line">
-                  {t("wordList.exampleTranslation")}: {currentWord.exampleTranslation}
+                  {t("wordList.exampleTranslation")}:{" "}
+                  {highlight(currentWord.exampleTranslation || "")}
                 </div>
               </div>
             )}

@@ -296,12 +296,15 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
   const highlight = (text: string) => {
-    const word = sessionWords[index]?.word || "";
-    if (!word) return text;
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const target =
+      direction === "word"
+        ? sessionWords[index]?.word || ""
+        : sessionWords[index]?.translation || "";
+    if (!target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`(${escaped})`, "gi");
     return text.split(regex).map((part, i) =>
-      part.toLowerCase() === word.toLowerCase() ? (
+      part.toLowerCase() === target.toLowerCase() ? (
         <mark key={i} className="bg-yellow-100">
           {part}
         </mark>
@@ -392,11 +395,11 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                 <div className="space-y-2 text-left text-lg mt-4">
                 <div className="text-3xl font-bold text-red-600">
                   {direction === "word"
-                    ? sessionWords[index].translation
-                    : sessionWords[index].word}
+                    ? highlight(sessionWords[index].translation)
+                    : highlight(sessionWords[index].word)}
                 </div>
                   <div>
-                    {t("wordList.pinyin")}: {sessionWords[index].pinyin}
+                    {t("wordList.pinyin")}: {highlight(sessionWords[index].pinyin || "")}
                   </div>
                   {sessionWords[index].partOfSpeech.length > 0 && (
                     <div>
@@ -407,14 +410,12 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                     </div>
                   )}
                   <div className="whitespace-pre-line">
-                    {t("wordList.example")}:
-                    {" "}
-                    {sessionWords[index].exampleSentence}
+                    {t("wordList.example")}:{" "}
+                    {highlight(sessionWords[index].exampleSentence || "")}
                   </div>
                   <div className="whitespace-pre-line">
-                    {t("wordList.exampleTranslation")}:
-                    {" "}
-                    {sessionWords[index].exampleTranslation}
+                    {t("wordList.exampleTranslation")}:{" "}
+                    {highlight(sessionWords[index].exampleTranslation || "")}
                   </div>
                 </div>
                 <Button className="w-full text-base" onClick={next}>
