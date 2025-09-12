@@ -12,6 +12,11 @@ import {
   getWordsByWordbookId,
   updateWord,
   Word,
+  getAllSrsStates,
+  applySrsAnswer,
+  type SrsState,
+  getPartOfSpeechTags,
+  type PartOfSpeechTag,
 } from "@/lib/firestore-service";
 import { Timestamp } from "firebase/firestore";
 
@@ -148,6 +153,8 @@ export default function ReciteSessionPage({ params }: PageProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
+  const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
+  const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
   const [step, setStep] = useState<Step>("reciting");
   const [index, setIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -166,6 +173,10 @@ export default function ReciteSessionPage({ params }: PageProps) {
     const load = async () => {
       const all = await getWordsByWordbookId(uid, wordbookId);
       setWords(all);
+      const states = await getAllSrsStates(uid, wordbookId, all);
+      setSrsStates(states);
+      const tags = await getPartOfSpeechTags(uid);
+      setPosTags(tags);
       let drawn = drawWords(all, count, mode);
       if (drawn.length === 0 && mode.startsWith("only")) {
         setSessionWords([]);
@@ -229,6 +240,24 @@ export default function ReciteSessionPage({ params }: PageProps) {
       reviewDate: now,
       studyCount: newCount,
     });
+    const qualityMap: Record<Answer, 0 | 1 | 2 | 3> = {
+      unknown: 0,
+      impression: 1,
+      familiar: 2,
+      memorized: 3,
+    };
+    const state = srsStates[word.id];
+    if (state) {
+      const updated = await applySrsAnswer(
+        auth.currentUser.uid,
+        wordbookId,
+        { ...word, mastery: newMastery, reviewDate: now },
+        state,
+        qualityMap[choice],
+        false
+      );
+      setSrsStates((prev) => ({ ...prev, [word.id]: updated }));
+    }
     setSessionWords((prev) => {
       const copy = [...prev];
       copy[index] = {
@@ -345,6 +374,14 @@ export default function ReciteSessionPage({ params }: PageProps) {
                   <div>
                     {t("wordList.pinyin")}: {sessionWords[index].pinyin}
                   </div>
+                  {sessionWords[index].partOfSpeech.length > 0 && (
+                    <div>
+                      {t("wordList.partOfSpeech")}: {sessionWords[index].partOfSpeech
+                        .map((id) => posTags.find((p) => p.id === id)?.name)
+                        .filter(Boolean)
+                        .join(", ")}
+                    </div>
+                  )}
                   <div className="whitespace-pre-line">
                     {t("wordList.example")}: {sessionWords[index].exampleSentence}
                   </div>

@@ -18,6 +18,11 @@ import {
   getWordsByWordbookId,
   updateWord,
   Word,
+  getAllSrsStates,
+  applySrsAnswer,
+  type SrsState,
+  getPartOfSpeechTags,
+  type PartOfSpeechTag,
 } from "@/lib/firestore-service";
 import { Timestamp } from "firebase/firestore";
 import { CheckCircle, XCircle } from "lucide-react";
@@ -152,6 +157,8 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
+  const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
+  const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
   const [step, setStep] = useState<Step>("quizzing");
   const [index, setIndex] = useState(0);
   const [options, setOptions] = useState<Word[]>([]);
@@ -170,6 +177,10 @@ export default function ChoiceSessionPage({ params }: PageProps) {
     loadKey.current = key;
     const all = await getWordsByWordbookId(auth.currentUser.uid, wordbookId);
     setWords(all);
+    const states = await getAllSrsStates(auth.currentUser.uid, wordbookId, all);
+    setSrsStates(states);
+    const tags = await getPartOfSpeechTags(auth.currentUser.uid);
+    setPosTags(tags);
     const drawn = drawWords(all, count, mode, direction);
     setSessionWords(drawn);
     setUsedIds(new Set(drawn.map((w) => w.id)));
@@ -201,6 +212,18 @@ export default function ChoiceSessionPage({ params }: PageProps) {
       reviewDate: now,
       studyCount: newCount,
     });
+    const state = srsStates[word.id];
+    if (state) {
+      const updated = await applySrsAnswer(
+        auth.currentUser.uid,
+        wordbookId,
+        { ...word, mastery: newMastery, reviewDate: now },
+        state,
+        isCorrect ? 3 : 0,
+        false
+      );
+      setSrsStates((prev) => ({ ...prev, [word.id]: updated }));
+    }
     setSessionWords((prev) => {
       const copy = [...prev];
       copy[index] = {
@@ -362,6 +385,14 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                   <div>
                     {t("wordList.pinyin")}: {sessionWords[index].pinyin}
                   </div>
+                  {sessionWords[index].partOfSpeech.length > 0 && (
+                    <div>
+                      {t("wordList.partOfSpeech")}: {sessionWords[index].partOfSpeech
+                        .map((id) => posTags.find((p) => p.id === id)?.name)
+                        .filter(Boolean)
+                        .join(", ")}
+                    </div>
+                  )}
                   <div className="whitespace-pre-line">
                     {t("wordList.example")}:
                     {" "}

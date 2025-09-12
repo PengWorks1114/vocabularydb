@@ -14,8 +14,10 @@ import {
   createPartOfSpeechTag,
   updatePartOfSpeechTag,
   deletePartOfSpeechTag,
+  getAllSrsStates,
   type Word,
   type PartOfSpeechTag,
+  type SrsState,
 } from "@/lib/firestore-service";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -128,7 +130,9 @@ type SortField =
   | "reviewDate"
   | "mastery"
   | "usageFrequency"
-  | "studyCount";
+  | "studyCount"
+  | "dueDate"
+  | "overdue";
 
 const PER_PAGE = 20;
 
@@ -163,13 +167,34 @@ export function WordList({ wordbookId }: WordListProps) {
   const [usageQuickOpen, setUsageQuickOpen] = useState(false);
   const [usageQuickWord, setUsageQuickWord] = useState<Word | null>(null);
   const [usageQuickValue, setUsageQuickValue] = useState(0);
+  const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const headerTextClass = `${i18n.language !== "zh-Hant" ? "text-xs" : ""} whitespace-nowrap`;
+  useEffect(() => {
+    if (!user) return;
+    getAllSrsStates(user.uid, wordbookId, words).then(setSrsStates);
+  }, [user, wordbookId, words]);
+
+  useEffect(() => {
+    const adjust = () => {
+      const cells = document.querySelectorAll(".header-cell") as NodeListOf<HTMLElement>;
+      cells.forEach((c) => {
+        c.classList.remove("text-xs");
+        if (c.scrollWidth > c.clientWidth) {
+          c.classList.add("text-xs");
+        }
+      });
+    };
+    adjust();
+    window.addEventListener("resize", adjust);
+    return () => window.removeEventListener("resize", adjust);
+  }, [i18n.language]);
+
+  const headerTextClass = "whitespace-nowrap overflow-hidden header-cell";
 
   const sortedWords = useMemo(() => {
     return [...words].sort((a, b) => {
@@ -187,13 +212,20 @@ export function WordList({ wordbookId }: WordListProps) {
       } else if (sortBy === "studyCount") {
         aVal = a.studyCount || 0;
         bVal = b.studyCount || 0;
+      } else if (sortBy === "dueDate") {
+        aVal = srsStates[a.id]?.dueDate?.toMillis() || 0;
+        bVal = srsStates[b.id]?.dueDate?.toMillis() || 0;
+      } else if (sortBy === "overdue") {
+        const today = Date.now();
+        aVal = srsStates[a.id]?.dueDate ? today - srsStates[a.id].dueDate.toMillis() : 0;
+        bVal = srsStates[b.id]?.dueDate ? today - srsStates[b.id].dueDate.toMillis() : 0;
       } else {
         aVal = a.usageFrequency || 0;
         bVal = b.usageFrequency || 0;
       }
       return sortDir === "asc" ? aVal - bVal : bVal - aVal;
     });
-  }, [words, sortBy, sortDir]);
+  }, [words, sortBy, sortDir, srsStates]);
 
   // Create
   const [creating, setCreating] = useState(false);
@@ -203,8 +235,8 @@ export function WordList({ wordbookId }: WordListProps) {
   const [newPartOfSpeech, setNewPartOfSpeech] = useState<string[]>([]);
   const [newExampleSentence, setNewExampleSentence] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
-  const [newSynonym, setNewSynonym] = useState("");
-  const [newAntonym, setNewAntonym] = useState("");
+  const [newSynonym, setNewSynonym] = useState("無");
+  const [newAntonym, setNewAntonym] = useState("無");
   const [newUsageFrequency, setNewUsageFrequency] = useState(0);
   const [newMastery, setNewMastery] = useState(0);
   const [newNote, setNewNote] = useState("");
@@ -320,6 +352,8 @@ export function WordList({ wordbookId }: WordListProps) {
     queryKey: ["words", user?.uid, wordbookId],
     queryFn: () => getWordsByWordbookId(user!.uid, wordbookId),
     enabled: !!user?.uid,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -349,8 +383,8 @@ export function WordList({ wordbookId }: WordListProps) {
     setNewPartOfSpeech([]);
     setNewExampleSentence("");
     setNewExampleTranslation("");
-    setNewSynonym("");
-    setNewAntonym("");
+    setNewSynonym("無");
+    setNewAntonym("無");
     setNewUsageFrequency(0);
     setNewMastery(0);
     setNewNote("");
@@ -588,6 +622,11 @@ export function WordList({ wordbookId }: WordListProps) {
             : w
         )
       );
+      setSrsStates((prev) => {
+        const copy = { ...prev };
+        selectedIds.forEach((id) => delete copy[id]);
+        return copy;
+      });
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
@@ -1028,6 +1067,14 @@ export function WordList({ wordbookId }: WordListProps) {
                 {t("wordList.bulkImport")}
               </Link>
             </Button>
+            <Button
+              className="bg-purple-500 text-white hover:bg-purple-600"
+              asChild
+            >
+              <Link href={`/wordbooks/${wordbookId}/srs`}>
+                {t("wordList.srsStudy")}
+              </Link>
+            </Button>
           </>
         )}
         <div className="ml-auto flex items-center gap-2">
@@ -1041,6 +1088,11 @@ export function WordList({ wordbookId }: WordListProps) {
               />
             </div>
             <span>{overallMastery.toFixed(1)}%</span>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/wordbooks/${wordbookId}/srs/stats`}>
+                {t("srs.stats.title")}
+              </Link>
+            </Button>
           </div>
           <select
             className="border rounded p-1 text-sm"
@@ -1052,6 +1104,8 @@ export function WordList({ wordbookId }: WordListProps) {
             <option value="usageFrequency">{t("wordList.usageFrequency")}</option>
             <option value="mastery">{t("wordList.mastery")}</option>
             <option value="studyCount">{t("wordList.studyCount")}</option>
+            <option value="dueDate">{t("wordList.dueDate")}</option>
+            <option value="overdue">{t("wordList.overdueDays")}</option>
           </select>
           <label className="flex items-center gap-1 text-sm">
             <input
@@ -1244,21 +1298,21 @@ export function WordList({ wordbookId }: WordListProps) {
               <div className={`flex items-center ${headerTextClass}`}>{t("wordList.word")}</div>
             </div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.pinyin")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
-            <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
+            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.translation")}</div>
+            <div className={`w-28 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>
               <button className={`flex items-center ${headerTextClass}`} onClick={openFilterDialog}>
                 {t("wordList.partOfSpeech")}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </button>
             </div>
-            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
-            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
+            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.example")}</div>
+            <div className={`flex-[4] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.exampleTranslation")}</div>
             <div className={`flex-1 min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.relatedWords")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
-            <div className={`flex-[2] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.mastery")}</div>
+            <div className={`flex-[3] min-w-0 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.note")}</div>
             <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.reviewDate")}</div>
-            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
-            <div className={`w-24 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
+            <div className={`w-16 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.studyCount")}</div>
+            <div className={`w-20 px-2 py-1 border-r border-gray-200 ${headerTextClass}`}>{t("wordList.createdAt")}</div>
             <div className={`w-28 px-2 py-1 ${headerTextClass}`}>{t("wordList.actions")}</div>
           </div>
           {visibleWords.length ? (
@@ -1306,13 +1360,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   {highlight(w.pinyin || "-")}
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editTranslation")}
                 >
                   {highlight(w.translation || "-")}
                 </div>
                 <div
-                  className="flex-1 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
+                  className="w-28 min-w-0 break-words px-2 py-2 border-r border-gray-200 cursor-pointer"
                   onClick={() => openPosQuick(w)}
                 >
                   {w.partOfSpeech.length ? (
@@ -1336,13 +1390,13 @@ export function WordList({ wordbookId }: WordListProps) {
                   )}
                 </div>
                 <div
-                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editExampleSentence")}
                 >
                   {highlightExample(w.exampleSentence || "-", w.word)}
                 </div>
                 <div
-                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[4] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editExampleTranslation")}
                 >
                   {highlightExample(w.exampleTranslation || "-", w.word)}
@@ -1375,7 +1429,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     {!w.relatedWords?.same && !w.relatedWords?.opposite && "-"}
                   </div>
                 </div>
-                <div className="w-24 px-2 py-2 flex flex-col items-center border-r border-gray-200">
+                <div className="w-20 px-2 py-2 flex flex-col items-center border-r border-gray-200">
                   <span>{w.mastery ?? 0}{t("wordList.points")}</span>
                   {(() => {
                     const s = w.mastery || 0;
@@ -1402,15 +1456,40 @@ export function WordList({ wordbookId }: WordListProps) {
                   })()}
                 </div>
                 <div
-                  className="flex-[2] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
+                  className="flex-[3] min-w-0 break-words whitespace-pre-line px-2 py-2 border-r border-gray-200"
                   onDoubleClick={() => openEdit(w, "editNote")}
                 >
                   {highlight(w.note || "-")}
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200">
-                  {w.reviewDate?.toDate().toLocaleDateString() || "-"}
+                <div className="w-24 px-2 py-2 border-r border-gray-200 whitespace-pre-line">
+                  {(() => {
+                    const review =
+                      w.reviewDate?.toDate().toLocaleDateString() || "-";
+                    const due =
+                      srsStates[w.id]?.dueDate?.toDate().toLocaleDateString() ||
+                      "-";
+                    const diff = srsStates[w.id]?.dueDate
+                      ? Math.max(
+                          0,
+                          Math.floor(
+                            (Date.now() -
+                              srsStates[w.id].dueDate
+                                .toDate()
+                                .getTime()) /
+                              86400000
+                          )
+                        )
+                      : null;
+                    return (
+                      `${t("wordList.lastReview")}\n${review}\n` +
+                      `${t("wordList.dueDate")}\n${due}\n` +
+                      `${t("wordList.overdue")}:${diff ?? "-"}${
+                        diff !== null ? t("wordList.days") : ""
+                      }`
+                    );
+                  })()}
                 </div>
-                <div className="w-20 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
+                <div className="w-16 px-2 py-2 border-r border-gray-200 flex items-center justify-center gap-1">
                   <span>{w.studyCount ?? 0}</span>
                   <button
                     className="px-1 text-xs border rounded"
@@ -1419,7 +1498,7 @@ export function WordList({ wordbookId }: WordListProps) {
                     +
                   </button>
                 </div>
-                <div className="w-24 px-2 py-2 border-r border-gray-200">
+                <div className="w-20 px-2 py-2 border-r border-gray-200">
                   {w.createdAt?.toDate().toLocaleDateString() || "-"}
                 </div>
                 <div className="w-28 px-2 py-2">

@@ -4,12 +4,15 @@ import {
   addDoc,
   getDocs,
   getDoc,
+  setDoc,
   deleteDoc,
   updateDoc,
   Timestamp,
   writeBatch,
   query,
   where,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -326,6 +329,16 @@ export const resetWordsProgress = async (
       id
     );
     batch.update(ref, { mastery: 0, studyCount: 0, reviewDate: null });
+    const srsRef = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "srs",
+      id
+    );
+    batch.delete(srsRef);
   });
   await batch.commit();
   const key = makeCacheKey(userId, wordbookId);
@@ -333,6 +346,9 @@ export const resetWordsProgress = async (
     wordCache[key] = wordCache[key].map((w) =>
       ids.includes(w.id) ? { ...w, mastery: 0, studyCount: 0, reviewDate: null } : w
     );
+  }
+  if (srsStateCache[key]) {
+    ids.forEach((id) => delete srsStateCache[key][id]);
   }
 };
 
@@ -359,6 +375,9 @@ export const bulkDeleteWords = async (
   const key = makeCacheKey(userId, wordbookId);
   if (wordCache[key]) {
     wordCache[key] = wordCache[key].filter((w) => !ids.includes(w.id));
+  }
+  if (srsStateCache[key]) {
+    ids.forEach((id) => delete srsStateCache[key][id]);
   }
 };
 
@@ -446,3 +465,249 @@ export const deletePartOfSpeechTag = async (
     posTagCache[userId] = posTagCache[userId].filter((t) => t.id !== tagId);
   }
 };
+
+// ------------------- SRS (Ebbinghaus) -------------------
+
+export interface SrsState {
+  stage: number;
+  intervalDays: number;
+  dueDate: Timestamp;
+  streak: number;
+  lapses: number;
+  ease: number;
+}
+
+export interface ReviewLog {
+  wordId: string;
+  ts: Timestamp;
+  quality: 0 | 1 | 2 | 3;
+  mastery: number;
+}
+
+function initSrsFromWord(word: Word): SrsState {
+  const score = word.mastery || 0;
+  let stage = 0;
+  let interval = 1;
+  if (score >= 90 && score <= 100) {
+    stage = 4;
+    interval = 30;
+  } else if (score >= 75) {
+    stage = 3;
+    interval = 14;
+  } else if (score >= 50) {
+    stage = 2;
+    interval = 7;
+  } else if (score >= 25) {
+    stage = 1;
+    interval = 3;
+  } else {
+    stage = 0;
+    interval = 1;
+  }
+  if (score > 100) {
+    stage = 5;
+    interval = Math.min(60, Math.floor(score / 2));
+  }
+  const lastReview = word.reviewDate?.toDate() || new Date();
+  const today = new Date();
+  const due = new Date(lastReview);
+  due.setDate(due.getDate() + interval);
+  if (due < today) due.setTime(today.getTime());
+  return {
+    stage,
+    intervalDays: interval,
+    dueDate: Timestamp.fromDate(due),
+    streak: Math.max(1, stage),
+    lapses: 0,
+    ease: 2.5,
+  };
+}
+
+// cache SRS state to avoid repeated reads
+const srsStateCache: Record<string, Record<string, SrsState>> = {};
+
+async function ensureSrsStates(
+  userId: string,
+  wordbookId: string,
+  words: Word[]
+): Promise<Record<string, SrsState>> {
+  const key = makeCacheKey(userId, wordbookId);
+  if (!srsStateCache[key]) {
+    const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
+    const snap = await getDocs(colRef);
+    const map: Record<string, SrsState> = {};
+    snap.forEach((d) => (map[d.id] = d.data() as SrsState));
+    srsStateCache[key] = map;
+  }
+  const cache = srsStateCache[key];
+  const colRef = collection(db, "users", userId, "wordbooks", wordbookId, "srs");
+  const batch = writeBatch(db);
+  let needCommit = false;
+  words.forEach((w) => {
+    if (!cache[w.id]) {
+      const init = initSrsFromWord(w);
+      cache[w.id] = init;
+      batch.set(doc(colRef, w.id), init);
+      needCommit = true;
+    }
+  });
+  if (needCommit) await batch.commit();
+  return cache;
+}
+
+export const getAllSrsStates = async (
+  userId: string,
+  wordbookId: string,
+  words: Word[]
+): Promise<Record<string, SrsState>> => {
+  const states = await ensureSrsStates(userId, wordbookId, words);
+  const result: Record<string, SrsState> = {};
+  words.forEach((w) => {
+    result[w.id] = states[w.id];
+  });
+  return result;
+};
+
+export const getDueSrsWords = async (
+  userId: string,
+  wordbookId: string
+): Promise<{ word: Word; state: SrsState }[]> => {
+  const words = await getWordsByWordbookId(userId, wordbookId);
+  const states = await ensureSrsStates(userId, wordbookId, words);
+  const today = new Date();
+  const items: { word: Word; state: SrsState }[] = [];
+  words.forEach((w) => {
+    const state = states[w.id];
+    if (state.dueDate.toDate() <= today) {
+      items.push({ word: w, state });
+    }
+  });
+  items.sort((a, b) => {
+    const diffA = today.getTime() - a.state.dueDate.toDate().getTime();
+    const diffB = today.getTime() - b.state.dueDate.toDate().getTime();
+    if (diffA !== diffB) return diffB - diffA;
+    return (b.state.lapses || 0) - (a.state.lapses || 0);
+  });
+  return items;
+};
+
+export const applySrsAnswer = async (
+  userId: string,
+  wordbookId: string,
+  word: Word,
+  state: SrsState,
+  quality: 0 | 1 | 2 | 3,
+  updateWord: boolean = true
+): Promise<SrsState> => {
+  let { stage, intervalDays: ivl, streak, lapses, ease } = state;
+  if (quality === 0) {
+    stage = Math.max(0, stage - 2);
+    ivl = 1;
+    streak = 0;
+    lapses += 1;
+    ease = Math.max(2.3, ease - 0.2);
+  } else if (quality === 1) {
+    stage = Math.max(0, stage - 1);
+    ivl = Math.ceil(ivl * 0.7);
+    streak = 0;
+    ease = Math.max(2.3, ease - 0.05);
+  } else if (quality === 2) {
+    stage += 1;
+    streak += 1;
+    ivl = Math.round(ivl * ease);
+  } else {
+    stage += 2;
+    streak += 1;
+    ease = Math.min(2.7, ease + 0.05);
+    ivl = Math.round(ivl * ease * 1.15);
+  }
+  ivl = Math.min(180, Math.max(1, ivl));
+  const today = new Date();
+  const due = new Date(today);
+  due.setDate(today.getDate() + ivl);
+  const newState: SrsState = {
+    stage,
+    intervalDays: ivl,
+    streak,
+    lapses,
+    ease,
+    dueDate: Timestamp.fromDate(due),
+  };
+  const srsRef = doc(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "srs",
+    word.id
+  );
+  await setDoc(srsRef, newState);
+  const cacheKey = makeCacheKey(userId, wordbookId);
+  if (srsStateCache[cacheKey]) {
+    srsStateCache[cacheKey][word.id] = newState;
+  }
+  let newMastery = word.mastery || 0;
+  if (updateWord) {
+    const delta =
+      quality === 0 ? -20 : quality === 1 ? -5 : quality === 2 ? 6 : 10;
+    newMastery = Math.max(0, (word.mastery || 0) + delta);
+    const wordRef = doc(
+      db,
+      "users",
+      userId,
+      "wordbooks",
+      wordbookId,
+      "words",
+      word.id
+    );
+    await updateDoc(wordRef, {
+      mastery: newMastery,
+      reviewDate: Timestamp.fromDate(today),
+    });
+    word.mastery = newMastery;
+    word.reviewDate = Timestamp.fromDate(today);
+  }
+
+  const logRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "reviewLogs"
+  );
+  await addDoc(logRef, {
+    wordId: word.id,
+    ts: Timestamp.fromDate(today),
+    quality,
+    mastery: newMastery,
+  });
+  return newState;
+};
+
+export const getReviewLogs = async (
+  userId: string,
+  wordbookId: string,
+  days: number
+): Promise<ReviewLog[]> => {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    "wordbooks",
+    wordbookId,
+    "reviewLogs"
+  );
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const qRef = query(
+    colRef,
+    where("ts", ">=", Timestamp.fromDate(since)),
+    orderBy("ts", "desc"),
+    limit(1000)
+  );
+  const snap = await getDocs(qRef);
+  return snap.docs.map((d) => d.data() as ReviewLog);
+};
+
