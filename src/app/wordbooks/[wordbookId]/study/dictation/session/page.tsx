@@ -1,6 +1,14 @@
 "use client";
 
-import { FormEvent, use, useCallback, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  use,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { signOut } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
@@ -159,6 +167,8 @@ export default function DictationSessionPage({ params }: PageProps) {
   const [input, setInput] = useState("");
   const [correct, setCorrect] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const answerInputId = useId();
+  const inputHintId = useId();
   const [isComposing, setIsComposing] = useState(false);
   const loadKey = useRef<string | null>(null);
 
@@ -394,13 +404,16 @@ export default function DictationSessionPage({ params }: PageProps) {
           <div className="border rounded p-6 space-y-4 text-center">
             <div className="text-3xl font-bold mb-12">{prompt}</div>
             {!showDetails ? (
-              <form onSubmit={submit} className="space-y-4">
-                <div
-                  className="relative flex justify-center gap-2 text-2xl"
-                  onClick={() => inputRef.current?.focus()}
+              <form onSubmit={submit} className="space-y-3">
+                <label
+                  htmlFor={answerInputId}
+                  className="relative flex flex-wrap justify-center gap-3 rounded-2xl border-2 border-dashed border-muted-foreground/60 bg-muted/30 px-6 py-6 text-2xl font-semibold text-muted-foreground transition focus-within:border-primary focus-within:bg-background focus-within:text-foreground focus-within:shadow-sm cursor-text"
                 >
+                  <span className="sr-only">{t("dictation.answerLabel")}</span>
                   <input
+                    id={answerInputId}
                     ref={inputRef}
+                    type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onCompositionStart={() => setIsComposing(true)}
@@ -410,22 +423,37 @@ export default function DictationSessionPage({ params }: PageProps) {
                         e.preventDefault();
                       }
                     }}
-                    className="absolute inset-0 w-full h-full opacity-0"
+                    className="absolute inset-0 h-full w-full cursor-text opacity-0"
                     autoComplete="off"
+                    aria-describedby={inputHintId}
+                    aria-label={t("dictation.answerLabel")}
                   />
+                  {input.length === 0 && (
+                    <span className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 text-base font-normal text-muted-foreground/75">
+                      {t("dictation.inputPlaceholder")}
+                    </span>
+                  )}
                   {answerChars.map((ch, i) =>
                     ch === " " ? (
-                      <span key={i} className="w-4" />
+                      <span
+                        key={i}
+                        aria-hidden="true"
+                        className="inline-flex h-12 w-6 sm:w-8"
+                      />
                     ) : (
                       <span
                         key={i}
-                        className="w-8 border-b-4 border-black text-center"
+                        aria-hidden="true"
+                        className="inline-flex h-12 w-10 items-end justify-center border-b-4 border-muted-foreground text-3xl text-foreground sm:w-12"
                       >
                         {input[i] ?? ""}
                       </span>
                     )
                   )}
-                </div>
+                </label>
+                <p id={inputHintId} className="text-sm text-muted-foreground">
+                  {t("dictation.inputHint")}
+                </p>
               </form>
             ) : (
               <div className="space-y-2 text-left text-lg">
