@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -19,6 +19,7 @@ import {
   type SrsState,
   type PartOfSpeechTag,
 } from "@/lib/firestore-service";
+import { cn } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
@@ -41,6 +42,8 @@ type Mode =
   | "onlyFamiliar"
   | "onlyMemorized"
   | "onlyFavorite";
+
+type Quality = 0 | 1 | 2 | 3;
 
 function drawWords(all: Word[], count: number, mode: Mode): Word[] {
   let words = [...all];
@@ -115,6 +118,7 @@ export default function SrsFlashcardsPage({ params }: PageProps) {
   const [queue, setQueue] = useState<{ word: Word; state: SrsState }[]>([]);
   const [total, setTotal] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [selectedQuality, setSelectedQuality] = useState<Quality | null>(null);
   const [lastWords, setLastWords] = useState<Word[]>([]);
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
   const [allPairs, setAllPairs] = useState<{ word: Word; state: SrsState }[] | null>(null);
@@ -150,6 +154,7 @@ export default function SrsFlashcardsPage({ params }: PageProps) {
     setTotal(items.length);
     setStep(items.length ? "review" : "noWords");
     setShowAnswer(false);
+    setSelectedQuality(null);
     setLastWords(selected);
   };
 
@@ -182,21 +187,31 @@ export default function SrsFlashcardsPage({ params }: PageProps) {
     );
   };
 
-  const handleAnswer = async (q: 0 | 1 | 2 | 3) => {
-    if (!user || !current) return;
-    const newState = await applySrsAnswer(
-      user.uid,
-      wordbookId,
-      current.word,
-      current.state,
-      q
-    );
-    const rest = queue.slice(1);
-    if (q <= 1) rest.push({ word: current.word, state: newState });
-    setQueue(rest);
-    setShowAnswer(false);
-    if (rest.length === 0) setStep("done");
-  };
+  const handleAnswer = useCallback(
+    async (q: Quality) => {
+      if (!user || !current) return;
+      setSelectedQuality(null);
+      const newState = await applySrsAnswer(
+        user.uid,
+        wordbookId,
+        current.word,
+        current.state,
+        q
+      );
+      let nextLength = 0;
+      setQueue((prev) => {
+        const rest = prev.slice(1);
+        if (q <= 1) {
+          rest.push({ word: current.word, state: newState });
+        }
+        nextLength = rest.length;
+        return rest;
+      });
+      setShowAnswer(false);
+      if (nextLength === 0) setStep("done");
+    },
+    [user, current, wordbookId]
+  );
 
   const repeatSet = async () => {
     if (!user) return;
@@ -206,19 +221,23 @@ export default function SrsFlashcardsPage({ params }: PageProps) {
     setTotal(items.length);
     setStep(items.length ? "review" : "noWords");
     setShowAnswer(false);
+    setSelectedQuality(null);
   };
 
   const nextSet = () => start();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && step === "review" && !showAnswer) {
+      if (e.key !== "Enter" || step !== "review") return;
+      if (!showAnswer) {
         setShowAnswer(true);
+      } else if (selectedQuality !== null) {
+        void handleAnswer(selectedQuality);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [step, showAnswer]);
+  }, [step, showAnswer, selectedQuality, handleAnswer]);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -414,33 +433,72 @@ export default function SrsFlashcardsPage({ params }: PageProps) {
             <div className="grid grid-cols-4 gap-1 pt-4">
               <Button
                 size="sm"
-                className="bg-red-500 hover:bg-red-600 text-white"
-                onClick={() => handleAnswer(0)}
+                className={cn(
+                  "bg-red-500 hover:bg-red-600 text-white",
+                  selectedQuality === 0 &&
+                    "ring-2 ring-offset-2 ring-red-300 ring-offset-background"
+                )}
+                onClick={() =>
+                  setSelectedQuality((prev) => (prev === 0 ? null : 0))
+                }
+                aria-pressed={selectedQuality === 0}
               >
                 {t("srs.buttons.wrong")}
               </Button>
               <Button
                 size="sm"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={() => handleAnswer(1)}
+                className={cn(
+                  "bg-orange-500 hover:bg-orange-600 text-white",
+                  selectedQuality === 1 &&
+                    "ring-2 ring-offset-2 ring-orange-300 ring-offset-background"
+                )}
+                onClick={() =>
+                  setSelectedQuality((prev) => (prev === 1 ? null : 1))
+                }
+                aria-pressed={selectedQuality === 1}
               >
                 {t("srs.buttons.hard")}
               </Button>
               <Button
                 size="sm"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                onClick={() => handleAnswer(2)}
+                className={cn(
+                  "bg-yellow-500 hover:bg-yellow-600 text-white",
+                  selectedQuality === 2 &&
+                    "ring-2 ring-offset-2 ring-yellow-300 ring-offset-background"
+                )}
+                onClick={() =>
+                  setSelectedQuality((prev) => (prev === 2 ? null : 2))
+                }
+                aria-pressed={selectedQuality === 2}
               >
                 {t("srs.buttons.good")}
               </Button>
               <Button
                 size="sm"
-                className="bg-green-500 hover:bg-green-600 text-white"
-                onClick={() => handleAnswer(3)}
+                className={cn(
+                  "bg-green-500 hover:bg-green-600 text-white",
+                  selectedQuality === 3 &&
+                    "ring-2 ring-offset-2 ring-green-300 ring-offset-background"
+                )}
+                onClick={() =>
+                  setSelectedQuality((prev) => (prev === 3 ? null : 3))
+                }
+                aria-pressed={selectedQuality === 3}
               >
                 {t("srs.buttons.easy")}
               </Button>
             </div>
+            <Button
+              className="mt-2 w-full"
+              onClick={() => {
+                if (selectedQuality !== null) {
+                  void handleAnswer(selectedQuality);
+                }
+              }}
+              disabled={selectedQuality === null}
+            >
+              {t("srs.confirmAnswer")}
+            </Button>
             <div className="space-y-1">
               <p className="text-center text-sm text-muted-foreground">
                 {t("recite.masteryTitle")}

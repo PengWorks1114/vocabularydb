@@ -118,6 +118,7 @@ i18n
             includeAll: "Include not-due words",
             start: "Start",
             showAnswer: "Show Answer",
+            confirmAnswer: "Confirm answer",
             back: "Back",
             backToMenu: "Back to review menu",
             modes: {
@@ -418,6 +419,7 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             includeAll: "包含未到期單字",
             start: "開始",
             showAnswer: "看答案",
+            confirmAnswer: "確認答案",
             back: "返回",
             backToMenu: "返回模式選單",
             modes: {
@@ -715,6 +717,7 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             includeAll: "期限前を含む",
             start: "開始",
             showAnswer: "答えを見る",
+            confirmAnswer: "答えを確定",
             back: "戻る",
             backToMenu: "モード選択に戻る",
             modes: {
