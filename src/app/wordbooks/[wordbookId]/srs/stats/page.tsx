@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -38,11 +38,21 @@ export default function SrsStatsPage({ params }: PageProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [states, setStates] = useState<Record<string, SrsState>>({});
   const [logs, setLogs] = useState<ReviewLog[]>([]);
+  const [modeFilter, setModeFilter] = useState<"all" | "flashcards" | "dictation">(
+    "all"
+  );
   const [range, setRange] = useState(30);
   const [metricView, setMetricView] =
     useState<"both" | "counts" | "mastery">("both");
   const [selected, setSelected] = useState<Word | null>(null);
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((l) => {
+      const logMode = l.mode ?? "flashcards";
+      return modeFilter === "all" || logMode === modeFilter;
+    });
+  }, [logs, modeFilter]);
 
   useEffect(() => {
     if (!user) return;
@@ -79,7 +89,7 @@ export default function SrsStatsPage({ params }: PageProps) {
     const masterySums = Array(range).fill(0);
     const masteryCounts = Array(range).fill(0);
     const now = Date.now();
-    logs.forEach((l) => {
+    filteredLogs.forEach((l) => {
       const diff = Math.floor((now - l.ts.toMillis()) / 86400000);
       if (diff >= 0 && diff < range) {
         const idx = range - 1 - diff;
@@ -152,7 +162,7 @@ export default function SrsStatsPage({ params }: PageProps) {
         },
       },
     });
-  }, [logs, range, t, metricView]);
+  }, [filteredLogs, range, t, metricView]);
 
   useEffect(() => {
     const distCanvas = document.getElementById("distChart") as HTMLCanvasElement | null;
@@ -216,7 +226,7 @@ export default function SrsStatsPage({ params }: PageProps) {
   );
 
   const topWeakMap: Record<string, { id: string; word: string; errors: number }> = {};
-  logs.forEach((l) => {
+  filteredLogs.forEach((l) => {
     if (l.quality < 2) {
       const w = words.find((w) => w.id === l.wordId);
       if (!w) return;
@@ -232,7 +242,7 @@ export default function SrsStatsPage({ params }: PageProps) {
     .slice(0, 10);
 
   const now = Date.now();
-  const todayLogs = logs.filter(
+  const todayLogs = filteredLogs.filter(
     (l) => Math.floor((now - l.ts.toMillis()) / 86400000) === 0
   );
   const todayReviewCount = todayLogs.length;
@@ -319,6 +329,27 @@ export default function SrsStatsPage({ params }: PageProps) {
               <option value="both">{t("srs.stats.metricOptions.both")}</option>
               <option value="counts">{t("srs.stats.metricOptions.counts")}</option>
               <option value="mastery">{t("srs.stats.metricOptions.mastery")}</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm" htmlFor="mode-select">
+            {t("srs.stats.modeFilter")}
+            <select
+              id="mode-select"
+              className="border rounded p-1"
+              value={modeFilter}
+              onChange={(e) =>
+                setModeFilter(
+                  e.target.value as "all" | "flashcards" | "dictation"
+                )
+              }
+            >
+              <option value="all">{t("srs.stats.modeOptions.all")}</option>
+              <option value="flashcards">
+                {t("srs.stats.modeOptions.flashcards")}
+              </option>
+              <option value="dictation">
+                {t("srs.stats.modeOptions.dictation")}
+              </option>
             </select>
           </label>
         </div>
