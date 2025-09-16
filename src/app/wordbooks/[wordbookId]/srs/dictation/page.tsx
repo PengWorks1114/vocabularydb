@@ -375,6 +375,7 @@ export default function SrsDictationPage({ params }: PageProps) {
       ? currentItem?.word.translation || ""
       : currentItem?.word.word || "";
   const answerChars = Array.from(currentAnswer);
+  const displayedPrompt = showDetails && result ? result.prompt : currentPrompt;
 
   const highlight = (text: string, target: string) => {
     if (!text || !target) return text;
@@ -575,7 +576,7 @@ export default function SrsDictationPage({ params }: PageProps) {
           />
         </div>
         <div className="border rounded p-6 space-y-4 text-center">
-          <div className="text-3xl font-bold mb-12">{currentPrompt}</div>
+          <div className="text-3xl font-bold mb-12">{displayedPrompt}</div>
           {!showDetails ? (
             <form onSubmit={submit} className="space-y-3">
               <label
