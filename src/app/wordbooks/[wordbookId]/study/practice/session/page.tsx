@@ -1,0 +1,603 @@
+"use client";
+
+import Link from "next/link";
+import {
+  FormEvent,
+  use,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+import { useTranslation } from "react-i18next";
+import { signOut } from "firebase/auth";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { BackButton } from "@/components/ui/back-button";
+import { useAuth } from "@/components/auth-provider";
+import {
+  getWordsByWordbookId,
+  updateWord,
+  Word,
+  getAllSrsStates,
+  applySrsAnswer,
+  type SrsState,
+  getPartOfSpeechTags,
+  type PartOfSpeechTag,
+} from "@/lib/firestore-service";
+import { Timestamp } from "firebase/firestore";
+import { CheckCircle, XCircle } from "lucide-react";
+
+interface PageProps {
+  params: Promise<{ wordbookId: string }>;
+}
+
+type Mode =
+  | "random"
+  | "masteryLow"
+  | "masteryHigh"
+  | "freqLow"
+  | "freqHigh"
+  | "recent"
+  | "old"
+  | "reviewRecent"
+  | "reviewOld"
+  | "onlyUnknown"
+  | "onlyImpression"
+  | "onlyFamiliar"
+  | "onlyMemorized"
+  | "onlyFavorite";
+
+type Direction = "word" | "translation";
+
+type Step = "practicing" | "finished" | "noWords";
+
+type Status = "idle" | "wrong" | "correct";
+
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function drawWords(
+  all: Word[],
+  count: number,
+  mode: Mode,
+  direction: Direction
+): Word[] {
+  let words = [...all];
+  if (direction === "word") {
+    words = words.filter((w) => w.translation);
+  } else {
+    words = words.filter((w) => w.word);
+  }
+  switch (mode) {
+    case "onlyUnknown":
+      words = words.filter((w) => w.mastery < 25);
+      break;
+    case "onlyImpression":
+      words = words.filter((w) => w.mastery >= 25 && w.mastery < 50);
+      break;
+    case "onlyFamiliar":
+      words = words.filter((w) => w.mastery >= 50 && w.mastery < 90);
+      break;
+    case "onlyMemorized":
+      words = words.filter((w) => w.mastery >= 90);
+      break;
+    case "onlyFavorite":
+      words = words.filter((w) => w.favorite);
+      break;
+  }
+
+  switch (mode) {
+    case "masteryLow":
+      words.sort((a, b) => a.mastery - b.mastery);
+      break;
+    case "masteryHigh":
+      words.sort((a, b) => b.mastery - a.mastery);
+      break;
+    case "freqLow":
+      words.sort((a, b) => a.usageFrequency - b.usageFrequency);
+      break;
+    case "freqHigh":
+      words.sort((a, b) => b.usageFrequency - a.usageFrequency);
+      break;
+    case "recent":
+      words.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+      break;
+    case "old":
+      words.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+      break;
+    case "reviewRecent":
+      words.sort(
+        (a, b) =>
+          (b.reviewDate?.toMillis() || 0) - (a.reviewDate?.toMillis() || 0)
+      );
+      break;
+    case "reviewOld":
+      words.sort(
+        (a, b) =>
+          (a.reviewDate?.toMillis() || 0) - (b.reviewDate?.toMillis() || 0)
+      );
+      break;
+    default:
+      words = shuffle(words);
+  }
+
+  if (
+    mode === "onlyUnknown" ||
+    mode === "onlyImpression" ||
+    mode === "onlyFamiliar" ||
+    mode === "onlyMemorized" ||
+    mode === "onlyFavorite"
+  ) {
+    words = shuffle(words);
+  }
+
+  return words.slice(0, count);
+}
+
+export default function PracticeSessionPage({ params }: PageProps) {
+  const { wordbookId } = use(params);
+  const { auth, user } = useAuth();
+  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const count = Number(searchParams?.get("count") ?? 5);
+  const mode = (searchParams?.get("mode") as Mode) ?? "random";
+  const direction = (searchParams?.get("direction") as Direction) ?? "word";
+  const [mounted, setMounted] = useState(false);
+  const [words, setWords] = useState<Word[]>([]);
+  const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
+  const [sessionWords, setSessionWords] = useState<Word[]>([]);
+  const [srsStates, setSrsStates] = useState<Record<string, SrsState>>({});
+  const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
+  const [step, setStep] = useState<Step>("practicing");
+  const [index, setIndex] = useState(0);
+  const [status, setStatus] = useState<Status>("idle");
+  const [input, setInput] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const answerInputId = useId();
+  const inputHintId = useId();
+  const loadKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid) return;
+    const key = `${uid}-${wordbookId}`;
+    if (loadKey.current === key) return;
+    loadKey.current = key;
+    const load = async () => {
+      const all = await getWordsByWordbookId(uid, wordbookId);
+      setWords(all);
+      const states = await getAllSrsStates(uid, wordbookId, all);
+      setSrsStates(states);
+      const tags = await getPartOfSpeechTags(uid);
+      setPosTags(tags);
+      let drawn = drawWords(all, count, mode, direction);
+      if (drawn.length === 0 && mode.startsWith("only")) {
+        setSessionWords([]);
+        setUsedIds(new Set());
+        setIndex(0);
+        setStatus("idle");
+        setInput("");
+        setStep("noWords");
+        return;
+      }
+      if (drawn.length === 0) {
+        drawn = drawWords(all, count, "random", direction);
+      }
+      setSessionWords(drawn);
+      setUsedIds(new Set(drawn.map((w) => w.id)));
+      setIndex(0);
+      setStatus("idle");
+      setInput("");
+      setStep("practicing");
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, wordbookId]);
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+  };
+
+  const startSession = () => {
+    if (words.length === 0) return;
+    let available = words.filter((w) => !usedIds.has(w.id));
+    let newUsed = new Set(usedIds);
+    if (available.length === 0) {
+      available = [...words];
+      newUsed = new Set();
+    }
+    let drawn = drawWords(available, count, mode, direction);
+    if (drawn.length === 0 && mode.startsWith("only")) {
+      setSessionWords([]);
+      setStep("noWords");
+      return;
+    }
+    if (drawn.length === 0) {
+      drawn = drawWords(words, count, "random", direction);
+      newUsed = new Set(drawn.map((w) => w.id));
+    } else {
+      drawn.forEach((w) => newUsed.add(w.id));
+    }
+    setSessionWords(drawn);
+    setUsedIds(newUsed);
+    setIndex(0);
+    setStatus("idle");
+    setInput("");
+    setStep("practicing");
+  };
+
+  const repeatSet = () => {
+    setIndex(0);
+    setStatus("idle");
+    setInput("");
+    setStep("practicing");
+    setTimeout(() => {
+      const el = inputRef.current;
+      if (el) el.focus();
+    }, 0);
+  };
+
+  const nextSet = () => {
+    startSession();
+  };
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (isComposing) return;
+    if (status === "correct") {
+      next();
+      return;
+    }
+    const word = sessionWords[index];
+    if (!word) return;
+    const answer =
+      direction === "word" ? word.translation ?? "" : word.word ?? "";
+    const normalizedInput = input.trim().toLowerCase();
+    const normalizedAnswer = answer.trim().toLowerCase();
+    if (normalizedInput === normalizedAnswer) {
+      const now = Timestamp.now();
+      const newMastery = Math.min(100, (word.mastery ?? 0) + 1);
+      const newCount = (word.studyCount || 0) + 1;
+      const uid = user?.uid;
+      if (uid) {
+        await updateWord(uid, wordbookId, word.id, {
+          mastery: newMastery,
+          reviewDate: now,
+          studyCount: newCount,
+        });
+        const state = srsStates[word.id];
+        if (state) {
+          const updated = await applySrsAnswer(
+            uid,
+            wordbookId,
+            { ...word, mastery: newMastery, reviewDate: now },
+            state,
+            3,
+            false
+          );
+          setSrsStates((prev) => ({ ...prev, [word.id]: updated }));
+        }
+      }
+      setSessionWords((prev) => {
+        const copy = [...prev];
+        copy[index] = {
+          ...word,
+          mastery: newMastery,
+          reviewDate: now,
+          studyCount: newCount,
+        };
+        return copy;
+      });
+      setWords((prev) => {
+        const copy = [...prev];
+        const i = copy.findIndex((w) => w.id === word.id);
+        if (i !== -1) {
+          copy[i] = {
+            ...word,
+            mastery: newMastery,
+            reviewDate: now,
+            studyCount: newCount,
+          };
+        }
+        return copy;
+      });
+      setInput(answer);
+      setStatus("correct");
+    } else {
+      setStatus("wrong");
+      setInput("");
+    }
+  };
+
+  const next = useCallback(() => {
+    if (index + 1 >= sessionWords.length) {
+      setStep("finished");
+      setStatus("idle");
+      setInput("");
+    } else {
+      setIndex((prev) => prev + 1);
+      setStatus("idle");
+      setInput("");
+      setTimeout(() => {
+        const el = inputRef.current;
+        if (el) el.focus();
+      }, 0);
+    }
+  }, [index, sessionWords.length]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && status === "correct") {
+        e.preventDefault();
+        next();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [status, next]);
+
+  useEffect(() => {
+    if (step === "practicing" && status !== "correct") {
+      const el = inputRef.current;
+      if (el) {
+        el.blur();
+        setTimeout(() => el.focus(), 0);
+      }
+    }
+  }, [index, step, status]);
+
+  const completedCount =
+    step === "finished"
+      ? sessionWords.length
+      : Math.min(sessionWords.length, index + (status === "correct" ? 1 : 0));
+  const progressPercent =
+    sessionWords.length > 0
+      ? (completedCount / sessionWords.length) * 100
+      : 0;
+  const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
+
+  const currentWord = sessionWords[index];
+  const prompt =
+    direction === "word"
+      ? currentWord?.word || ""
+      : currentWord?.translation || "";
+  const answerText =
+    direction === "word"
+      ? currentWord?.translation || ""
+      : currentWord?.word || "";
+  const answerChars = Array.from(answerText);
+
+  const highlight = (text: string, target: string) => {
+    if (!text || !target) return text;
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    return text.split(regex).map((part, i) =>
+      part.toLowerCase() === target.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-100">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
+  return (
+    <div className="p-4 sm:p-8 space-y-6 text-base">
+      <div className="flex items-center justify-between">
+        <BackButton />
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <Button variant="outline" onClick={handleLogout} disabled={!auth}>
+            <span suppressHydrationWarning>
+              {mounted ? t("logout") : ""}
+            </span>
+          </Button>
+        </div>
+      </div>
+      <h1 className="text-center text-3xl font-bold sm:text-4xl">
+        <span suppressHydrationWarning>
+          {mounted ? t("studyPage.practice") : ""}
+        </span>
+      </h1>
+
+      {step === "practicing" && currentWord && (
+        <div className="max-w-md mx-auto space-y-4">
+          <p className="text-center text-base text-muted-foreground">
+            {t("dictation.progress", {
+              current: index + 1,
+              total: sessionWords.length,
+            })}
+          </p>
+          <div className="h-3 bg-muted rounded">
+            <div
+              className="h-3 rounded"
+              style={{
+                width: `${progressPercent}%`,
+                backgroundColor: progressColor,
+              }}
+            />
+          </div>
+          <div className="border rounded p-6 space-y-4 text-center">
+            <div className="text-3xl font-bold">{prompt}</div>
+            <div className="space-y-2 text-left text-lg">
+              <div className="text-xl font-bold">
+                {t("wordList.word")}: {highlight(currentWord.word || "", prompt)}
+              </div>
+              <div className="text-xl font-bold text-red-600">
+                {t("wordList.translation")}:
+                {" "}
+                {highlight(currentWord.translation || "", prompt)}
+              </div>
+              <div>
+                {t("wordList.pinyin")}:
+                {" "}
+                {highlight(currentWord.pinyin || "", prompt)}
+              </div>
+              {currentWord.partOfSpeech.length > 0 && (
+                <div>
+                  {t("wordList.partOfSpeech")}:
+                  {" "}
+                  {currentWord.partOfSpeech
+                    .map((id) => posTags.find((p) => p.id === id)?.name)
+                    .filter(Boolean)
+                    .join(", ")}
+                </div>
+              )}
+              <div className="whitespace-pre-line">
+                {t("wordList.example")}:
+                {" "}
+                {highlight(currentWord.exampleSentence || "", prompt)}
+              </div>
+              <div className="whitespace-pre-line text-sm text-muted-foreground">
+                {t("wordList.exampleTranslation")}:
+                {" "}
+                {highlight(currentWord.exampleTranslation || "", prompt)}
+              </div>
+            </div>
+            <form onSubmit={submit} className="space-y-3">
+              <label
+                htmlFor={answerInputId}
+                className="relative flex flex-wrap justify-center gap-3 rounded-2xl border-2 border-dashed border-muted-foreground/60 bg-muted/30 px-6 py-6 text-2xl font-semibold text-muted-foreground transition focus-within:border-primary focus-within:bg-background focus-within:text-foreground focus-within:shadow-sm cursor-text"
+              >
+                <span className="sr-only">{t("dictation.answerLabel")}</span>
+                <input
+                  id={answerInputId}
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    if (status === "wrong") {
+                      setStatus("idle");
+                    }
+                  }}
+                  onCompositionStart={() => setIsComposing(true)}
+                  onCompositionEnd={() => setIsComposing(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && isComposing) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="absolute inset-0 h-full w-full cursor-text opacity-0"
+                  autoComplete="off"
+                  aria-describedby={inputHintId}
+                  aria-label={t("dictation.answerLabel")}
+                />
+                {input.length === 0 && (
+                  <span className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 text-base font-normal text-muted-foreground/75">
+                    {t("dictation.inputPlaceholder")}
+                  </span>
+                )}
+                {answerChars.map((ch, i) =>
+                  ch === " " ? (
+                    <span
+                      key={i}
+                      aria-hidden="true"
+                      className="inline-flex h-12 w-6 sm:w-8"
+                    />
+                  ) : (
+                    <span
+                      key={i}
+                      aria-hidden="true"
+                      className="inline-flex h-12 w-10 items-end justify-center border-b-4 border-muted-foreground text-3xl text-foreground sm:w-12"
+                    >
+                      {input[i] ?? ""}
+                    </span>
+                  )
+                )}
+              </label>
+              <p id={inputHintId} className="text-sm text-muted-foreground">
+                {t("dictation.inputHint")}
+              </p>
+            </form>
+            {status !== "idle" && (
+              <div
+                className={`flex items-center justify-center gap-2 text-lg font-semibold ${
+                  status === "correct" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {status === "correct" ? (
+                  <CheckCircle className="h-8 w-8" />
+                ) : (
+                  <XCircle className="h-8 w-8" />
+                )}
+                <span>
+                  {status === "correct"
+                    ? t("practiceDictation.correctMessage")
+                    : t("practiceDictation.wrongMessage")}
+                </span>
+              </div>
+            )}
+            {status === "correct" && (
+              <Button className="w-full text-base" type="button" onClick={next}>
+                {t("dictation.next")}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {step === "noWords" && (
+        <div className="max-w-md mx-auto space-y-4 text-center">
+          <p>{t(`recite.noWords.${mode}`)}</p>
+          <Link
+            href={`/wordbooks/${wordbookId}/study/practice`}
+            className="w-full"
+          >
+            <Button className="w-full" variant="outline">
+              {t("dictation.finish")}
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {step === "finished" && (
+        <div className="max-w-md mx-auto space-y-4 text-center">
+          <p>
+            {t("dictation.progress", {
+              current: sessionWords.length,
+              total: sessionWords.length,
+            })}
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={repeatSet}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {t("dictation.again")}
+            </Button>
+            <Button onClick={nextSet}>
+              {t("dictation.nextSet", { count })}
+            </Button>
+            <Link href={`/wordbooks/${wordbookId}/study`} className="w-full">
+              <Button className="w-full" variant="outline">
+                {t("dictation.finish")}
+              </Button>
+            </Link>
+            <Link href={`/wordbooks/${wordbookId}`} className="w-full">
+              <Button className="w-full" variant="outline">
+                {t("backToWordbook")}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

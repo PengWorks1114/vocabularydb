@@ -159,6 +159,7 @@ export default function SrsDictationPage({ params }: PageProps) {
   const [direction, setDirection] = useState<Direction>("word");
   const [includeAll, setIncludeAll] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [currentItem, setCurrentItem] = useState<QueueItem | null>(null);
   const [total, setTotal] = useState(0);
   const [completed, setCompleted] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -205,6 +206,7 @@ export default function SrsDictationPage({ params }: PageProps) {
     let selected = drawWords(words, count, mode, direction);
     if (selected.length === 0 && mode.startsWith("only")) {
       setQueue([]);
+      setCurrentItem(null);
       setTotal(0);
       setCompleted(0);
       setResult(null);
@@ -221,6 +223,7 @@ export default function SrsDictationPage({ params }: PageProps) {
       .filter(Boolean) as QueueItem[];
     if (items.length === 0) {
       setQueue([]);
+      setCurrentItem(null);
       setTotal(0);
       setCompleted(0);
       setResult(null);
@@ -228,7 +231,8 @@ export default function SrsDictationPage({ params }: PageProps) {
       setStep("noWords");
       return;
     }
-    setQueue(items);
+    setQueue(items.slice(1));
+    setCurrentItem(items[0] ?? null);
     setTotal(items.length);
     setCompleted(0);
     setShowDetails(false);
@@ -241,6 +245,13 @@ export default function SrsDictationPage({ params }: PageProps) {
   const repeatSet = async () => {
     if (!user) return;
     if (lastWords.length === 0) {
+      setQueue([]);
+      setCurrentItem(null);
+      setResult(null);
+      setShowDetails(false);
+      setInput("");
+      setTotal(0);
+      setCompleted(0);
       setStep("noWords");
       return;
     }
@@ -252,6 +263,7 @@ export default function SrsDictationPage({ params }: PageProps) {
       );
     if (items.length === 0) {
       setQueue([]);
+      setCurrentItem(null);
       setTotal(0);
       setCompleted(0);
       setResult(null);
@@ -259,7 +271,8 @@ export default function SrsDictationPage({ params }: PageProps) {
       setStep("noWords");
       return;
     }
-    setQueue(items);
+    setQueue(items.slice(1));
+    setCurrentItem(items[0] ?? null);
     setTotal(items.length);
     setCompleted(0);
     setShowDetails(false);
@@ -275,58 +288,62 @@ export default function SrsDictationPage({ params }: PageProps) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (isComposing) return;
-    if (!user || queue.length === 0) return;
-    const current = queue[0];
+    if (!user || !currentItem) return;
     const prompt =
       direction === "word"
-        ? current.word.word || ""
-        : current.word.translation || "";
+        ? currentItem.word.word || ""
+        : currentItem.word.translation || "";
     const answer =
       direction === "word"
-        ? current.word.translation || ""
-        : current.word.word || "";
+        ? currentItem.word.translation || ""
+        : currentItem.word.word || "";
     const normalizedInput = input.trim().toLowerCase();
     const normalizedAnswer = answer.trim().toLowerCase();
     const isCorrect = normalizedInput === normalizedAnswer;
     const newState = await applySrsAnswer(
       user.uid,
       wordbookId,
-      current.word,
-      current.state,
+      currentItem.word,
+      currentItem.state,
       isCorrect ? 3 : 0,
       true,
       "dictation"
     );
-    const rest = queue.slice(1);
     if (!isCorrect) {
-      rest.push({ word: current.word, state: newState });
+      setQueue((prev) => [...prev, { word: currentItem.word, state: newState }]);
     } else {
       setCompleted((prev) => prev + 1);
     }
-    setQueue(rest);
     setShowDetails(true);
-    setResult({ word: current.word, correct: isCorrect, prompt, answer });
+    setResult({ word: currentItem.word, correct: isCorrect, prompt, answer });
     setInput("");
     if (includeAll) {
       setAllPairs((prev) =>
         prev
           ? prev.map((item) =>
-              item.word.id === current.word.id
-                ? { word: current.word, state: newState }
+              item.word.id === currentItem.word.id
+                ? { word: currentItem.word, state: newState }
                 : item
             )
           : prev
       );
     }
     setLastWords((prev) =>
-      prev.map((w) => (w.id === current.word.id ? current.word : w))
+      prev.map((w) => (w.id === currentItem.word.id ? currentItem.word : w))
     );
   };
 
   const next = useCallback(() => {
     if (queue.length === 0) {
+      setCurrentItem(null);
+      setShowDetails(false);
+      setResult(null);
+      setInput("");
       setStep("finished");
     } else {
+      const [nextItem, ...rest] = queue;
+      setCurrentItem(nextItem);
+      setQueue(rest);
       setShowDetails(false);
       setResult(null);
       setInput("");
@@ -335,7 +352,7 @@ export default function SrsDictationPage({ params }: PageProps) {
         if (el) el.focus();
       }, 0);
     }
-  }, [queue.length]);
+  }, [queue, inputRef]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -356,7 +373,7 @@ export default function SrsDictationPage({ params }: PageProps) {
         setTimeout(() => el.focus(), 0);
       }
     }
-  }, [step, showDetails, queue.length]);
+  }, [step, showDetails, currentItem?.word.id, inputRef]);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -365,7 +382,6 @@ export default function SrsDictationPage({ params }: PageProps) {
 
   const progressPercent = total > 0 ? (completed / total) * 100 : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
-  const currentItem = queue[0];
   const currentPrompt =
     direction === "word"
       ? currentItem?.word.word || ""
@@ -375,6 +391,7 @@ export default function SrsDictationPage({ params }: PageProps) {
       ? currentItem?.word.translation || ""
       : currentItem?.word.word || "";
   const answerChars = Array.from(currentAnswer);
+  const displayedPrompt = showDetails && result ? result.prompt : currentPrompt;
 
   const highlight = (text: string, target: string) => {
     if (!text || !target) return text;
@@ -575,7 +592,7 @@ export default function SrsDictationPage({ params }: PageProps) {
           />
         </div>
         <div className="border rounded p-6 space-y-4 text-center">
-          <div className="text-3xl font-bold mb-12">{currentPrompt}</div>
+          <div className="text-3xl font-bold mb-12">{displayedPrompt}</div>
           {!showDetails ? (
             <form onSubmit={submit} className="space-y-3">
               <label
