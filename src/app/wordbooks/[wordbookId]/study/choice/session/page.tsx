@@ -148,7 +148,7 @@ function computeMastery(current: number, correct: boolean): number {
 
 export default function ChoiceSessionPage({ params }: PageProps) {
   const { wordbookId } = use(params);
-  const { auth } = useAuth();
+  const { auth, user } = useAuth();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const count = Number(searchParams?.get("count") ?? 5);
@@ -172,22 +172,22 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   }, []);
 
   const loadWords = useCallback(async () => {
-    if (!auth.currentUser) return;
-    const key = `${auth.currentUser.uid}-${wordbookId}`;
+    if (!user?.uid) return;
+    const key = `${user.uid}-${wordbookId}`;
     if (loadKey.current === key) return;
     loadKey.current = key;
-    const all = await getWordsByWordbookId(auth.currentUser.uid, wordbookId);
+    const all = await getWordsByWordbookId(user.uid, wordbookId);
     setWords(all);
-    const states = await getAllSrsStates(auth.currentUser.uid, wordbookId, all);
+    const states = await getAllSrsStates(user.uid, wordbookId, all);
     setSrsStates(states);
-    const tags = await getPartOfSpeechTags(auth.currentUser.uid);
+    const tags = await getPartOfSpeechTags(user.uid);
     setPosTags(tags);
     const drawn = drawWords(all, count, mode, direction);
     setSessionWords(drawn);
     setUsedIds(new Set(drawn.map((w) => w.id)));
     if (drawn.length === 0) setStep("noWords");
     else setOptions(makeOptions(drawn, 0));
-  }, [auth.currentUser, wordbookId, count, mode, direction]);
+  }, [user?.uid, wordbookId, count, mode, direction]);
 
   useEffect(() => {
     loadWords();
@@ -201,14 +201,14 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   };
 
   const handleSelect = async (choice: Word) => {
-    if (!auth.currentUser) return;
+    if (!user?.uid) return;
     const word = sessionWords[index];
     const isCorrect = choice.id === word.id;
     setCorrect(isCorrect);
     const newMastery = computeMastery(word.mastery || 0, isCorrect);
     const now = Timestamp.now();
     const newCount = (word.studyCount || 0) + 1;
-    await updateWord(auth.currentUser.uid, wordbookId, word.id, {
+    await updateWord(user.uid, wordbookId, word.id, {
       mastery: newMastery,
       reviewDate: now,
       studyCount: newCount,
@@ -216,7 +216,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
     const state = srsStates[word.id];
     if (state) {
       const updated = await applySrsAnswer(
-        auth.currentUser.uid,
+        user.uid,
         wordbookId,
         { ...word, mastery: newMastery, reviewDate: now },
         state,
@@ -271,7 +271,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   };
 
   const nextSet = async () => {
-    if (!auth.currentUser) return;
+    if (!user?.uid) return;
     const remaining = words.filter((w) => !usedIds.has(w.id));
     if (remaining.length === 0) {
       setStep("finished");
@@ -326,6 +326,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
   }, [showResult, next]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 
@@ -335,7 +336,7 @@ export default function ChoiceSessionPage({ params }: PageProps) {
         <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} disabled={!auth}>
             <span suppressHydrationWarning>
               {mounted ? t("logout") : ""}
             </span>

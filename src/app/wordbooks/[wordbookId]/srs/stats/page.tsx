@@ -59,6 +59,7 @@ export default function SrsStatsPage({ params }: PageProps) {
   const distChartRef = useRef<Chart | null>(null);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 
@@ -203,7 +204,7 @@ export default function SrsStatsPage({ params }: PageProps) {
         <BackButton href={`/wordbooks/${wordbookId}`} />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} disabled={!auth}>
             {t("logout")}
           </Button>
         </div>

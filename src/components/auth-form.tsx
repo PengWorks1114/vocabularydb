@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  Auth,
 } from "firebase/auth";
 // Previously: import { auth } from "@/lib/firebase";
 import { getFirebaseAuth } from "@/lib/firebase-client";
@@ -43,7 +44,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const auth = getFirebaseAuth();
+  const [auth, setAuth] = useState<Auth | null>(null);
+
+  useEffect(() => {
+    setAuth(getFirebaseAuth());
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,6 +62,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setError(null);
+    if (!auth) {
+      setError("Authentication is not available.");
+      setIsLoading(false);
+      return;
+    }
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -87,6 +97,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   async function handleGoogleLogin() {
     setIsLoading(true);
     setError(null);
+    if (!auth) {
+      setError("Authentication is not available.");
+      setIsLoading(false);
+      return;
+    }
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);

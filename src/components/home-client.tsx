@@ -32,6 +32,7 @@ export default function HomeClient() {
 
   const handleAuthSuccess = () => setIsAuthOpen(false);
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 
@@ -55,7 +56,7 @@ export default function HomeClient() {
             </p>
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
-              <Button onClick={handleLogout} variant="outline">
+              <Button onClick={handleLogout} variant="outline" disabled={!auth}>
                 {t("logout")}
               </Button>
             </div>

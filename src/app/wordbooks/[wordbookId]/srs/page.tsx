@@ -220,6 +220,7 @@ export default function SrsPage({ params }: PageProps) {
   }, [step, showAnswer]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 
@@ -230,7 +231,7 @@ export default function SrsPage({ params }: PageProps) {
           <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <Button variant="outline" onClick={handleLogout}>
+            <Button variant="outline" onClick={handleLogout} disabled={!auth}>
               {t("logout")}
             </Button>
           </div>
@@ -302,7 +303,7 @@ export default function SrsPage({ params }: PageProps) {
           <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <Button variant="outline" onClick={handleLogout}>
+            <Button variant="outline" onClick={handleLogout} disabled={!auth}>
               {t("logout")}
             </Button>
           </div>
@@ -320,7 +321,7 @@ export default function SrsPage({ params }: PageProps) {
           <BackButton />
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <Button variant="outline" onClick={handleLogout}>
+            <Button variant="outline" onClick={handleLogout} disabled={!auth}>
               {t("logout")}
             </Button>
           </div>
@@ -356,7 +357,7 @@ export default function SrsPage({ params }: PageProps) {
         </button>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} disabled={!auth}>
             {t("logout")}
           </Button>
         </div>

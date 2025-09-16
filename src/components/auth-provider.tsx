@@ -13,7 +13,7 @@ import { getFirebaseAuth } from "@/lib/firebase-client";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  auth: Auth;
+  auth: Auth | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,13 +25,21 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const firebaseAuth = getFirebaseAuth();
+  const [firebaseAuth, setFirebaseAuth] = useState<Auth | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
+    const instance = getFirebaseAuth();
+    if (!instance) {
+      setLoading(false);
+      return;
+    }
+
+    setFirebaseAuth(instance);
+    const unsubscribe = onAuthStateChanged(instance, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
