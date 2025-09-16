@@ -72,7 +72,7 @@ export default function HomeClient() {
           <Image
             src={logoImage}
             alt="VocabularyDB logo"
-            className="h-24 w-auto"
+            className="h-36 w-auto"
             priority
           />
           <Button>{t("welcome")}</Button>

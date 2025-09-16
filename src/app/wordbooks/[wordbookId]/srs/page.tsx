@@ -153,8 +153,8 @@ export default function SrsPage({ params }: PageProps) {
   };
 
   const current = queue[0];
-  const progress = total - queue.length + 1;
-  const progressPercent = (progress / total) * 100;
+  const completedCount = Math.max(0, total - queue.length);
+  const progressPercent = total > 0 ? (completedCount / total) * 100 : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120},70%,50%)`;
   const overdue = current
     ? Math.max(
@@ -363,7 +363,7 @@ export default function SrsPage({ params }: PageProps) {
         </div>
       </div>
       <p className="text-center text-base text-muted-foreground">
-        {t("srs.progress", { current: progress, total })}
+        {t("srs.progress", { current: completedCount, total })}
       </p>
       <div className="h-3 bg-muted rounded">
         <div

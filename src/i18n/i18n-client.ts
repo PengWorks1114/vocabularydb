@@ -117,6 +117,10 @@ i18n
             back: "Back",
             stats: {
               title: "Detailed Stats",
+              todayTitle: "Today's results",
+              todaySummary:
+                "Reviewed {{count}} words today, made {{wrong}} mistakes ({{accuracy}}% correct).",
+              accuracyLabel: "Today's accuracy",
               avgMastery: "Avg mastery",
               dailyCount: "Daily completed",
               range: "Range",
@@ -124,6 +128,12 @@ i18n
               countUnit: "times",
               masteryUnit: "%",
               wordUnit: "words",
+              metric: "Metric",
+              metricOptions: {
+                both: "Counts & mastery",
+                counts: "Review count",
+                mastery: "Avg mastery",
+              },
               pieTitle: "Total {{count}} words Overall mastery (pie)",
               dist: {
                 unknown: "Unknown",
@@ -373,6 +383,10 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             back: "返回",
             stats: {
               title: "詳細統計圖表",
+              todayTitle: "今日戰績",
+              todaySummary:
+                "今日已複習{{count}}個單字、錯了{{wrong}}次（正確率{{accuracy}}%）",
+              accuracyLabel: "今日正確率",
               avgMastery: "平均掌握度",
               dailyCount: "每日完成量",
               range: "範圍",
@@ -380,6 +394,12 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
               countUnit: "次",
               masteryUnit: "%",
               wordUnit: "個單字",
+              metric: "指標",
+              metricOptions: {
+                both: "同時顯示",
+                counts: "複習次數",
+                mastery: "平均掌握度",
+              },
               pieTitle: "目前共{{count}}個單字 整體掌握度(圓餅圖)",
               dist: {
                 unknown: "陌生",
@@ -627,10 +647,23 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             back: "戻る",
             stats: {
               title: "詳細統計図表",
+              todayTitle: "本日の戦績",
+              todaySummary:
+                "今日は{{count}}語を復習し、{{wrong}}回間違えました（正答率{{accuracy}}%）。",
+              accuracyLabel: "本日の正答率",
               avgMastery: "平均習得度",
               dailyCount: "1日の復習数",
               range: "期間",
               days: "{{count}}日",
+              countUnit: "回",
+              masteryUnit: "%",
+              wordUnit: "語",
+              metric: "指標",
+              metricOptions: {
+                both: "両方表示",
+                counts: "復習回数",
+                mastery: "平均習得度",
+              },
               dist: {
                 unknown: "未習得",
                 impression: "見覚え",
