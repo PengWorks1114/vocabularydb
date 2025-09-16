@@ -317,8 +317,11 @@ export default function ReciteSessionPage({ params }: PageProps) {
     startSession();
   };
 
+  const completedCount = Math.min(index, sessionWords.length);
   const progressPercent =
-    sessionWords.length > 0 ? (index / sessionWords.length) * 100 : 0;
+    sessionWords.length > 0
+      ? (completedCount / sessionWords.length) * 100
+      : 0;
   const progressColor = `hsl(${(progressPercent / 100) * 120}, 70%, 50%)`;
 
   const highlight = (text: string) => {
@@ -360,7 +363,7 @@ export default function ReciteSessionPage({ params }: PageProps) {
         <div className="max-w-md mx-auto space-y-4">
           <p className="text-center text-base text-muted-foreground">
             {t("recite.progress", {
-              current: index + 1,
+              current: completedCount,
               total: sessionWords.length,
             })}
           </p>

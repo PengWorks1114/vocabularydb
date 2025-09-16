@@ -10,7 +10,6 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -141,13 +140,29 @@ export default function WordbookList() {
   };
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("wordbookList.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
+    <div className="w-full space-y-4">
+      <div>
+        <h2 className="text-2xl font-semibold">{t("wordbookList.title")}</h2>
+      </div>
+
+      {loading && (
+        <div className="text-sm text-muted-foreground">
+          {t("wordbookList.loading")}
+        </div>
+      )}
+      {error ? <div className="text-sm text-red-500">{String(error)}</div> : null}
+      {!loading && !sortedWordbooks.length && (
+        <div className="text-sm text-muted-foreground">
+          {t("wordbookList.empty")}
+        </div>
+      )}
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="aspect-square flex flex-col">
+          <CardHeader>
+            <CardTitle>{t("wordbookList.create")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center gap-3">
             <Input
               placeholder={t("wordbookList.namePlaceholder")}
               value={newName}
@@ -156,112 +171,111 @@ export default function WordbookList() {
                 if (e.key === "Enter") handleCreate();
               }}
             />
-            <Button onClick={handleCreate} disabled={creating || !newName.trim()}>
+          </CardContent>
+          <CardFooter className="mt-auto flex w-full">
+            <Button
+              className="w-full"
+              onClick={handleCreate}
+              disabled={creating || !newName.trim()}
+            >
               {creating ? t("wordbookList.creating") : t("wordbookList.create")}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Separator />
-
-      <div className="space-y-3">
-        {loading && (
-          <div className="text-sm text-muted-foreground">
-            {t("wordbookList.loading")}
-          </div>
-        )}
-        {error ? (
-          <div className="text-sm text-red-500">{String(error)}</div>
-        ) : null}
-        {!loading && !sortedWordbooks.length && (
-          <div className="text-sm text-muted-foreground">
-            {t("wordbookList.empty")}
-          </div>
-        )}
+          </CardFooter>
+        </Card>
 
         {sortedWordbooks.map((wb: Wordbook) => (
-          <Card key={wb.id}>
-            <CardHeader>
-              <CardTitle>{wb.name}</CardTitle>
+          <Card key={wb.id} className="aspect-square flex flex-col">
+            <CardHeader className="flex-1 flex items-start">
+              <CardTitle className="line-clamp-3 text-lg">{wb.name}</CardTitle>
             </CardHeader>
-            <CardFooter className="flex gap-2 justify-end">
-              <Button asChild variant="secondary">
-                <Link href={`/wordbooks/${wb.id}`}>{t("wordbookList.view")}</Link>
+            <CardFooter className="mt-auto flex flex-col gap-2">
+              <Button
+                asChild
+                className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <Link href={`/wordbooks/${wb.id}`}>
+                  {t("wordbookList.view")}
+                </Link>
               </Button>
 
-              <Dialog
-                open={renameOpen && renameTarget?.id === wb.id}
-                onOpenChange={(o) => {
-                  if (!o) setRenameOpen(false);
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="outline" onClick={() => openRename(wb)}>
-                    {t("wordbookList.rename")}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t("wordbookList.renameTitle")}</DialogTitle>
-                  </DialogHeader>
-                  <Input
-                    autoFocus
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleRename();
-                    }}
-                  />
-                  <DialogFooter>
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <Dialog
+                  open={renameOpen && renameTarget?.id === wb.id}
+                  onOpenChange={(o) => {
+                    if (!o) setRenameOpen(false);
+                  }}
+                >
+                  <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      onClick={() => setRenameOpen(false)}
+                      className="w-full"
+                      onClick={() => openRename(wb)}
                     >
-                      {t("wordbookList.cancel")}
+                      {t("wordbookList.rename")}
                     </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{t("wordbookList.renameTitle")}</DialogTitle>
+                    </DialogHeader>
+                    <Input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleRename();
+                      }}
+                    />
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setRenameOpen(false)}
+                      >
+                        {t("wordbookList.cancel")}
+                      </Button>
+                      <Button
+                        onClick={handleRename}
+                        disabled={renaming || !renameValue.trim()}
+                      >
+                        {renaming
+                          ? t("wordbookList.saving")
+                          : t("wordbookList.save")}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <Button
-                      onClick={handleRename}
-                      disabled={renaming || !renameValue.trim()}
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => setDeleteTarget(wb)}
                     >
-                      {renaming
-                        ? t("wordbookList.saving")
-                        : t("wordbookList.save")}
+                      {t("wordbookList.delete")}
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setDeleteTarget(wb)}
-                  >
-                    {t("wordbookList.delete")}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {t("wordbookList.confirmDelete", { name: wb.name })}
-                    </AlertDialogTitle>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setDeleteTarget(null)}>
-                      {t("wordbookList.cancel")}
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={deleting}
-                    >
-                      {deleting
-                        ? t("wordbookList.deleting")
-                        : t("wordbookList.delete")}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {t("wordbookList.confirmDelete", { name: wb.name })}
+                      </AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setDeleteTarget(null)}>
+                        {t("wordbookList.cancel")}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={deleting}
+                      >
+                        {deleting
+                          ? t("wordbookList.deleting")
+                          : t("wordbookList.delete")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardFooter>
           </Card>
         ))}

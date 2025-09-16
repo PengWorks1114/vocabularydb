@@ -859,7 +859,7 @@ export function WordList({ wordbookId }: WordListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start gap-2">
+      <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {!bulkMode && (
             <Dialog open={createOpen} onOpenChange={(o) => {
@@ -1115,9 +1115,11 @@ export function WordList({ wordbookId }: WordListProps) {
           </>
         )}
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-auto shrink-0">
-          <span>{t("wordList.wordCount", { count: words.length })}</span>
-          <div className="flex items-center gap-2">
+        <div className="w-full text-sm text-muted-foreground">
+          {t("wordList.wordCount", { count: words.length })}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 w-full">
+          <div className="flex flex-wrap items-center gap-2">
             <span>{t("wordList.overallMastery")}</span>
             <div className="h-2 w-24 rounded bg-gray-200">
               <div
@@ -1132,51 +1134,53 @@ export function WordList({ wordbookId }: WordListProps) {
               </Link>
             </Button>
           </div>
-          <select
-            className="border rounded p-1 text-sm"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortField)}
-          >
-            <option value="createdAt">{t("wordList.createdAt")}</option>
-            <option value="reviewDate">{t("wordList.reviewDate")}</option>
-            <option value="usageFrequency">{t("wordList.usageFrequency")}</option>
-            <option value="mastery">{t("wordList.mastery")}</option>
-            <option value="studyCount">{t("wordList.studyCount")}</option>
-            <option value="dueDate">{t("wordList.dueDate")}</option>
-            <option value="overdue">{t("wordList.overdueDays")}</option>
-          </select>
-          <label className="flex items-center gap-1 text-sm">
-            <input
-              type="checkbox"
-              checked={sortDir === "asc"}
-              onChange={(e) => setSortDir(e.target.checked ? "asc" : "desc")}
-            />
-            {t("wordList.reverseOrder")}
-          </label>
-          <div className="flex items-center gap-1">
-            <Input
-              placeholder={t("wordList.searchPlaceholder")}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <select
+              className="border rounded p-1 text-sm"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortField)}
+            >
+              <option value="createdAt">{t("wordList.createdAt")}</option>
+              <option value="reviewDate">{t("wordList.reviewDate")}</option>
+              <option value="usageFrequency">{t("wordList.usageFrequency")}</option>
+              <option value="mastery">{t("wordList.mastery")}</option>
+              <option value="studyCount">{t("wordList.studyCount")}</option>
+              <option value="dueDate">{t("wordList.dueDate")}</option>
+              <option value="overdue">{t("wordList.overdueDays")}</option>
+            </select>
+            <label className="flex items-center gap-1 text-sm">
+              <input
+                type="checkbox"
+                checked={sortDir === "asc"}
+                onChange={(e) => setSortDir(e.target.checked ? "asc" : "desc")}
+              />
+              {t("wordList.reverseOrder")}
+            </label>
+            <div className="flex items-center gap-1 w-full sm:w-auto">
+              <Input
+                placeholder={t("wordList.searchPlaceholder")}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setSearch(searchInput);
+                    setPage(1);
+                  }
+                }}
+                className="w-full sm:w-48"
+              />
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => {
                   setSearch(searchInput);
                   setPage(1);
-                }
-              }}
-              className="w-40"
-            />
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => {
-                setSearch(searchInput);
-                setPage(1);
-              }}
-              aria-label={t("wordList.searchButton")}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+                }}
+                aria-label={t("wordList.searchButton")}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

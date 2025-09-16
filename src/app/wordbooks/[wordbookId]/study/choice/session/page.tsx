@@ -374,7 +374,9 @@ export default function ChoiceSessionPage({ params }: PageProps) {
                     onClick={() => handleSelect(o)}
                   >
                     <span className="truncate w-full text-left">
-                      {highlight(direction === "word" ? o.translation : o.word)}
+                      {direction === "word"
+                        ? o.translation || ""
+                        : o.word || ""}
                     </span>
                   </Button>
                 ))}
