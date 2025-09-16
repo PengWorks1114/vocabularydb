@@ -58,6 +58,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
   }, []);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 
@@ -73,7 +74,7 @@ export default function ReciteSettingsPage({ params }: PageProps) {
         <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} disabled={!auth}>
             <span suppressHydrationWarning>
               {mounted ? t("logout") : ""}
             </span>

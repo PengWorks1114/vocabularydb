@@ -141,7 +141,7 @@ function computeMastery(current: number, correct: boolean): number {
 
 export default function DictationSessionPage({ params }: PageProps) {
   const { wordbookId } = use(params);
-  const { auth } = useAuth();
+  const { auth, user } = useAuth();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const count = Number(searchParams?.get("count") ?? 5);
@@ -167,7 +167,7 @@ export default function DictationSessionPage({ params }: PageProps) {
   }, []);
 
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
+    const uid = user?.uid;
     if (!uid) return;
     const key = `${uid}-${wordbookId}`;
     if (loadKey.current === key) return;
@@ -200,9 +200,10 @@ export default function DictationSessionPage({ params }: PageProps) {
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.currentUser?.uid, wordbookId]);
+  }, [user?.uid, wordbookId]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 
@@ -242,11 +243,11 @@ export default function DictationSessionPage({ params }: PageProps) {
     const isCorrect =
       input.trim().toLowerCase() === answer.trim().toLowerCase();
     setCorrect(isCorrect);
-    if (!auth.currentUser) return;
+    if (!user?.uid) return;
     const newMastery = computeMastery(word.mastery, isCorrect);
     const now = Timestamp.now();
     const newCount = (word.studyCount || 0) + 1;
-    await updateWord(auth.currentUser.uid, wordbookId, word.id, {
+    await updateWord(user.uid, wordbookId, word.id, {
       mastery: newMastery,
       reviewDate: now,
       studyCount: newCount,
@@ -254,7 +255,7 @@ export default function DictationSessionPage({ params }: PageProps) {
     const state = srsStates[word.id];
     if (state) {
       const updated = await applySrsAnswer(
-        auth.currentUser.uid,
+        user.uid,
         wordbookId,
         { ...word, mastery: newMastery, reviewDate: now },
         state,
@@ -366,7 +367,7 @@ export default function DictationSessionPage({ params }: PageProps) {
         <BackButton />
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} disabled={!auth}>
             <span suppressHydrationWarning>
               {mounted ? t("logout") : ""}
             </span>
