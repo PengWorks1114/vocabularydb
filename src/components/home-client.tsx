@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import {
@@ -19,6 +20,7 @@ import { signOut } from "firebase/auth";
 
 // Wordbook list component
 import WordbookList from "@/components/wordbooks/wordbook-list";
+import logoImage from "@/images/logo.png";
 
 export default function HomeClient() {
   const { t } = useTranslation();
@@ -66,23 +68,31 @@ export default function HomeClient() {
           <WordbookList />
         </div>
       ) : (
-        <div className="flex min-h-[60vh] items-center justify-center gap-4">
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
+          <Image
+            src={logoImage}
+            alt="VocabularyDB logo"
+            className="h-36 w-auto"
+            priority
+          />
           <Button>{t("welcome")}</Button>
-          <LanguageSwitcher />
-          <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">{t("login")}</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{t("login")}</DialogTitle>
-                <DialogDescription>
-                  Log in to your account or create a new one.
-                </DialogDescription>
-              </DialogHeader>
-              <AuthForm onSuccess={handleAuthSuccess} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">{t("login")}</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{t("login")}</DialogTitle>
+                  <DialogDescription>
+                    Log in to your account or create a new one.
+                  </DialogDescription>
+                </DialogHeader>
+                <AuthForm onSuccess={handleAuthSuccess} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       )}
     </div>

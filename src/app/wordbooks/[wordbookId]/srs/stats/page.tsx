@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Chart } from "chart.js/auto";
+import type { ChartDataset } from "chart.js";
 
 interface PageProps {
   params: Promise<{ wordbookId: string }>;
@@ -37,9 +38,21 @@ export default function SrsStatsPage({ params }: PageProps) {
   const [words, setWords] = useState<Word[]>([]);
   const [states, setStates] = useState<Record<string, SrsState>>({});
   const [logs, setLogs] = useState<ReviewLog[]>([]);
+  const [modeFilter, setModeFilter] = useState<"all" | "flashcards" | "dictation">(
+    "all"
+  );
   const [range, setRange] = useState(30);
+  const [metricView, setMetricView] =
+    useState<"both" | "counts" | "mastery">("both");
   const [selected, setSelected] = useState<Word | null>(null);
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((l) => {
+      const logMode = l.mode ?? "flashcards";
+      return modeFilter === "all" || logMode === modeFilter;
+    });
+  }, [logs, modeFilter]);
 
   useEffect(() => {
     if (!user) return;
@@ -64,7 +77,9 @@ export default function SrsStatsPage({ params }: PageProps) {
   };
 
   useEffect(() => {
-    if (logs.length === 0) return;
+    const dailyCanvas = document.getElementById("dailyChart") as HTMLCanvasElement | null;
+    if (!dailyCanvas) return;
+
     const labels = Array.from({ length: range }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (range - 1 - i));
@@ -73,8 +88,9 @@ export default function SrsStatsPage({ params }: PageProps) {
     const reviewCounts = Array(range).fill(0);
     const masterySums = Array(range).fill(0);
     const masteryCounts = Array(range).fill(0);
-    logs.forEach((l) => {
-      const diff = Math.floor((Date.now() - l.ts.toMillis()) / 86400000);
+    const now = Date.now();
+    filteredLogs.forEach((l) => {
+      const diff = Math.floor((now - l.ts.toMillis()) / 86400000);
       if (diff >= 0 && diff < range) {
         const idx = range - 1 - diff;
         reviewCounts[idx]++;
@@ -87,103 +103,130 @@ export default function SrsStatsPage({ params }: PageProps) {
       masteryCounts[i] ? sum / masteryCounts[i] : 0
     );
 
-    const dailyCanvas = document.getElementById("dailyChart") as HTMLCanvasElement | null;
-    if (dailyCanvas) {
-      dailyChartRef.current?.destroy();
-      dailyChartRef.current = new Chart(dailyCanvas, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: `${t("srs.stats.avgMastery")} (${t("srs.stats.masteryUnit")})`,
-              data: masteryAvg,
-              borderColor: "#3b82f6",
-              fill: false,
-              yAxisID: "y1",
-            },
-            {
-              label: `${t("srs.stats.dailyCount")} (${t("srs.stats.countUnit")})`,
-              data: reviewCounts,
-              borderColor: "#10b981",
-              fill: false,
-              yAxisID: "y",
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              position: "left",
-              title: { display: true, text: t("srs.stats.countUnit") },
-            },
-            y1: {
-              position: "right",
-              grid: { drawOnChartArea: false },
-              title: { display: true, text: t("srs.stats.masteryUnit") },
-              min: 0,
-              max: 100,
-            },
-          },
-        },
+    const showCounts = metricView === "both" || metricView === "counts";
+    const showMastery = metricView === "both" || metricView === "mastery";
+    const datasets: ChartDataset<"bar" | "line", number[]>[] = [];
+
+    if (showCounts) {
+      datasets.push({
+        type: "bar",
+        label: `${t("srs.stats.dailyCount")} (${t("srs.stats.countUnit")})`,
+        data: reviewCounts,
+        backgroundColor: "rgba(16, 185, 129, 0.6)",
+        borderColor: "#10b981",
+        borderWidth: 1,
+        yAxisID: "y",
       });
     }
 
-    const distCanvas = document.getElementById("distChart") as HTMLCanvasElement | null;
-    if (distCanvas) {
-      let u = 0,
-        i = 0,
-        f = 0,
-        m = 0;
-      words.forEach((w) => {
-        const score = Math.min(100, w.mastery);
-        if (score >= 90) m++;
-        else if (score >= 50) f++;
-        else if (score >= 25) i++;
-        else u++;
+    if (showMastery) {
+      datasets.push({
+        type: "line",
+        label: `${t("srs.stats.avgMastery")} (${t("srs.stats.masteryUnit")})`,
+        data: masteryAvg,
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        fill: false,
+        tension: 0.3,
+        yAxisID: "y1",
       });
-      distChartRef.current?.destroy();
-      distChartRef.current = new Chart(distCanvas, {
-        type: "pie",
-        data: {
-          labels: [
-            t("srs.stats.dist.unknown"),
-            t("srs.stats.dist.impression"),
-            t("srs.stats.dist.familiar"),
-            t("srs.stats.dist.memorized"),
-          ],
-          datasets: [
-            {
-              label: t("srs.stats.wordUnit"),
-              data: [u, i, f, m],
-              backgroundColor: [
-                "#ef4444",
-                "#f59e0b",
-                "#3b82f6",
-                "#10b981",
-              ],
-            },
-          ],
+    }
+
+    const chartType = showCounts && !showMastery ? "bar" : "line";
+
+    dailyChartRef.current?.destroy();
+    dailyChartRef.current = new Chart(dailyCanvas, {
+      type: chartType,
+      data: {
+        labels,
+        datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            display: showCounts,
+            beginAtZero: true,
+            position: "left",
+            title: { display: showCounts, text: t("srs.stats.countUnit") },
+          },
+          y1: {
+            display: showMastery,
+            position: showCounts ? "right" : "left",
+            grid: { drawOnChartArea: !showCounts },
+            title: { display: showMastery, text: t("srs.stats.masteryUnit") },
+            min: 0,
+            max: 100,
+          },
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: (ctx) => `${ctx.label}: ${ctx.parsed} ${t("srs.stats.wordUnit")}`,
-              },
+      },
+    });
+  }, [filteredLogs, range, t, metricView]);
+
+  useEffect(() => {
+    const distCanvas = document.getElementById("distChart") as HTMLCanvasElement | null;
+    if (!distCanvas) return;
+
+    let u = 0,
+      i = 0,
+      f = 0,
+      m = 0;
+    words.forEach((w) => {
+      const score = Math.min(100, w.mastery);
+      if (score >= 90) m++;
+      else if (score >= 50) f++;
+      else if (score >= 25) i++;
+      else u++;
+    });
+
+    distChartRef.current?.destroy();
+    distChartRef.current = new Chart(distCanvas, {
+      type: "pie",
+      data: {
+        labels: [
+          t("srs.stats.dist.unknown"),
+          t("srs.stats.dist.impression"),
+          t("srs.stats.dist.familiar"),
+          t("srs.stats.dist.memorized"),
+        ],
+        datasets: [
+          {
+            label: t("srs.stats.wordUnit"),
+            data: [u, i, f, m],
+            backgroundColor: [
+              "#ef4444",
+              "#f59e0b",
+              "#3b82f6",
+              "#10b981",
+            ],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${ctx.parsed} ${t("srs.stats.wordUnit")}`,
             },
           },
         },
-      });
-    }
-  }, [logs, range, t]);
+      },
+    });
+  }, [words, t]);
+
+  useEffect(
+    () => () => {
+      dailyChartRef.current?.destroy();
+      distChartRef.current?.destroy();
+    },
+    []
+  );
 
   const topWeakMap: Record<string, { id: string; word: string; errors: number }> = {};
-  logs.forEach((l) => {
+  filteredLogs.forEach((l) => {
     if (l.quality < 2) {
       const w = words.find((w) => w.id === l.wordId);
       if (!w) return;
@@ -198,6 +241,27 @@ export default function SrsStatsPage({ params }: PageProps) {
     .sort((a, b) => b.errors - a.errors)
     .slice(0, 10);
 
+  const now = Date.now();
+  const todayLogs = filteredLogs.filter(
+    (l) => Math.floor((now - l.ts.toMillis()) / 86400000) === 0
+  );
+  const todayReviewCount = todayLogs.length;
+  const todayWrongCount = todayLogs.filter((l) => l.quality === 0).length;
+  const accuracyPercent = todayReviewCount
+    ? Math.round(
+        ((todayReviewCount - todayWrongCount) / todayReviewCount) * 100
+      )
+    : 0;
+  const accuracyBarWidth = Math.max(0, Math.min(accuracyPercent, 100));
+  const accuracyColor =
+    todayReviewCount === 0
+      ? "#94a3b8"
+      : accuracyBarWidth >= 80
+      ? "#22c55e"
+      : accuracyBarWidth >= 50
+      ? "#f59e0b"
+      : "#ef4444";
+
   return (
     <div className="p-4 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
@@ -211,31 +275,92 @@ export default function SrsStatsPage({ params }: PageProps) {
       </div>
       <h1 className="text-xl font-semibold">{t("srs.stats.title")}</h1>
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <label className="text-sm" htmlFor="range-select">
-            {t("srs.stats.range")}
-          </label>
-          <select
-            id="range-select"
-            className="border p-1 rounded"
-            value={range}
-            onChange={(e) => setRange(Number(e.target.value))}
-          >
-            {[7, 30, 90, 180, 365].map((r) => (
-              <option key={r} value={r}>
-                {t("srs.stats.days", { count: r })}
-              </option>
-            ))}
-          </select>
+        <div className="rounded-lg border p-4 space-y-3">
+          <h2 className="text-lg font-semibold">{t("srs.stats.todayTitle")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t("srs.stats.todaySummary", {
+              count: todayReviewCount,
+              wrong: todayWrongCount,
+              accuracy: accuracyPercent,
+            })}
+          </p>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-sm font-medium">
+              <span>{t("srs.stats.accuracyLabel")}</span>
+              <span>{accuracyPercent}%</span>
+            </div>
+            <div className="h-2 w-full rounded bg-muted">
+              <div
+                className="h-2 rounded"
+                style={{
+                  width: `${accuracyBarWidth}%`,
+                  backgroundColor: accuracyColor,
+                }}
+              />
+            </div>
+          </div>
         </div>
-        <div className="w-full h-64">
-          <canvas id="dailyChart" className="w-full h-full" />
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-sm" htmlFor="range-select">
+            {t("srs.stats.range")}
+            <select
+              id="range-select"
+              className="border rounded p-1"
+              value={range}
+              onChange={(e) => setRange(Number(e.target.value))}
+            >
+              {[7, 30, 90, 180, 365].map((r) => (
+                <option key={r} value={r}>
+                  {t("srs.stats.days", { count: r })}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm" htmlFor="metric-select">
+            {t("srs.stats.metric")}
+            <select
+              id="metric-select"
+              className="border rounded p-1"
+              value={metricView}
+              onChange={(e) =>
+                setMetricView(e.target.value as "both" | "counts" | "mastery")
+              }
+            >
+              <option value="both">{t("srs.stats.metricOptions.both")}</option>
+              <option value="counts">{t("srs.stats.metricOptions.counts")}</option>
+              <option value="mastery">{t("srs.stats.metricOptions.mastery")}</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm" htmlFor="mode-select">
+            {t("srs.stats.modeFilter")}
+            <select
+              id="mode-select"
+              className="border rounded p-1"
+              value={modeFilter}
+              onChange={(e) =>
+                setModeFilter(
+                  e.target.value as "all" | "flashcards" | "dictation"
+                )
+              }
+            >
+              <option value="all">{t("srs.stats.modeOptions.all")}</option>
+              <option value="flashcards">
+                {t("srs.stats.modeOptions.flashcards")}
+              </option>
+              <option value="dictation">
+                {t("srs.stats.modeOptions.dictation")}
+              </option>
+            </select>
+          </label>
+        </div>
+        <div className="h-64 w-full">
+          <canvas id="dailyChart" className="h-full w-full" />
         </div>
         <p className="text-center text-sm">
           {t("srs.stats.pieTitle", { count: words.length })}
         </p>
-        <div className="w-64 h-64 mx-auto">
-          <canvas id="distChart" className="w-full h-full" />
+        <div className="mx-auto h-64 w-64">
+          <canvas id="distChart" className="h-full w-full" />
         </div>
       </div>
       <div>

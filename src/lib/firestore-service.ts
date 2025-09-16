@@ -446,6 +446,7 @@ export interface ReviewLog {
   ts: Timestamp;
   quality: 0 | 1 | 2 | 3;
   mastery: number;
+  mode?: "flashcards" | "dictation";
 }
 
 function initSrsFromWord(word: Word): SrsState {
@@ -561,7 +562,8 @@ export const applySrsAnswer = async (
   word: Word,
   state: SrsState,
   quality: 0 | 1 | 2 | 3,
-  updateWord: boolean = true
+  updateWord: boolean = true,
+  mode: "flashcards" | "dictation" = "flashcards"
 ): Promise<SrsState> => {
   let { stage, intervalDays: ivl, streak, lapses, ease } = state;
   if (quality === 0) {
@@ -646,6 +648,7 @@ export const applySrsAnswer = async (
     ts: Timestamp.fromDate(today),
     quality,
     mastery: newMastery,
+    mode,
   });
   return newState;
 };
