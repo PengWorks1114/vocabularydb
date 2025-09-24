@@ -451,7 +451,7 @@ export function WordList({ wordbookId }: WordListProps) {
         note: newNote.trim(),
         favorite: newFavorite,
       });
-      setWords((prev) => [created, ...prev]);
+      setWords((prev) => [created, ...prev.filter((w) => w.id !== created.id)]);
       resetCreateForm();
       setCreateOpen(false);
     } catch (e) {
