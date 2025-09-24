@@ -266,7 +266,9 @@ i18n
             partOfSpeechCodes: "Part of speech codes:",
             bulkImportExample: `Example:
 word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note
-生贄,いけにえ,祭品、活祭/比喻被犧牲者,B8KvmTNtiqNfeAI8AV62,古代では神に生贄を捧げる風習があった。（古代有向神獻上活祭的習俗。） 彼は生贄として選ばれた。（他被選為祭品。）,生贄を捧げる（獻上祭品）/神への生贄（獻給神的活祭）/生贄にされる（被當作祭品）,犠牲,救済,1.5,85,宗教與歷史色彩濃厚 現代常作比喻指被犧牲者 名詞`,
+生贄,いけにえ,祭品、活祭/比喻被犧牲者,{{partOfSpeechCode}},古代では神に生贄を捧げる風習があった。（古代有向神獻上活祭的習俗。） 彼は生贄として選ばれた。（他被選為祭品。）,生贄を捧げる（獻上祭品）/神への生贄（獻給神的活祭）/生贄にされる（被當作祭品）,犠牲,救済,1.5,85,宗教與歷史色彩濃厚 現代常作比喻指被犧牲者 {{partOfSpeechName}}`,
+            bulkImportExampleCodeFallback: "PART_OF_SPEECH_ID",
+            bulkImportExampleNameFallback: "part of speech name",
             importSuccess: "Import successful",
             importFailed: "Import failed",
             studyWords: "Study Words",
@@ -572,7 +574,9 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             partOfSpeechCodes: "詞性代碼對應如下：",
             bulkImportExample: `範例:
 word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note
-生贄,いけにえ,祭品、活祭/比喻被犧牲者,B8KvmTNtiqNfeAI8AV62,古代では神に生贄を捧げる風習があった。（古代有向神獻上活祭的習俗。） 彼は生贄として選ばれた。（他被選為祭品。）,生贄を捧げる（獻上祭品）/神への生贄（獻給神的活祭）/生贄にされる（被當作祭品）,犠牲,救済,1.5,85,宗教與歷史色彩濃厚 現代常作比喻指被犧牲者 名詞`,
+生贄,いけにえ,祭品、活祭/比喻被犧牲者,{{partOfSpeechCode}},古代では神に生贄を捧げる風習があった。（古代有向神獻上活祭的習俗。） 彼は生贄として選ばれた。（他被選為祭品。）,生贄を捧げる（獻上祭品）/神への生贄（獻給神的活祭）/生贄にされる（被當作祭品）,犠牲,救済,1.5,85,宗教與歷史色彩濃厚 現代常作比喻指被犧牲者 {{partOfSpeechName}}`,
+            bulkImportExampleCodeFallback: "詞性代碼",
+            bulkImportExampleNameFallback: "詞性名稱",
             importSuccess: "匯入成功",
             importFailed: "匯入失敗",
             studyWords: "背誦單字",
@@ -876,7 +880,9 @@ word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,
             partOfSpeechCodes: "品詞コード:",
             bulkImportExample: `例:
 word,pinyin,translation,partOfSpeech,exampleSentence,exampleTranslation,synonym,antonym,usageFrequency,mastery,note
-生贄,いけにえ,祭品、活祭/比喻被犧牲者,B8KvmTNtiqNfeAI8AV62,古代では神に生贄を捧げる風習があった。（古代有向神獻上活祭的習俗。） 彼は生贄として選ばれた。（他被選為祭品。）,生贄を捧げる（獻上祭品）/神への生贄（獻給神的活祭）/生贄にされる（被當作祭品）,犠牲,救済,1.5,85,宗教與歷史色彩濃厚 現代常作比喻指被犧牲者 名詞`,
+生贄,いけにえ,祭品、活祭/比喻被犧牲者,{{partOfSpeechCode}},古代では神に生贄を捧げる風習があった。（古代有向神獻上活祭的習俗。） 彼は生贄として選ばれた。（他被選為祭品。）,生贄を捧げる（獻上祭品）/神への生贄（獻給神的活祭）/生贄にされる（被當作祭品）,犠牲,救済,1.5,85,宗教與歷史色彩濃厚 現代常作比喻指被犧牲者 {{partOfSpeechName}}`,
+            bulkImportExampleCodeFallback: "品詞コード",
+            bulkImportExampleNameFallback: "品詞名",
             importSuccess: "インポート成功",
             importFailed: "インポート失敗",
             studyWords: "単語を暗記",

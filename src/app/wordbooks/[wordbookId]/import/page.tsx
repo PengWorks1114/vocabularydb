@@ -24,6 +24,13 @@ export default function ImportPage({ params }: PageProps) {
   const [csv, setCsv] = useState("");
   const [mounted, setMounted] = useState(false);
   const [posTags, setPosTags] = useState<PartOfSpeechTag[]>([]);
+  const sampleTag = posTags[0];
+  const bulkImportExample = t("wordList.bulkImportExample", {
+    partOfSpeechCode:
+      sampleTag?.id || t("wordList.bulkImportExampleCodeFallback"),
+    partOfSpeechName:
+      sampleTag?.name || t("wordList.bulkImportExampleNameFallback"),
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +106,7 @@ export default function ImportPage({ params }: PageProps) {
       <h1 className="text-xl font-bold">{t("wordList.bulkImport")}</h1>
       <div>
         <div className="mb-2 text-sm whitespace-pre-wrap">
-          {t("wordList.bulkImportExample")}
+          {bulkImportExample}
         </div>
         {!!posTags.length && (
           <div className="mb-2 text-sm whitespace-pre-wrap">
