@@ -80,16 +80,17 @@ export const createWordbook = async (
   name: string
 ): Promise<Wordbook> => {
   const colRef = collection(db, "users", userId, "wordbooks");
+  const createdAt = Timestamp.now();
   const docRef = await addDoc(colRef, {
     name,
     userId,
-    createdAt: Timestamp.now(),
+    createdAt,
   });
   return {
     id: docRef.id,
     name,
     userId,
-    createdAt: Timestamp.now(),
+    createdAt,
   };
 };
 
@@ -103,6 +104,7 @@ export const deleteWordbook = async (
   const wordsSnap = await getDocs(wordsRef);
   await Promise.all(wordsSnap.docs.map((d) => deleteDoc(d.ref)));
   await deleteDoc(docRef);
+  clearWordbookCaches(userId, wordbookId);
 };
 
 
@@ -168,10 +170,11 @@ export const createWord = async (
     wordbookId,
     "words"
   );
+  const createdAt = Timestamp.now();
   const docRef = await addDoc(colRef, {
     ...wordData,
     wordbookId,
-    createdAt: Timestamp.now(),
+    createdAt,
     reviewDate: null,
     studyCount: 0,
   });
@@ -179,7 +182,7 @@ export const createWord = async (
     id: docRef.id,
     ...wordData,
     wordbookId,
-    createdAt: Timestamp.now(),
+    createdAt,
     reviewDate: null,
     studyCount: 0,
   } as Word;
@@ -490,6 +493,16 @@ function initSrsFromWord(word: Word): SrsState {
 
 // cache SRS state to avoid repeated reads
 const srsStateCache: Record<string, Record<string, SrsState>> = {};
+
+function clearWordbookCaches(userId: string, wordbookId: string) {
+  const key = makeCacheKey(userId, wordbookId);
+  if (wordCache[key]) {
+    delete wordCache[key];
+  }
+  if (srsStateCache[key]) {
+    delete srsStateCache[key];
+  }
+}
 
 async function ensureSrsStates(
   userId: string,

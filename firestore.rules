@@ -1,0 +1,199 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function optionalString(field) {
+      return !(field in request.resource.data) || request.resource.data[field] is string;
+    }
+
+    function optionalNumber(field) {
+      return !(field in request.resource.data) || request.resource.data[field] is number;
+    }
+
+    function optionalBoolean(field) {
+      return !(field in request.resource.data) || request.resource.data[field] is bool;
+    }
+
+    function optionalTimestamp(field) {
+      return !(field in request.resource.data)
+        || request.resource.data[field] == null
+        || request.resource.data[field] is timestamp;
+    }
+
+    function requiredString(field) {
+      return (field in request.resource.data) && request.resource.data[field] is string;
+    }
+
+    function requiredNumber(field) {
+      return (field in request.resource.data) && request.resource.data[field] is number;
+    }
+
+    function requiredBoolean(field) {
+      return (field in request.resource.data) && request.resource.data[field] is bool;
+    }
+
+    function requiredTimestamp(field) {
+      return (field in request.resource.data) && request.resource.data[field] is timestamp;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /wordbooks/{wordbookId} {
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(["name", "userId", "createdAt"])
+          && request.resource.data.name is string
+          && request.resource.data.userId == userId
+          && request.resource.data.createdAt is timestamp;
+
+        allow update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(["name", "userId", "createdAt"])
+          && request.resource.data.userId == userId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.name is string;
+
+        allow delete: if isOwner(userId);
+
+        match /words/{wordId} {
+          allow read: if isOwner(userId);
+
+          allow create: if isOwner(userId)
+            && request.resource.data.keys().hasOnly([
+              "word",
+              "pinyin",
+              "favorite",
+              "translation",
+              "partOfSpeech",
+              "exampleSentence",
+              "exampleTranslation",
+              "relatedWords",
+              "usageFrequency",
+              "mastery",
+              "note",
+              "wordbookId",
+              "createdAt",
+              "reviewDate",
+              "studyCount"
+            ])
+            && requiredString("word")
+            && optionalString("pinyin")
+            && requiredString("translation")
+            && optionalString("exampleSentence")
+            && optionalString("exampleTranslation")
+            && optionalString("note")
+            && requiredNumber("usageFrequency")
+            && requiredNumber("mastery")
+            && requiredBoolean("favorite")
+            && requiredTimestamp("createdAt")
+            && optionalTimestamp("reviewDate")
+            && requiredNumber("studyCount")
+            && ("partOfSpeech" in request.resource.data ? request.resource.data.partOfSpeech is list : true)
+            && ("relatedWords" in request.resource.data ? request.resource.data.relatedWords is map : true)
+            && request.resource.data.wordbookId == wordbookId;
+
+          allow update: if isOwner(userId)
+            && request.resource.data.keys().hasOnly([
+              "word",
+              "pinyin",
+              "favorite",
+              "translation",
+              "partOfSpeech",
+              "exampleSentence",
+              "exampleTranslation",
+              "relatedWords",
+              "usageFrequency",
+              "mastery",
+              "note",
+              "wordbookId",
+              "createdAt",
+              "reviewDate",
+              "studyCount"
+            ])
+            && requiredString("word")
+            && optionalString("pinyin")
+            && requiredString("translation")
+            && optionalString("exampleSentence")
+            && optionalString("exampleTranslation")
+            && optionalString("note")
+            && requiredNumber("usageFrequency")
+            && requiredNumber("mastery")
+            && requiredBoolean("favorite")
+            && requiredTimestamp("createdAt")
+            && optionalTimestamp("reviewDate")
+            && requiredNumber("studyCount")
+            && ("partOfSpeech" in request.resource.data ? request.resource.data.partOfSpeech is list : true)
+            && ("relatedWords" in request.resource.data ? request.resource.data.relatedWords is map : true)
+            && request.resource.data.wordbookId == wordbookId
+            && resource.data.wordbookId == wordbookId
+            && request.resource.data.createdAt == resource.data.createdAt;
+
+          allow delete: if isOwner(userId);
+        }
+
+        match /srs/{srsId} {
+          allow read: if isOwner(userId);
+          allow create, update: if isOwner(userId)
+            && request.resource.data.keys().hasOnly([
+              "stage",
+              "intervalDays",
+              "dueDate",
+              "streak",
+              "lapses",
+              "ease"
+            ])
+            && requiredNumber("stage")
+            && requiredNumber("intervalDays")
+            && requiredTimestamp("dueDate")
+            && requiredNumber("streak")
+            && requiredNumber("lapses")
+            && requiredNumber("ease");
+          allow delete: if isOwner(userId);
+        }
+
+        match /reviewLogs/{logId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId)
+            && request.resource.data.keys().hasOnly([
+              "wordId",
+              "ts",
+              "quality",
+              "mastery",
+              "mode"
+            ])
+            && request.resource.data.wordId is string
+            && request.resource.data.ts is timestamp
+            && requiredNumber("quality")
+            && requiredNumber("mastery")
+            && optionalString("mode");
+        }
+      }
+
+      match /posTags/{tagId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(["name", "color", "userId"])
+          && request.resource.data.userId == userId
+          && request.resource.data.name is string
+          && request.resource.data.color is string;
+
+        allow update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(["name", "color", "userId"])
+          && request.resource.data.userId == userId
+          && resource.data.userId == userId
+          && request.resource.data.name is string
+          && request.resource.data.color is string;
+
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
